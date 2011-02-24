@@ -1,27 +1,64 @@
---[[
-Copyright (c) 2011 Team Tempest
+require "menu.lua"
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+sWidth, sHeight = 800, 600
+state = {} --this is what gets called into action, whether that be the game, level editor, whatever...
 
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
+function love.load()
+  --Resources
+	color =	 {	background = {240,243,247},
+				main = {63,193,245},
+				text = {76,77,78},
+				overlay = {255,255,255,235} }
+	font = {	default = love.graphics.newFont(24),
+				large = love.graphics.newFont(32),
+				huge = love.graphics.newFont(72),
+				small = love.graphics.newFont(22) }
+	sound =	{	click = love.audio.newSource("media/click.ogg", "static"),}
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
+	-- Variables
+	size = 6				-- size of the grid
+	audio = true			-- whether audio should be on or off
 
-main.lua 
---]]
+	--initial graphics setup
+
+	love.graphics.setBackgroundColor(0,0,0)
+	love.graphics.setMode(sWidth, sHeight, false, false, 0)
+
+	state = menu:new()
+end
+
+function love.update(dt)
+	if state.update then
+		state:update(dt)
+	end
+end
 
 function love.draw()
-    love.graphics.print("Hello World", 400, 300)
+	if state.draw then
+		state:draw()
+	end
+end
+
+function love.keypressed(key, unicode)
+	if state.keypressed then
+		state:keypressed(key, unicode)
+	end
+end
+
+function love.keyreleased(key)
+	if state.keyreleased then
+		state:keyreleased(key)
+	end
+end
+
+function love.mousepressed(x, y, button)
+	if state.mousepressed then
+		state:mousepressed(x, y, button)
+	end
+end
+
+function love.mousereleased(x, y, button)
+	if state.mousereleased then
+		state:mousereleased(x, y, button)
+	end
 end

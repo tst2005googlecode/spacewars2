@@ -20,50 +20,91 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
 game.lua
+
+Currently, this is an example scenario to test rendering and movement.
 --]]
 
 require "subclass/class.lua"
+require "util/camera.lua"
 require "pause.lua"
 
+-- Coordiante variables holding min x,y World coordinates
+local minX = {}
+local minY = {}
+-- Coordinate variables holding max x,y World coordinates
+local maxX = {}
+local maxY = {}
+-- Coordinate variables holding max x,y Screen coorinates
+local screenX = {}
+local screenY = {}
+-- Box2D holder variables
+local theWorld = {}
+local theBody = {}
+local theCircle = {}
+local radius = {}
+-- Camera control variables
+local theCamera = {}
+local currentX = {}
+local currentY = {}
+-- Current game state
+local gameState = {}
 game = class:new(...)
 
 function game:init()
 	--minimum and maximum valid X/Y coordinates
 	minX = 0
 	maxX = 1600
+	screenX = love.graphics.getWidth()
 	minY = 0
-	maxY = 1200
-	--default starting position for the camera, smack in the middle for now
-	startX = (love.graphics.getWidth() - maxX)/2
-	startY = (love.graphics.getHeight() - maxY)/2
+	maxY = 1600
+	screenY = love.graphics.getHeight()
 	--radius of our body
 	radius = 10
-	--the parameters for our world, note it must be larger than VALID coordinates
+	--declare the world
 	theWorld = love.physics.newWorld(minX-100,minY-100,maxX+100,maxY+100)
-	--Variables for the Body and it's accompanying CircleShape
-	theBody = {}
-	theCircle = {}
-	--variables holding current camera position and body velocity
-	screenX = {}
-	screenY = {}
-	xVelocity = {}
-	yVelocity = {}
-	gameState = {}
-	--Variable for the current state of the simulation, starts in INITIAL mode
+	--set a new random seed
+	math.randomseed(os.time())
+	--reset the game
 	game:reset()
+	--Test bodies to show the screen jitter is unique to the text
+	--NOTE: Body collision is disabled by setting all masks to 1
+	stillBody1 = love.physics.newBody(theWorld,600,600,1,0)
+	stillCircle1 = love.physics.newCircleShape(stillBody1,0,0,radius)
+	stillCircle1:setMask(1)
+	stillBody2 = love.physics.newBody(theWorld,1000,600,1,0)
+	stillCircle2 = love.physics.newCircleShape(stillBody2,0,0,radius)
+	stillCircle2:setMask(1)
+	stillBody3 = love.physics.newBody(theWorld,600,1000,1,0)
+	stillCircle3 = love.physics.newCircleShape(stillBody3,0,0,radius)
+	stillCircle3:setMask(1)
+	stillBody4 = love.physics.newBody(theWorld,1000,1000,1,0)
+	stillCircle4 = love.physics.newCircleShape(stillBody4,0,0,radius)
+	stillCircle4:setMask(1)
 end
 
 function game:draw()
-	game:adjustCamera()
-	love.graphics.translate(screenX,screenY)
+	-- Get the current camera position and apply it
+	currentX, currentY = theCamera:adjust(minX,maxX,screenX,minY,maxY,screenY)
+	love.graphics.translate(-currentX,-currentY)
+	-- Change color to body color
 	love.graphics.setColor(unpack(color["main"]))
+	-- Draw the main movement body
 	love.graphics.circle("fill", theBody:getX(), theBody:getY(), theCircle:getRadius(), 100)
-	love.graphics.setFont(12)
-	love.graphics.setColor(unpack(color["text"]))
-	love.graphics.print("X Coordinate: " .. tostring(theBody:getX()), 50-screenX, 50-screenY)
-	love.graphics.print("Y Coordinate: " .. tostring(theBody:getY()), 50-screenX, 70-screenY)
-	love.graphics.print("Mouse X Coordinate: " .. tostring(love.mouse.getX() - screenX), 50-screenX, 90-screenY)
-	love.graphics.print("Mouse Y Coordinate: " .. tostring(love.mouse.getY() - screenY), 50-screenX, 110-screenY)
+	-- Draw the stationary test bodies
+	love.graphics.circle("fill", stillBody1:getX(), stillBody1:getY(), stillCircle1:getRadius(), 100)
+	love.graphics.circle("fill", stillBody2:getX(), stillBody2:getY(), stillCircle2:getRadius(), 100)
+	love.graphics.circle("fill", stillBody3:getX(), stillBody3:getY(), stillCircle3:getRadius(), 100)
+	love.graphics.circle("fill", stillBody4:getX(), stillBody4:getY(), stillCircle4:getRadius(), 100)
+
+	-- Now draw the text on the screen
+	-- NOTE: Text has "screen jitter"
+	-- WARNING: TEXT DRAWING IS PROCESS INTENSIVE!  CURRENTLY DISABLED!
+--	love.graphics.setFont(12)
+--	love.graphics.setColor(unpack(color["text"]))
+--	love.graphics.print("X Coordinate: " .. tostring(theBody:getX()), 50+currentX, 50+currentY)
+--	love.graphics.print("Y Coordinate: " .. tostring(theBody:getY()), 50+currentX, 70+currentY)
+--	love.graphics.print("Mouse X Coordinate: " .. tostring(love.mouse.getX() + currentX), 50+currentX, 90+currentY)
+--	love.graphics.print("Mouse Y Coordinate: " .. tostring(love.mouse.getY() + currentY), 50+currentX, 110+currentY)
 end
 
 function game:update(dt)
@@ -76,7 +117,7 @@ function game:update(dt)
 		if(theBody:getX() > maxX) or (theBody:getX() < minX) or (theBody:getY() < minY) or (theBody:getY() > maxY) then
 			gameState = "INITIAL" --restart in the center, do NOT update
 		else
-			theWorld:update(1) --ONLY update if it won't crash engine
+			theWorld:update(dt) --ONLY update if it won't crash engine
 		end
 	end
 end
@@ -88,42 +129,16 @@ function game:keypressed(key)
 	end
 end
 
-function game:adjustCamera()
-	--If theBody is within 20% of the edge, the camera moves with it
-	--If there is only 20% of the board left, the camera stops moving
-	--theBody moves in two directions: two pans can occur at once
-	--Each check is done separately, rather than doing if/then/else
-	if(theBody:getX() + screenX > love.graphics.getWidth() * 0.8) then
-		if(theBody:getX() < maxX - love.graphics.getWidth() * 0.2) then
-			screenX = screenX - math.abs(xVelocity)
-		end
-	end
-	if (theBody:getX() + screenX < love.graphics.getWidth() * 0.2) then
-		if(theBody:getX() > love.graphics.getWidth() * 0.2) then
-			screenX = screenX + math.abs(xVelocity)
-		end
-	end
-	if (theBody:getY() + screenY > love.graphics.getHeight() * 0.8) then
-		if(theBody:getY() < maxY - love.graphics.getHeight() * 0.2) then
-			screenY = screenY - math.abs(yVelocity)
-		end
-	end
-	if (theBody:getY() + screenY < love.graphics.getHeight() * 0.2) then
-		if(theBody:getY() > love.graphics.getHeight() * 0.2) then
-			screenY = screenY + math.abs(yVelocity)
-		end
-	end
-end
-
 function game:reset()
 	--reset the position of the body and camera
-	theBody = love.physics.newBody(theWorld,800,600,1,0)
+	theBody = love.physics.newBody(theWorld,maxX/2,maxY/2,1,0)
 	theCircle = love.physics.newCircleShape(theBody,0,0,radius)
-	screenX = startX
-	screenY = startY
-	--come up with random X and Y velocities, and store them for the camera
-	xVelocity = math.random(-10,10)
-	yVelocity = math.random(-10,10)
+	theCircle:setMask(1)
+	theCamera = camera:new(theBody)
+	currentX, currentY = theCamera:adjust(minX,maxX,screenX,minY,maxY,screenY)
+	--come up with random X and Y velocities, and store them
+	local xVelocity = math.random(-10,10) * 50
+	local yVelocity = math.random(-10,10) * 50
 	theBody:setLinearVelocity(xVelocity, yVelocity)
 	gameState = "TRAVEL"
 end

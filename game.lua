@@ -48,9 +48,18 @@ local currentX = {}
 local currentY = {}
 -- Current game state
 local gameState = {}
+-- Misc stuff
+local digits = {} -- for printing numbers
+local frames = {}
+local seconds = {}
+local fps = {}
+
 game = class:new(...)
 
 function game:init()
+	-- for basic number output only
+	digits = love.graphics.newImageFont( "images/digits.png", "1234567890" )
+	love.graphics.setFont( digits )
 	--minimum and maximum valid X/Y coordinates
 	minX = 0
 	maxX = 1600
@@ -60,13 +69,17 @@ function game:init()
 	screenY = love.graphics.getHeight()
 	--radius of our body
 	radius = 10
+	-- frames per second stuff
+	frames = 0
+	seconds = 0
+	fps = 0
+
 	--declare the world
 	theWorld = love.physics.newWorld(minX-100,minY-100,maxX+100,maxY+100)
 	--set a new random seed
 	math.randomseed(os.time())
 	--reset the game
 	game:reset()
-	fps = 0
 	--Test bodies to show the screen jitter is unique to the text
 	--NOTE: Body collision is disabled by setting all masks to 1
 	stillBody1 = love.physics.newBody(theWorld,600,600,1,0)
@@ -97,6 +110,16 @@ function game:draw()
 	love.graphics.circle("fill", stillBody3:getX(), stillBody3:getY(), stillCircle3:getRadius(), 100)
 	love.graphics.circle("fill", stillBody4:getX(), stillBody4:getY(), stillCircle4:getRadius(), 100)
 
+	local x = math.floor( currentX )
+	local y = math.floor( currentY )
+
+	if currentX - x >= 0.5 then
+		x = x + 1
+	end
+	if currentY - y >= 0.5 then
+		y = y + 1
+	end
+
 	-- Now draw the text on the screen
 	-- NOTE: Text has "screen jitter"
 	-- WARNING: TEXT DRAWING IS PROCESS INTENSIVE!  CURRENTLY DISABLED!
@@ -106,7 +129,7 @@ function game:draw()
 --	love.graphics.print("Y Coordinate: " .. tostring(theBody:getY()), 50+currentX, 70+currentY)
 --	love.graphics.print("Mouse X Coordinate: " .. tostring(love.mouse.getX() + currentX), 50+currentX, 90+currentY)
 --	love.graphics.print("Mouse Y Coordinate: " .. tostring(love.mouse.getY() + currentY), 50+currentX, 110+currentY)
---	love.graphics.print("Frames per second: " .. tostring( fps ), 50-screenX, 130-screenY)
+	love.graphics.print( fps, 5 + x, 5 + y )
 end
 
 function game:update(dt)
@@ -114,7 +137,13 @@ function game:update(dt)
 	if gameState == "INITIAL" then
 		game:reset()
 	end
-	fps = 1 / dt
+	seconds = seconds + dt
+	frames = frames + 1
+	if seconds > 1 then
+		fps = frames
+		frames = 0
+		seconds = seconds - 1
+	end
 	-- TRAVEL state means to the body is in motion and needs updating
 	if gameState == "TRAVEL" then
 		if(theBody:getX() > maxX) or (theBody:getX() < minX) or (theBody:getY() < minY) or (theBody:getY() > maxY) then
@@ -142,6 +171,11 @@ function game:reset()
 	--come up with random X and Y velocities, and store them
 	local xVelocity = math.random(-10,10) * 50
 	local yVelocity = math.random(-10,10) * 50
+	if xVelocity == 0 then
+		if yVelocity == 0 then
+			xVelocity = 1000
+		end
+	end
 	theBody:setLinearVelocity(xVelocity, yVelocity)
 	gameState = "TRAVEL"
 end

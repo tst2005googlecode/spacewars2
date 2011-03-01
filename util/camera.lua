@@ -28,14 +28,31 @@ When the camera reaches the edge of the applicable game board, it stops.
 
 require "subclass/class.lua"
 
+-- The body to follow
 local myBody = {}
+-- Border awareness
+local minX = {}
+local maxX = {}
+local screenX = {}
+local minY = {}
+local maxY = {}
+local screenY = {}
+
 camera = class:new(...)
 
-function camera:init(aBody)
+--Assigns the borders of the game and the current body to follow
+function camera:init(aCoordBag, aBody)
+	minX,maxX,screenX,minY,maxY,screenY = aCoordBag:getCoords()
 	myBody = aBody
 end
 
-function camera:adjust(minX, maxX, screenX, minY, maxY, screenY)
+--Allows the camera to jump to another body if needed.
+function camera:assign(aBody)
+	myBody = aBody
+end
+
+--Adjust the current position of the camera.
+function camera:adjust()
 	local currentX = ((maxX - screenX)/2) + (myBody:getX() - (maxX/2))
 	local currentY = ((maxY - screenY)/2) + (myBody:getY() - (maxY/2))
 	if(currentX < minX) then

@@ -8,7 +8,8 @@ function love.load()
 	color =	 {	background = {240,243,247},
 				main = {63,193,245},
 				text = {76,77,78},
-				overlay = {255,255,255,235} }
+				overlay = {255,255,255,235},
+				ship = {255,255,255} }
 	font = {	default = love.graphics.newFont(24),
 				large = love.graphics.newFont(32),
 				huge = love.graphics.newFont(72),

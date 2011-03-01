@@ -25,23 +25,28 @@ Currently, this is an example scenario to test rendering and movement.
 --]]
 
 require "subclass/class.lua"
+require "util/playerShip.lua"
 require "util/camera.lua"
+require "util/coordBag.lua"
+require "util/controlBag.lua"
 require "pause.lua"
 
 -- Coordiante variables holding min x,y World coordinates
-local minX = {}
-local minY = {}
+local minX = 0
+local minY = 0
 -- Coordinate variables holding max x,y World coordinates
-local maxX = {}
-local maxY = {}
+local maxX = 1600
+local maxY = 1600
 -- Coordinate variables holding max x,y Screen coorinates
-local screenX = {}
-local screenY = {}
+local screenX = love.graphics.getWidth()
+local screenY = love.graphics.getHeight()
+-- Bag variables
+local theCoordBag = coordBag:new(minX,maxX,screenX,minY,maxY,screenY)
+local theControlBag = controlBag:new("w","a","s","d","q","e","NORMAL")
 -- Box2D holder variables
 local theWorld = {}
-local theBody = {}
-local theCircle = {}
-local radius = {}
+local thePlayer = {}
+local radius = 10
 -- Camera control variables
 local theCamera = {}
 local currentX = {}
@@ -60,15 +65,6 @@ function game:init()
 	-- for basic number output only
 	digits = love.graphics.newImageFont( "images/digits.png", "1234567890" )
 	love.graphics.setFont( digits )
-	--minimum and maximum valid X/Y coordinates
-	minX = 0
-	maxX = 1600
-	screenX = love.graphics.getWidth()
-	minY = 0
-	maxY = 1600
-	screenY = love.graphics.getHeight()
-	--radius of our body
-	radius = 10
 	-- frames per second stuff
 	frames = 0
 	seconds = 0
@@ -98,12 +94,13 @@ end
 
 function game:draw()
 	-- Get the current camera position and apply it
-	currentX, currentY = theCamera:adjust(minX,maxX,screenX,minY,maxY,screenY)
+	currentX, currentY = theCamera:adjust()
 	love.graphics.translate(-currentX,-currentY)
-	-- Change color to body color
-	love.graphics.setColor(unpack(color["main"]))
 	-- Draw the main movement body
-	love.graphics.circle("fill", theBody:getX(), theBody:getY(), theCircle:getRadius(), 100)
+--	love.graphics.circle("fill", theBody:getX(), theBody:getY(), theCircle:getRadius(), 100)
+	playerShip:draw()
+	-- Change color a buoy color
+	love.graphics.setColor(unpack(color["main"]))
 	-- Draw the stationary test bodies
 	love.graphics.circle("fill", stillBody1:getX(), stillBody1:getY(), stillCircle1:getRadius(), 100)
 	love.graphics.circle("fill", stillBody2:getX(), stillBody2:getY(), stillCircle2:getRadius(), 100)
@@ -132,6 +129,7 @@ function game:draw()
 	love.graphics.print( fps, 5 + x, 5 + y )
 end
 
+--[[
 function game:update(dt)
 	-- INITIAL state means we need to initialize a body for movement
 	if gameState == "INITIAL" then
@@ -153,6 +151,19 @@ function game:update(dt)
 		end
 	end
 end
+]]--
+
+function game:update(dt)
+	seconds = seconds + dt
+	frames = frames + 1
+	if seconds > 1 then
+		fps = frames
+		frames = 0
+		seconds = seconds - 1
+	end
+	playerShip:update(dt)
+	theWorld:update(dt)
+end
 
 function game:keypressed(key)
 	if key == "escape" then
@@ -161,7 +172,7 @@ function game:keypressed(key)
 	end
 end
 
-function game:reset()
+--[[function game:reset()
 	--reset the position of the body and camera
 	theBody = love.physics.newBody(theWorld,maxX/2,maxY/2,1,0)
 	theCircle = love.physics.newCircleShape(theBody,0,0,radius)
@@ -178,4 +189,11 @@ function game:reset()
 	end
 	theBody:setLinearVelocity(xVelocity, yVelocity)
 	gameState = "TRAVEL"
+end]]--
+
+function game:reset()
+	--reset the position of the ship
+	thePlayer = playerShip:new(theWorld,maxX/2,maxY/2,0,theCoordBag,theControlBag)
+	theCamera = camera:new(theCoordBag,thePlayer:getBody())
+	currentX, currentY = theCamera:adjust()
 end

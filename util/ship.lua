@@ -93,11 +93,18 @@ function ship:normalRight()
 end
 
 --Applies torque counter to current angular velocity to stop rotation
+--Now a two-step process. If torque overcompensates, set velocity to 0.
 function ship:stopTurn()
 	if shipBody:getAngularVelocity() > 0 then
 		shipBody:applyTorque(-baseTorque)
+		if (shipBody:getAngularVelocity()) < 0 then
+			shipBody:setAngularVelocity(0)
+		end
 	elseif shipBody:getAngularVelocity() < 0 then
 			shipBody:applyTorque(baseTorque)
+		if (shipBody:getAngularVelocity() > 0) then
+			shipBody:setAngularVelocity(0)
+		end
 	end
 end
 
@@ -115,16 +122,39 @@ function ship:reverse()
 	shipBody:applyForce(xThrust,yThrust)
 end
 
---Counters thrust in all directions at a rate of 1/2 baseThrust
+--Applies thrust to the ship, pointed in the opposite direction of MOVEMENT
 function ship:stopThrust()
+	--Get the velocity in each direction and figure total velocity
 	local xVel, yVel = shipBody:getLinearVelocity()
-	local xMulti, yMulti = 0,0
-	if(xVel > 0) then xMulti = -11 end
-	if(xVel < 0) then xMulti = 1 end
-	if(yVel > 0) then yMulti = -1 end
-	if(yVel < 0) then yMulti = 1 end
-	local xThrust = baseThrust/2 * xMulti
-	local yThrust = baseThrust/2 * yMulti
+	local tVel = math.sqrt(xVel*xVel + yVel*yVel)
+	--Determine what percent of thrust gets applied on x and y axis
+	local xPerc = xVel/tVel
+	local yPerc = yVel/tVel
+	--Declare holder variables
+	local xThrust,yThrust
+	--If velocity is positive, apply the thrust in a negative direction
+	if(xVel > 1) then
+		xThrust = -baseThrust/2 * xPerc
+	--If velocity is negative, apply the thrust in a positive direction
+	elseif(xVel < -1) then
+		xThrust = baseThrust/2 * xPerc
+	--If velocity is small, set it 0 and apply no thrust
+	else
+		xVel = 0
+		shipBody:setLinearVelocity(xVel,yVel)
+		xThrust = 0
+	end
+	--The pattern is the same as above
+	if(yVel > 1) then
+		yThrust = baseThrust/2 * yPerc
+	elseif(yVel < -1) then
+		yThrust = -baseThrust/2 * yPerc
+	else
+		yVel = 0
+		shipBody:setLinearVelocity(xVel,yVel)
+		yThrust = 0
+	end
+	--Apply thrust
 	shipBody:applyForce(xThrust,yThrust)
 end
 

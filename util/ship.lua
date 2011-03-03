@@ -124,38 +124,19 @@ end
 
 --Applies thrust to the ship, pointed in the opposite direction of MOVEMENT
 function ship:stopThrust()
-	--Get the velocity in each direction and figure total velocity
 	local xVel, yVel = shipBody:getLinearVelocity()
-	local tVel = math.sqrt(xVel*xVel + yVel*yVel)
-	--Determine what percent of thrust gets applied on x and y axis
-	local xPerc = xVel/tVel
-	local yPerc = yVel/tVel
-	--Declare holder variables
-	local xThrust,yThrust
-	--If velocity is positive, apply the thrust in a negative direction
-	if(xVel > 1) then
-		xThrust = -baseThrust/2 * xPerc
-	--If velocity is negative, apply the thrust in a positive direction
-	elseif(xVel < -1) then
-		xThrust = baseThrust/2 * xPerc
-	--If velocity is small, set it 0 and apply no thrust
-	else
-		xVel = 0
-		shipBody:setLinearVelocity(xVel,yVel)
-		xThrust = 0
+	if math.abs( xVel ) < baseThrust / 2 and math.abs( yVel ) < baseThrust / 2 then
+		shipBody:setLinearVelocity( 0, 0 )
+		return
 	end
-	--The pattern is the same as above
-	if(yVel > 1) then
-		yThrust = baseThrust/2 * yPerc
-	elseif(yVel < -1) then
-		yThrust = -baseThrust/2 * yPerc
-	else
-		yVel = 0
-		shipBody:setLinearVelocity(xVel,yVel)
-		yThrust = 0
+	local direction = math.atan2( -yVel, xVel ) + math.pi -- opposite current vector
+	if direction > maxAngle then
+		direction = direction - maxAngle
 	end
-	--Apply thrust
-	shipBody:applyForce(xThrust,yThrust)
+	local xThrust = baseThrust * math.cos( direction ) / 2
+	local yThrust = -baseThrust * math.sin( direction ) / 2
+
+	shipBody:applyForce( xThrust, yThrust )
 end
 
 --Uses world awareness to engage "warpdrive," causing the ship to "wrap" around

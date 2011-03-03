@@ -38,95 +38,83 @@ local baseThrust = 100
 local baseTorque = 3
 local easyTurn = 0.005
 
--- Box2D variables
-local shipBody = {}
-local shipPoly = {}
-
--- Border awareness
-local minX = {}
-local maxX = {}
-local screenX = {}
-local minY = {}
-local maxY = {}
-local screenY = {}
-
 ship = class:new(...)
 
 --Function to initialize the ship body, shape, angle, and border awareness
 function ship:init(theWorld, startX, startY, startAngle, aCoordBag)
-	shipBody = love.physics.newBody(theWorld, startX, startY, 10, 1)
-	shipPoly = love.physics.newPolygonShape(shipBody, 0, -15, 10, 10, -10, 10)
-	shipBody:setAngle(startAngle)
+	self.shipBody = love.physics.newBody(theWorld, startX, startY, 10, 1)
+	self.shipPoly = love.physics.newPolygonShape(self.shipBody, 0, -15, 10, 10, -10, 10)
+	self.shipBody:setAngle(startAngle)
 
-	minX,maxX,screenX,minY,maxY,screenY = aCoordBag:getCoords()
+	self.minX,self.maxX,self.screenX,self.minY,self.maxY,self.screenY = aCoordBag:getCoords()
 end
 
 --Simply draws the ship
 function ship:draw()
-	love.graphics.polygon("line", shipPoly:getPoints())
+	love.graphics.polygon("line", self.shipPoly:getPoints())
 end
 
 --A simple way to turn left
 function ship:easyLeft()
-	shipBody:setAngle(shipBody:getAngle() - easyTurn)
+	self.shipBody:setAngle(self.shipBody:getAngle() - easyTurn)
 end
 
 --An advanced way to turn left, it applies torque for angular acceleration
 function ship:normalLeft()
-	shipBody:applyTorque(-baseTorque)
-	if shipBody:getAngularVelocity() < -maxAngleV then
-		shipBody:setAngularVelocity(-maxAngleV)
+	self.shipBody:applyTorque(-baseTorque)
+	if self.shipBody:getAngularVelocity() < -maxAngleV then
+		self.shipBody:setAngularVelocity(-maxAngleV)
 	end
 end
 
 --A simple way to turn right
 function ship:easyRight()
-	shipBody:setAngle(shipBody:getAngle() + easyTurn)
+	self.shipBody:setAngle(self.shipBody:getAngle() + easyTurn)
 end
 
 --An advanced way to turn right, it applies torque for angular acceleration
 function ship:normalRight()
-	shipBody:applyTorque(baseTorque)
-	if shipBody:getAngularVelocity() > maxAngleV then
-		shipBody:setAngularVelocity(maxAngleV)
+	self.shipBody:applyTorque(baseTorque)
+	if self.shipBody:getAngularVelocity() > maxAngleV then
+		self.shipBody:setAngularVelocity(maxAngleV)
 	end
 end
 
 --Applies torque counter to current angular velocity to stop rotation
 --Now a two-step process. If torque overcompensates, set velocity to 0.
 function ship:stopTurn()
-	if shipBody:getAngularVelocity() > 0 then
-		shipBody:applyTorque(-baseTorque)
-		if (shipBody:getAngularVelocity()) < 0 then
-			shipBody:setAngularVelocity(0)
+	if self.shipBody:getAngularVelocity() > 0 then
+		self.shipBody:applyTorque(-baseTorque)
+		if (self.shipBody:getAngularVelocity()) < 0 then
+			self.shipBody:setAngularVelocity(0)
 		end
-	elseif shipBody:getAngularVelocity() < 0 then
-			shipBody:applyTorque(baseTorque)
-		if (shipBody:getAngularVelocity() > 0) then
-			shipBody:setAngularVelocity(0)
+	elseif self.shipBody:getAngularVelocity() < 0 then
+			self.shipBody:applyTorque(baseTorque)
+		if (self.shipBody:getAngularVelocity() > 0) then
+			self.shipBody:setAngularVelocity(0)
 		end
 	end
 end
 
 --Applies thrust to the ship, pointed in the direction the cone is facing
 function ship:thrust()
-	local xThrust = math.sin(shipBody:getAngle()) * baseThrust
-	local yThrust = -math.cos(shipBody:getAngle()) * baseThrust
-	shipBody:applyForce(xThrust,yThrust)
+	local xThrust = math.sin(self.shipBody:getAngle()) * baseThrust
+	local yThrust = -math.cos(self.shipBody:getAngle()) * baseThrust
+	self.shipBody:applyForce(xThrust,yThrust)
 end
 
 --Applies thrust to the ship, pointed in the opposite direction of the cone
 function ship:reverse()
-	local xThrust = math.sin(shipBody:getAngle()) * -baseThrust/2
-	local yThrust = -math.cos(shipBody:getAngle()) * -baseThrust/2
-	shipBody:applyForce(xThrust,yThrust)
+	local xThrust = math.sin(self.shipBody:getAngle()) * -baseThrust/2
+	local yThrust = -math.cos(self.shipBody:getAngle()) * -baseThrust/2
+	self.shipBody:applyForce(xThrust,yThrust)
 end
 
 --Applies thrust to the ship, pointed in the opposite direction of MOVEMENT
 function ship:stopThrust()
-	local xVel, yVel = shipBody:getLinearVelocity()
+	local xVel, yVel = self.shipBody:getLinearVelocity()
 	if math.abs( xVel ) < baseThrust / 2 and math.abs( yVel ) < baseThrust / 2 then
-		shipBody:setLinearVelocity( 0, 0 )
+		self.shipBody:setLinearVelocity( 0, 0 )
 		return
 	end
 	local direction = math.atan2( -yVel, xVel ) + math.pi -- opposite current vector
@@ -136,22 +124,22 @@ function ship:stopThrust()
 	local xThrust = baseThrust * math.cos( direction ) / 2
 	local yThrust = -baseThrust * math.sin( direction ) / 2
 
-	shipBody:applyForce( xThrust, yThrust )
+	self.shipBody:applyForce( xThrust, yThrust )
 end
 
 --Uses world awareness to engage "warpdrive," causing the ship to "wrap" around
 function ship:warpDrive()
-	if(shipBody:getX() > maxX) then
-		shipBody:setX(minX)
+	if(self.shipBody:getX() > self.maxX) then
+		self.shipBody:setX(self.minX)
 	end
-	if(shipBody:getX() < minX) then
-		shipBody:setX(maxX)
+	if(self.shipBody:getX() < self.minX) then
+		self.shipBody:setX(self.maxX)
 	end
-	if(shipBody:getY() > maxY) then
-		shipBody:setY(minY)
+	if(self.shipBody:getY() > self.maxY) then
+		self.shipBody:setY(self.minY)
 	end
-	if(shipBody:getY() < minY) then
-		shipBody:setY(maxY)
+	if(self.shipBody:getY() < self.minY) then
+		self.shipBody:setY(self.maxY)
 	end
 end
 
@@ -169,7 +157,7 @@ end
 
 --Returns the ship body for use by other classes, such as a camera!
 function ship:getBody()
-	return shipBody
+	return self.shipBody
 end
 
 --Function to check maximum linear velocity.

@@ -27,7 +27,7 @@ main game control and framework
 require "subclass/class.lua"
 require "util/playerShip.lua"
 require "util/solarMass.lua"
-require "util/test.lua"
+--require "util/test.lua"
 require "util/camera.lua"
 require "util/coordBag.lua"
 require "util/controlBag.lua"
@@ -146,7 +146,7 @@ end
 
 function game:newMass( index )
 	local proto = {}
-	
+
 	if index == 0 then  -- 0 indicates generate a planet
 		proto["orbit"] = 0
 		proto["x"] = maxX / 2 -- center of game area
@@ -172,9 +172,9 @@ function game:newMass( index )
 		proto["originX"] = planet:getX()
 		proto["originY"] = planet:getY()
 	end
-	
+
 	-- v ~= ( (M^2)*G / (m + M)*r )^(1/2)
-	
+
 
 	return proto
 end

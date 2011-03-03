@@ -30,72 +30,59 @@ playerShip checks for keyboard input.
 require "subclass/class.lua"
 require "util/ship.lua"
 
-local theShip = {}
-
--- Keyboard controls
-local thrustKey = {}
-local leftKey = {}
-local rightKey = {}
-local reverseKey = {}
-local stopTurnKey = {}
-local stopThrustKey = {}
-
--- Use EASY or NORMAL turning
-local turnMode = {}
-
 playerShip = class:new(...)
 
 --Function to instantiate the ship and assign keyboard controls
 function playerShip:init(theWorld, startX, startY, startAngle, aCoordBag, shipConfig)
 	-- Create the ship bound to this instance
-	theShip = ship:new(theWorld,startX,startY,startAngle,aCoordBag)
+	self.theShip = ship:new(theWorld,startX,startY,startAngle,aCoordBag)
 	-- Assign the key commands
-	thrustKey,leftKey,reverseKey,rightKey,stopTurnKey,stopThrustKey,turnMode = shipConfig:getAllControls()
+	self.thrustKey,self.leftKey,self.reverseKey,self.rightKey,self.stopTurnKey,self.stopThrustKey,self.turnMode = shipConfig:getAllControls()
 end
 
 --Draw the ship using its draw() function
 function playerShip:draw()
 	love.graphics.setColor(unpack(color["ship"]))
-	theShip:draw()
+	self.theShip:draw()
 end
 
 --Checks every dt seconds for input, and executes the appropriate function
 function playerShip:update(dt)
 	--Thrust controls
-	if love.keyboard.isDown(thrustKey) then
-		ship:thrust()
+	if love.keyboard.isDown(self.thrustKey) then
+		self.theShip:thrust()
 	end
 	--Turn left
-	if love.keyboard.isDown(leftKey) then
-		if(turnMode == "EASY") then
-			theShip:easyLeft()
+	if love.keyboard.isDown(self.leftKey) then
+		if(self.turnMode == "EASY") then
+			self.theShip:easyLeft()
 		else
-			theShip:normalLeft()
+			self.theShip:normalLeft()
 		end
 	end
 	--Turn right
-	if love.keyboard.isDown(rightKey) then
-		if(turnMode == "EASY") then
-			theShip:easyRight()
+	if love.keyboard.isDown(self.rightKey) then
+		if(self.turnMode == "EASY") then
+			self.theShip:easyRight()
 		else
-			theShip:normalRight()
+			self.theShip:normalRight()
 		end
 	end
 	--Stop turning
-	if love.keyboard.isDown(stopTurnKey) then
-		ship:stopTurn()
+	if love.keyboard.isDown(self.stopTurnKey) then
+		self.theShip:stopTurn()
 	end
 	--Stop thrust OR reverse thrust.  NOT both.
-	if love.keyboard.isDown(stopThrustKey) then
-		ship:stopThrust()
-	elseif love.keyboard.isDown(reverseKey) then
-		ship:reverse()
+	if love.keyboard.isDown(self.stopThrustKey) then
+		self.theShip:stopThrust()
+	elseif love.keyboard.isDown(self.reverseKey) then
+		self.theShip:reverse()
 	end
 	--Activate the ship's warpdrive if needed.
-	ship:warpDrive()
+	self.theShip:warpDrive()
 end
 
 --Passes the ship's body up the stack.
 function playerShip:getBody()
-	return ship:getBody()
+	return self.theShip:getBody()
 end

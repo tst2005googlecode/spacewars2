@@ -1,6 +1,7 @@
 require "menu.lua"
 
 sWidth, sHeight = 800, 600
+config = {}
 state = {} --this is what gets called into action, whether that be the game, level editor, whatever...
 
 function love.load()
@@ -20,8 +21,12 @@ function love.load()
 	size = 6				-- size of the grid
 	audio = true			-- whether audio should be on or off
 
-	--initial graphics setup
+	-- Creates a dummy file to force directory creation
+	if(not love.filesystem.exists("dummy.txt")
+		love.filesystem.write("dummy.txt", "")
+	end
 
+	-- Setup the graphics engine
 	love.graphics.setBackgroundColor(0,0,0)
 	love.graphics.setMode(sWidth, sHeight, false, false, 0)
 

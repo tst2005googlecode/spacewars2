@@ -22,7 +22,7 @@ function love.load()
 	audio = true			-- whether audio should be on or off
 
 	-- Creates a dummy file to force directory creation
-	if(not love.filesystem.exists("dummy.txt")
+	if(not love.filesystem.exists("dummy.txt")) then
 		love.filesystem.write("dummy.txt", "")
 	end
 

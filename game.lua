@@ -54,6 +54,7 @@ maxAngle = 0
 local theCamera
 local currentX
 local currentY
+local screenZoom
 -- Current game state
 local gameState
 -- Misc stuff
@@ -190,8 +191,9 @@ end
 
 function game:draw()
 	-- Get the current camera position and apply it
-	currentX, currentY = theCamera:adjust()
+	currentX, currentY, screenZoom = theCamera:adjust()
 	love.graphics.translate( -currentX, -currentY )
+	love.graphics.scale(screenZoom,screenZoom)
 
 	-- draw all objects
 	for i, obj in ipairs( obj_draw ) do
@@ -217,8 +219,8 @@ function game:draw()
 --	love.graphics.setColor(unpack(color["text"]))
 --	love.graphics.print("obj count: " .. #obj_draw, 50 + currentX, 50 + currentY)
 --	love.graphics.print("Y Coordinate: " .. theBody:getY(), 50+currentX, 70+currentY)
---	love.graphics.print("Mouse X Coordinate: " .. (love.mouse.getX() + currentX), 50+currentX, 90+currentY)
---	love.graphics.print("Mouse Y Coordinate: " .. (love.mouse.getY() + currentY), 50+currentX, 110+currentY)
+--	love.graphics.print("Mouse X Coordinate: " .. (love.mouse.getX() + x), 1+x, 7+y)
+--	love.graphics.print("Mouse Y Coordinate: " .. (love.mouse.getY() + y), 1+x, 13+y)
 	love.graphics.print( fps, 5 + x, 5 + y )
 end
 
@@ -246,6 +248,7 @@ function game:keypressed(key)
 --		state = menu:new()
 		state = pause:new(game)
 	end
+	theCamera:keypressed(key)
 end
 
 --[[function game:reset()

@@ -37,6 +37,7 @@ local screenX = {}
 local minY = {}
 local maxY = {}
 local screenY = {}
+local zoom = {}
 
 camera = class:new(...)
 
@@ -44,6 +45,7 @@ camera = class:new(...)
 function camera:init(aCoordBag, aBody)
 	minX,maxX,screenX,minY,maxY,screenY = aCoordBag:getCoords()
 	myBody = aBody
+	zoom = 1
 end
 
 --Allows the camera to jump to another body if needed.
@@ -53,23 +55,36 @@ end
 
 --Adjust the current position of the camera.
 function camera:adjust()
-	local currentX = ((maxX - screenX)/2) + (myBody:getX() - (maxX/2))
-	local currentY = ((maxY - screenY)/2) + (myBody:getY() - (maxY/2))
+	local currentX = ((maxX*zoom - screenX)/2) + (myBody:getX()*zoom - (maxX*zoom/2))
+	local currentY = ((maxY*zoom - screenY)/2) + (myBody:getY()*zoom - (maxY*zoom/2))
 	if(currentX < minX) then
 		currentX = minX
 	end
-	if(currentX > (maxX - screenX)) then
-		currentX = maxX - screenX
+	if(currentX > (maxX*zoom - screenX)) then
+		currentX = maxX*zoom - screenX
 	end
 	if(currentY < minY) then
 		currentY = minY
 	end
-	if(currentY > (maxY - screenY)) then
-		currentY = maxY - screenY
+	if(currentY > (maxY*zoom - screenY)) then
+		currentY = maxY*zoom - screenY
 	end
-	return currentX, currentY
+	return currentX, currentY, zoom
 end
 
+function camera:keypressed(key)
+	if(key == "1") then
+		zoom = zoom + 0.25
+		if(zoom >= 2) then
+			zoom = 2
+		end
+	elseif(key == "2") then
+		zoom = zoom - 0.25
+		if(zoom <= 0.25) then
+			zoom = 0.25
+		end
+	end
+end
 --Old camera code, keeping just in case
 --[[	if(theBody:getX() + screenX > screenX * 0.8) then
 		if(theBody:getX() < maxX - screenX * 0.2) then

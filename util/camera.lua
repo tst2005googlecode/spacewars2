@@ -54,7 +54,44 @@ function camera:assign(aBody)
 	self.myBody = aBody
 end
 
+function camera:keypressed(key)
+	if key == "1" then
+		self.zoom = self.zoom + 0.125
+		if self.zoom > 2 then
+			self.zoom = 2
+		end
+	elseif key == "2" then
+		self.zoom = self.zoom - 0.125
+		if self.zoom < 0.125 then
+			self.zoom = 0.125
+		end
+	end
+end
+
 -- Adjust the current position of the camera.
+-- This verision of camera:adjust() assumes love.graphics.scale occurs before love.graphics.transform
+-- Since love.graphics.print ASSUMES scale occurs before trasnform, this IS text-safe.
+function camera:adjust()
+	local currentX = ((self.maxX - self.screenX/self.zoom) / 2) + (self.myBody:getX() - (self.maxX / 2))
+	local currentY = ((self.maxY - self.screenY/self.zoom) / 2) + (self.myBody:getY() - (self.maxY / 2))
+	if currentX < self.minX then
+		currentX = self.minX
+	end
+	if currentX > (self.maxX - self.screenX/self.zoom) then
+		currentX = self.maxX - self.screenX/self.zoom
+	end
+	if currentY < self.minY then
+		currentY = self.minY
+	end
+	if currentY > (self.maxY - self.screenY/self.zoom) then
+		currentY = self.maxY - self.screenY/self.zoom
+	end
+	return currentX, currentY, self.zoom
+end
+
+--[[
+-- This version of camera:adjust() assumes love.graphics.transform occurs before love.graphics.scale
+-- Since love.graphics.print ASSUMES scale occurs before transfrom, this IS NOT text-safe.
 function camera:adjust()
 	local currentX = ((self.maxX * self.zoom - self.screenX) / 2) + (self.myBody:getX() * self.zoom - (self.maxX * self.zoom / 2))
 	local currentY = ((self.maxY * self.zoom - self.screenY) / 2) + (self.myBody:getY() * self.zoom - (self.maxY * self.zoom / 2))
@@ -72,20 +109,8 @@ function camera:adjust()
 	end
 	return currentX, currentY, self.zoom
 end
+--]]
 
-function camera:keypressed(key)
-	if key == "1" then
-		self.zoom = self.zoom + 0.125
-		if self.zoom > 2 then
-			self.zoom = 2
-		end
-	elseif key == "2" then
-		self.zoom = self.zoom - 0.125
-		if self.zoom < 0.125 then
-			self.zoom = 0.125
-		end
-	end
-end
 --Old camera code, keeping just in case
 --[[	if(theBody:getX() + screenX > screenX * 0.8) then
 		if(theBody:getX() < maxX - screenX * 0.2) then

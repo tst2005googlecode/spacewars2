@@ -157,7 +157,7 @@ end
 
 function game:newMass( index )
 	local proto = {}
-	
+
 --  earth is ~6400 km radius and 5.9736 x 10^24 kg
 --  planet like saturn is 60000 km radius and 5.6846 x 10^26 kg (600 pixels? 100 km per pixel)
 --  planet like jupiter is 71000 km radius and 1.8986 x 10^27 kg
@@ -187,12 +187,12 @@ function game:newMass( index )
 		proto["orbitRadius"] = orbitRadius
 		proto["orbitAngle"] = orbitAngle
 		-- w = v / r  ... where w is angular velocity, v is tangental velocity, and r is radius to origin
-		proto["angularVelocity"] = ( 
-                                     ( 
-                                       ( 
-                                         ( planet:getMass() ^ 2 ) * gravity / 
+		proto["angularVelocity"] = (
+                                     (
+                                       (
+                                         ( planet:getMass() ^ 2 ) * gravity /
                                          ( ( proto.mass + planet:getMass() ) * orbitRadius * distanceScale )
-                                       ) ^ ( 1 / 2 ) 
+                                       ) ^ ( 1 / 2 )
                                      ) / ( orbitRadius  * distanceScale )
                                    ) * timeScale
 		proto["originX"] = planet:getX()
@@ -212,10 +212,13 @@ function game:newColor()
 end
 
 function game:draw()
+	--Allow quick return to default settings
+	love.graphics.push()
 	-- Get the current camera position and apply it
 	currentX, currentY, screenZoom = theCamera:adjust()
-	love.graphics.translate( -currentX, -currentY )
+	-- WARNING: Scale must come before translate, they are not commutative properties!
 	love.graphics.scale( screenZoom )
+	love.graphics.translate( -currentX, -currentY )
 
 	-- draw all objects
 	for i, obj in ipairs( obj_draw ) do
@@ -244,6 +247,9 @@ function game:draw()
 --	love.graphics.print("Mouse X Coordinate: " .. (love.mouse.getX() + currentX), 50+currentX, 90+currentY)
 --	love.graphics.print("Mouse Y Coordinate: " .. (love.mouse.getY() + currentY), 50+currentX, 110+currentY)
 	love.graphics.print( fps, 5 + x, 5 + y )
+
+	--Return to default settings to draw static objects
+	love.graphics.pop()
 end
 
 function game:update( dt )

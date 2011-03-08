@@ -30,10 +30,13 @@ require "util/button.lua"
 options = class:new()
 
 function options:init()
-	self.buttons = {back = button:new("Back", 400, 550)}
+	self.buttons = {controls = button:new("Controls", 400, 350),
+                          game = button:new("Game" , 400, 500)}   
+ 
 end
 
 function options:draw()
+ 
 	for n,b in pairs(self.buttons) do
 		b:draw()
 	end
@@ -48,8 +51,10 @@ end
 function options:mousepressed(x,y,button)
 	for n,b in pairs(self.buttons) do
 		if b:mousepressed(x,y,button) then
-			if n == "back" then
-				state = menu:new()
+			if n == "controls" then
+				state = controls:new()
+                        elseif n == "game" then
+                               state = menu:new()
 			end
 		end
 	end

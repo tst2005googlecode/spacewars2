@@ -19,55 +19,56 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
-menu.lua
+options.lua
 
-This class implements the main menu for Spacewars!II.
+This class implements the controls menu for Spacewars!II.
 --]]
 
-require "game.lua"
-require "options.lua"
 require "subclass/class.lua"
 require "util/button.lua"
-require "controls.lua"
 
-menu = class:new(...)
+controls = class:new()
 
-function menu:init()
-	self.buttons = {new = 	button:new("New Game", 400, 250),
-					options = 	button:new("Options", 400, 350),
-					exit = 		button:new("Exit", 400, 550)}
+function controls:init()
+	self.buttons = {thrustforward = button:new("Thrust Forward", 400, 100),
+                        thrustreverse = button:new("Thrust Reverse" ,400, 150),
+                        rotateleft    = button:new("Rotate Left"  , 400, 200),
+                        rotateright = button:new("Rotate Right", 400, 250),
+                        stoprotate = button:new("Stop Rotate", 400, 300),
+                        Stopallmotion = button:new("Stop All Motion", 400,350),
+                        back = button:new("Back" , 400, 550)
+}
+                                                
 
 end
 
-function menu:update(dt)
-	for n,b in pairs(self.buttons) do
-		b:update(dt)
-	end
-end
-
-function menu:mousepressed(x, y, button)
-	for n,b in pairs(self.buttons) do
-		if b:mousepressed(x,y,buttons) then
-			if n == "new" then
-				state = game:new()
-			elseif n == "options" then
-				state = options:new()
-			elseif n == "exit" then
-				love.event.push("q")
-				love.graphics.setMode(sWidth, sHeight, false, false, 0)
-			end
-		end
-	end
-end
-
-function menu:draw()
+function controls:draw()
+love.graphics.setFont(font["small"])
 	for n,b in pairs(self.buttons) do
 		b:draw()
 	end
 end
 
-function menu:keypressed(key)
+function controls:update(dt)
+	for n,b in pairs(self.buttons) do
+		b:update(dt)
+	end
+end
+
+function controls:mousepressed(x,y,button)
+for n,b in pairs(self.buttons) do
+		if b:mousepressed(x,y,button) then
+			if n == "back" then	                               
+                       state = menu:new()
+			
+		end
+	end
+end
+	
+end
+
+function controls:keypressed(key)
 	if key == "escape" then
-		love.event.push("q")
+		state = menu:new()
 	end
 end

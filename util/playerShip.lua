@@ -53,20 +53,24 @@ function playerShip:update(dt)
 		self.theShip:thrust()
 	end
 	--Turn left
-	if love.keyboard.isDown(self.leftKey) then
-		if(self.turnMode == "EASY") then
+	if love.keyboard.isDown( self.leftKey ) then
+		if ( self.turnMode == "EASY" ) then
 			self.theShip:easyLeft()
-		else
+		elseif ( self.turnMode == "NORMAL" ) then
 			self.theShip:normalLeft()
 		end
 	end
 	--Turn right
-	if love.keyboard.isDown(self.rightKey) then
-		if(self.turnMode == "EASY") then
+	if love.keyboard.isDown( self.rightKey ) then
+		if ( self.turnMode == "EASY" ) then
 			self.theShip:easyRight()
-		else
+		elseif ( self.turnMode == "NORMAL" ) then
 			self.theShip:normalRight()
 		end
+	end
+	-- accelerate turn if turning
+	if self.theShip:getTurnAccel() then
+		self.theShip:accelTurn()
 	end
 	--Stop turning
 	if love.keyboard.isDown(self.stopTurnKey) then
@@ -80,6 +84,20 @@ function playerShip:update(dt)
 	end
 	--Activate the ship's warpdrive if needed.
 	self.theShip:warpDrive()
+end
+
+function playerShip:turnStepLeft()
+	-- Turn left step
+	--if self.turnMode == "STEP" then
+		self.theShip:stepLeft()
+	--end
+end
+
+function playerShip:turnStepRight()
+	-- Turn Right step
+	--if self.turnMode == "STEP" then
+		self.theShip:stepRight()
+	--end
 end
 
 --Passes the ship's body up the stack.

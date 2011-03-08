@@ -53,6 +53,7 @@ function menu:mousepressed(x, y, button)
 				state = options:new()
 			elseif n == "exit" then
 				love.event.push("q")
+				love.graphics.setMode(sWidth, sHeight, false, false, 0)
 			end
 		end
 	end

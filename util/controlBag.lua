@@ -28,54 +28,54 @@ Values can be returned individually, or in bulk.
 
 require "subclass/class.lua"
 
-local thrust = {}
-local left = {}
-local reverse = {}
-local right = {}
-local stopTurn = {}
-local stopThrust = {}
-local turn = {}
+local thrust
+local left
+local reverse
+local right
+local stopTurn
+local stopThrust
+local turn
 
 controlBag = class:new(...)
 
 function controlBag:init(thrustKey,leftKey,reverseKey,rightKey,stopTurnKey,stopThrustKey,turnType)
-	thrust = thrustKey
-	left = leftKey
-	reverse = reverseKey
-	right = rightKey
-	stopTurn = stopTurnKey
-	stopThrust = stopThrustKey
-	turn = turnType
+	self.thrust = thrustKey
+	self.left = leftKey
+	self.reverse = reverseKey
+	self.right = rightKey
+	self.stopTurn = stopTurnKey
+	self.stopThrust = stopThrustKey
+	self.turn = turnType
 end
 
 function controlBag:getThrust()
-	return thrust
+	return self.thrust
 end
 
-function controlBag:getleft()
-	return left
+function controlBag:getLeft()
+	return self.left
 end
 
 function controlBag:getReverse()
-	return reverse
+	return self.reverse
 end
 
 function controlBag:getRight()
-	return right
+	return self.right
 end
 
 function controlBag:getStopTurn()
-	return stopTurn
+	return self.stopTurn
 end
 
 function controlBag:getStopThrust()
-	return stopThrust
+	return self.stopThrust
 end
 
 function controlBag:getTurn()
-	return turn
+	return self.turn
 end
 
 function controlBag:getAllControls()
-	return thrust,left,reverse,right,stopTurn,stopThrust,turn
+	return self.thrust,self.left,self.reverse,self.right,self.stopTurn,self.stopThrust,self.turn
 end

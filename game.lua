@@ -27,7 +27,6 @@ main game control and framework
 require "subclass/class.lua"
 require "util/playerShip.lua"
 require "util/solarMass.lua"
---require "util/test.lua"
 require "util/camera.lua"
 require "util/coordBag.lua"
 require "util/controlBag.lua"
@@ -37,24 +36,25 @@ require "pause.lua"
 local minX = 0
 local minY = 0
 -- Coordinate variables holding max x,y World coordinates
-local maxX = 1600
-local maxY = 1600
+local maxX = 32768
+local maxY = 32768
 -- Coordinate variables holding max x,y Screen coordinates
 local screenX = love.graphics.getWidth()
 local screenY = love.graphics.getHeight()
 -- Bag variables
-local theCoordBag = coordBag:new(minX,maxX,screenX,minY,maxY,screenY)
-local theControlBag = controlBag:new("w","a","s","d","q","e","NORMAL")
+local theCoordBag
+local theControlBag
 -- Box2D holder variables
 local theWorld
 local thePlayer
 local gravity = 0
 maxAngle = 0
+timeScale = 100 -- elapsed seconds, per second
+distanceScale = 100000 -- meters per pixel
 -- Camera control variables
 local theCamera
 local currentX
 local currentY
-local screenZoom
 -- Current game state
 local gameState
 -- Misc stuff
@@ -87,10 +87,17 @@ local update_count = 0
 
 game = class:new(...)
 
-function game:init()
-	-- constants
+function game:init( coord, control )
+	-- set to full screen
+	--local modes = love.graphics.getModes()
+    --love.graphics.setMode( modes[#modes].width, modes[#modes].height, true, false, 0)
+    --love.graphics.setMode( 1440, 900, true, false, 0)
+
+	-- constants and scalers
 	maxAngle = math.pi * 2
-	gravity = 0.0000000000667428 * 10000000
+	gravity = 0.0000000000667428 --* 10000000
+	timeScale = 100 -- elapsed seconds, per second
+	distanceScale = 100000 -- meters per pixel
 
 	-- for basic number output only
 	digits = love.graphics.newImageFont( "images/digits.png", "1234567890.-" )
@@ -98,16 +105,19 @@ function game:init()
 
 	-- declare the world
 	theWorld = love.physics.newWorld( minX - 100, minY - 100, maxX + 100, maxY + 100 )
+	theWorld:setMeter( 100 ) -- Box2D can't hangle large spaces (should be 1 pixel = 100 km!)
 	game:addUpdatable( theWorld )
 
 	-- set a new random seed
 	math.randomseed( os.time() )
-	numberOfMoons = math.random( 0, 8 )
+	numberOfMoons = math.random( 1, 4 ) + math.random( 1, 4 )
 
 	-- generate planet and moons
 	game:generateMasses( numberOfMoons )
 
-	-- create player ship
+	-- create controls and player ship
+	theCoordBag = coordBag:new(minX,maxX,screenX,minY,maxY,screenY)
+	theControlBag = controlBag:new("w","a","s","d","q","e","EASY")
 	thePlayer = playerShip:new( theWorld, maxX/4, maxY/4, 0, theCoordBag, theControlBag )
 	game:addDrawable( thePlayer )
 	game:addUpdatable( thePlayer )
@@ -147,44 +157,56 @@ end
 
 function game:newMass( index )
 	local proto = {}
-
-	if index == 0 then  -- 0 indicates generate a planet
+	
+--  earth is ~6400 km radius and 5.9736 x 10^24 kg
+--  planet like saturn is 60000 km radius and 5.6846 x 10^26 kg (600 pixels? 100 km per pixel)
+--  planet like jupiter is 71000 km radius and 1.8986 x 10^27 kg
+--  planet line neptune is 24750 km radius and 1.0243 x 10^26 kg
+--  large moons range from 1500 to 2500+ km radius and 5 to 15 x 10^22 kg
+--    400K km orbit to 2000k km orbits
+--  small moons are irregular, and much less mass
+--    120K km (2x planet) orbits out to far ranges
+	if index == 0 then  -- 0 indicates generate the planet
 		proto["orbit"] = 0
 		proto["x"] = maxX / 2 -- center of game area
 		proto["y"] = maxY / 2
-		proto["radius"] = math.random( maxX / 20, maxX / 10 ) -- 5 to 10%?
-		proto["mass"] = 10000
+		proto["radius"] = math.random( 250, 1000 ) -- for a gas giant
+		proto["mass"] = math.random( 1, 25 ) * ( 10 ^ 26 ) --10000 -- ( 10 ^ 26 without scaling )
 		proto["color"] = game:newColor()
 	else  -- index > 0 are for moons ...
 		-- moons must orbit outside 1.5x radius of planet
-		local orbitRadius = solar_mass[1].massShape:getRadius() * 1.5 * index
+		local orbitRadius = solar_mass[1].massShape:getRadius() * 2 * index
 		local orbitAngle = math.pi * math.random( 0, 1024 ) / 512
 		local planet = solar_mass[1].massBody
 		proto["orbit"] = index -- needs to be random
 		proto["x"] = math.sin( orbitAngle ) * orbitRadius + planet:getX()
 		proto["y"] = math.cos( orbitAngle ) * orbitRadius + planet:getY()
-		proto["radius"] = math.random( 2, maxX / 200 ) -- 5 to 10% of planet?
-		proto["mass"] = 100
+		proto["radius"] = math.random( 10, 40 ) -- for a solid, round moon
+		proto["mass"] = math.random( 1, 25 ) * ( 10 ^ 22 ) -- ( 10 ^ 22 without scaling )
 		proto["color"] = game:newColor()
 		proto["orbitRadius"] = orbitRadius
 		proto["orbitAngle"] = orbitAngle
 		-- w = v / r  ... where w is angular velocity, v is tangental velocity, and r is radius to origin
-		proto["angularVelocity"] = ( ( ( planet:getMass() ^ 2) * gravity / ( proto.mass + planet:getMass() ) * orbitRadius ) ^ ( 1 / 2 ) ) / orbitRadius
+		proto["angularVelocity"] = ( 
+                                     ( 
+                                       ( 
+                                         ( planet:getMass() ^ 2 ) * gravity / 
+                                         ( ( proto.mass + planet:getMass() ) * orbitRadius * distanceScale )
+                                       ) ^ ( 1 / 2 ) 
+                                     ) / ( orbitRadius  * distanceScale )
+                                   ) * timeScale
 		proto["originX"] = planet:getX()
 		proto["originY"] = planet:getY()
 	end
-
-	-- v ~= ( (M^2)*G / (m + M)*r )^(1/2)
-
 
 	return proto
 end
 
 function game:newColor()
 	local color = {}
-	color[1] = 128 + math.random( 0, 127 )
-	color[2] = 128 + math.random( 0, 127 )
-	color[3] = 128 + math.random( 0, 127 )
+	color[1] = 64 + math.random( 0, 191 )
+	color[2] = 64 + math.random( 0, 191 )
+	color[3] = 64 + math.random( 0, 191 )
 	color[4] = 255
 	return color
 end
@@ -193,7 +215,7 @@ function game:draw()
 	-- Get the current camera position and apply it
 	currentX, currentY, screenZoom = theCamera:adjust()
 	love.graphics.translate( -currentX, -currentY )
-	love.graphics.scale(screenZoom,screenZoom)
+	love.graphics.scale( screenZoom )
 
 	-- draw all objects
 	for i, obj in ipairs( obj_draw ) do
@@ -219,8 +241,8 @@ function game:draw()
 --	love.graphics.setColor(unpack(color["text"]))
 --	love.graphics.print("obj count: " .. #obj_draw, 50 + currentX, 50 + currentY)
 --	love.graphics.print("Y Coordinate: " .. theBody:getY(), 50+currentX, 70+currentY)
---	love.graphics.print("Mouse X Coordinate: " .. (love.mouse.getX() + x), 1+x, 7+y)
---	love.graphics.print("Mouse Y Coordinate: " .. (love.mouse.getY() + y), 1+x, 13+y)
+--	love.graphics.print("Mouse X Coordinate: " .. (love.mouse.getX() + currentX), 50+currentX, 90+currentY)
+--	love.graphics.print("Mouse Y Coordinate: " .. (love.mouse.getY() + currentY), 50+currentX, 110+currentY)
 	love.graphics.print( fps, 5 + x, 5 + y )
 end
 
@@ -239,36 +261,22 @@ function game:update( dt )
 			obj:update( dt )
 		--end
 	end
-	--playerShip:update(dt)
-	--theWorld:update(dt)
 end
 
-function game:keypressed(key)
+function game:keypressed( key, code )
 	if key == "escape" then
---		state = menu:new()
-		state = pause:new(game)
-	end
-	theCamera:keypressed(key)
-end
-
---[[function game:reset()
-	--reset the position of the body and camera
-	theBody = love.physics.newBody(theWorld,maxX/2,maxY/2,1,0)
-	theCircle = love.physics.newCircleShape(theBody,0,0,radius)
-	theCircle:setMask(1)
-	theCamera = camera:new(theBody)
-	currentX, currentY = theCamera:adjust(minX,maxX,screenX,minY,maxY,screenY)
-	--come up with random X and Y velocities, and store them
-	local xVelocity = math.random(-10,10) * 50
-	local yVelocity = math.random(-10,10) * 50
-	if xVelocity == 0 then
-		if yVelocity == 0 then
-			xVelocity = 1000
+		state = pause:new( game )
+	else
+		theCamera:keypressed(key)
+		if theControlBag:getTurn() == "STEP" then
+			if key == theControlBag:getLeft() then
+				thePlayer:turnStepLeft()
+			elseif key == theControlBag:getRight() then
+				thePlayer:turnStepRight()
+			end
 		end
 	end
-	theBody:setLinearVelocity(xVelocity, yVelocity)
-	gameState = "TRAVEL"
-end]]--
+end
 
 function game:reset()
 	-- reset the position of the ship

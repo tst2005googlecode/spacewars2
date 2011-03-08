@@ -29,59 +29,60 @@ When the camera reaches the edge of the applicable game board, it stops.
 require "subclass/class.lua"
 
 -- The body to follow
-local myBody = {}
+local myBody
 -- Border awareness
-local minX = {}
-local maxX = {}
-local screenX = {}
-local minY = {}
-local maxY = {}
-local screenY = {}
-local zoom = {}
+local minX
+local maxX
+local screenX
+local minY
+local maxY
+local screenY
+local zoom
 
 camera = class:new(...)
 
---Assigns the borders of the game and the current body to follow
+-- Assigns the borders of the game and the current body to follow
 function camera:init(aCoordBag, aBody)
-	minX,maxX,screenX,minY,maxY,screenY = aCoordBag:getCoords()
-	myBody = aBody
-	zoom = 1
+	if aBody == nil then camera:error() end
+	self.minX,self.maxX,self.screenX,self.minY,self.maxY,self.screenY = aCoordBag:getCoords()
+	self.myBody = aBody
+	self.zoom = 1
 end
 
---Allows the camera to jump to another body if needed.
+-- Allows the camera to jump to another body if needed.
 function camera:assign(aBody)
-	myBody = aBody
+	self.myBody = aBody
 end
 
---Adjust the current position of the camera.
+-- Adjust the current position of the camera.
 function camera:adjust()
-	local currentX = ((maxX*zoom - screenX)/2) + (myBody:getX()*zoom - (maxX*zoom/2))
-	local currentY = ((maxY*zoom - screenY)/2) + (myBody:getY()*zoom - (maxY*zoom/2))
-	if(currentX < minX) then
-		currentX = minX
+	local currentX = ((self.maxX * self.zoom - self.screenX) / 2) + (self.myBody:getX() * self.zoom - (self.maxX * self.zoom / 2))
+	local currentY = ((self.maxY * self.zoom - self.screenY) / 2) + (self.myBody:getY() * self.zoom - (self.maxY * self.zoom / 2))
+	if currentX < self.minX then
+		currentX = self.minX
 	end
-	if(currentX > (maxX*zoom - screenX)) then
-		currentX = maxX*zoom - screenX
+	if currentX > (self.maxX * self.zoom - self.screenX) then
+		currentX = self.maxX * self.zoom - self.screenX
 	end
-	if(currentY < minY) then
-		currentY = minY
+	if currentY < self.minY then
+		currentY = self.minY
 	end
-	if(currentY > (maxY*zoom - screenY)) then
-		currentY = maxY*zoom - screenY
+	if currentY > (self.maxY * self.zoom - self.screenY) then
+		currentY = self.maxY * self.zoom - self.screenY
 	end
-	return currentX, currentY, zoom
+	return currentX, currentY, self.zoom
 end
 
 function camera:keypressed(key)
-	if(key == "1") then
-		zoom = zoom + 0.25
-		if(zoom >= 2) then
-			zoom = 2
+	if key == "1" then
+		self.zoom = self.zoom + 0.125
+		if self.zoom > 2 then
+			self.zoom = 2
 		end
-	elseif(key == "2") then
-		zoom = zoom - 0.25
-		if(zoom <= 0.25) then
-			zoom = 0.25
+	elseif key == "2" then
+		self.zoom = self.zoom - 0.125
+		if self.zoom < 0.125 then
+			self.zoom = 0.125
 		end
 	end
 end

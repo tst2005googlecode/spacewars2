@@ -43,14 +43,18 @@ local screenX = love.graphics.getWidth()
 local screenY = love.graphics.getHeight()
 -- Bag variables
 local theCoordBag
-local theControlBag
+local theConfigBag
 -- Box2D holder variables
 local theWorld
 local thePlayer
-local gravity = 0
+gravity = 0
+lightSpeed = 0
 maxAngle = 0
-timeScale = 100 -- elapsed seconds, per second
-distanceScale = 100000 -- meters per pixel
+quarterCircle = 0
+timeScale = 0 -- elapsed seconds, per second
+worldScale = 0 -- 100 pixels = 1 meter
+distanceScale = 0 -- virtual meters per pixel
+forceScale = 0
 -- Camera control variables
 local theCamera
 local currentX
@@ -62,24 +66,30 @@ local digits -- font for printing numbers
 local frames = 0
 local seconds = 0
 local fps = 0
+local lastA = 0
+local lowDt = 1
+local highDt = 0
+local lowA = 1000000000000000000000
+local highA = -1000000000000000000000
+lastAngle = 0
 
 -- all drawable objects
 local obj_draw = {}
 local draw_count = 0
 -- objects that will not change much
-local solar_mass = {} -- Planet/moons
+solarMasses = {} -- Planet/moons
 local numberOfMoons = 0
-local orbital = {} -- stations, platforms, and other constructed orbitals
+orbitals = {} -- stations, platforms, and other constructed orbitals
 -- objects that will likely change frequently
-local ship = {} -- list of capital ships (players, AIs)
-local x_ship = {}
-local ship_count = 0
-local auto_obj = {} -- list of autonomous objects:  missiles, decoys, drones/fighters, probes, etc
-local x_auto_obj = {}
-local auto_draw_count = 0
-local inert_obj = {} -- asteroids, junk, etc
-local x_inert_obj = {}
-local inert_draw_count = 0
+local ships = {} -- list of capital ships (players, AIs)
+local x_ships = {}
+local shipCount = 0
+local autoObjs = {} -- list of autonomous objects:  missiles, decoys, drones/fighters, probes, etc
+local x_autoObjs = {}
+local autoObjCount = 0
+local inertObjs = {} -- asteroids, junk, etc
+local x_inertObjs = {}
+local inertObjCount = 0
 
 -- all updatable objects
 local obj_update = {}
@@ -90,14 +100,18 @@ game = class:new(...)
 function game:init( coord, control )
 	-- set to full screen
 	--local modes = love.graphics.getModes()
-    --love.graphics.setMode( modes[#modes].width, modes[#modes].height, true, false, 0)
-    --love.graphics.setMode( 1440, 900, true, false, 0)
+    --love.graphics.setMode( modes[#modes].width, modes[#modes].height, true, false, 0 )
+    --love.graphics.setMode( 1440, 900, true, false, 0 )
 
 	-- constants and scalers
 	maxAngle = math.pi * 2
-	gravity = 0.0000000000667428 --* 10000000
-	timeScale = 100 -- elapsed seconds, per second
-	distanceScale = 100000 -- meters per pixel
+    quarterCircle = math.pi / 2
+	gravity = 0.0000000000667428
+    lightSpeed = 299792458 -- meters per second
+    worldScale = 100 -- 100 pixels = 1 meter
+	distanceScale = 100000 -- meters per pixel (100 comes from world scale; see below)
+	timeScale = 250 -- elapsed seconds, per second
+    forceScale = timeScale ^ 2 / distanceScale / worldScale -- proportional to square of time scale
 
 	-- for basic number output only
 	digits = love.graphics.newImageFont( "images/digits.png", "1234567890.-" )
@@ -105,7 +119,8 @@ function game:init( coord, control )
 
 	-- declare the world
 	theWorld = love.physics.newWorld( minX - 100, minY - 100, maxX + 100, maxY + 100 )
-	theWorld:setMeter( 100 ) -- Box2D can't hangle large spaces (should be 1 pixel = 100 km!)
+    -- 100 pixels per meter!!
+	theWorld:setMeter( worldScale ) -- Box2D can't hangle large spaces (should be 1 pixel = 100 km!)
 	game:addUpdatable( theWorld )
 
 	-- set a new random seed
@@ -117,8 +132,10 @@ function game:init( coord, control )
 
 	-- create controls and player ship
 	theCoordBag = coordBag:new(minX,maxX,screenX,minY,maxY,screenY)
-	theControlBag = controlBag:new("w","a","s","d","q","e","EASY")
-	thePlayer = playerShip:new( theWorld, maxX/4, maxY/4, 0, theCoordBag, theControlBag )
+	theConfigBag = controlBag:new("w","a","s","d","q","e","r","NORMAL",100000)
+	thePlayer = playerShip:new( theWorld, maxX/4, maxY/4, math.random() * maxAngle, theCoordBag, theConfigBag  )
+	ships[#ships + 1] = thePlayer:getShip()
+	shipCount = shipCount + 1
 	game:addDrawable( thePlayer )
 	game:addUpdatable( thePlayer )
 
@@ -129,19 +146,19 @@ end
 function game:generateMasses( pNumberOfMoons )
 	-- for now, always generate a planet
 	local m = game:newMass( 0 )
-	solar_mass[#solar_mass + 1] = solarMass:new( theWorld, m.x, m.y, m.mass, m.radius, 0, m.color )
-	game:addDrawable( solar_mass[#solar_mass] )
+	solarMasses[#solarMasses + 1] = solarMass:new( theWorld, m.x, m.y, m.mass, m.radius, 0, m.color )
+	game:addDrawable( solarMasses[#solarMasses] )
 
 	for i = 1, pNumberOfMoons do
 		m = game:newMass( i )
-		solar_mass[#solar_mass + 1] = solarMass:new( theWorld, m.x, m.y, m.mass, m.radius, m.orbit, m.color )
-		game:addDrawable( solar_mass[#solar_mass] )
-		game:addUpdatable( solar_mass[#solar_mass] )
-		solar_mass[#solar_mass]["orbitRadius"] = m.orbitRadius
-		solar_mass[#solar_mass]["orbitAngle"] = m.orbitAngle
-		solar_mass[#solar_mass]["angularVelocity"] = m.angularVelocity
-		solar_mass[#solar_mass]["originX"] = m.originX
-		solar_mass[#solar_mass]["originY"] = m.originY
+		solarMasses[#solarMasses + 1] = solarMass:new( theWorld, m.x, m.y, m.mass, m.radius, m.orbit, m.color )
+		game:addDrawable( solarMasses[#solarMasses] )
+		game:addUpdatable( solarMasses[#solarMasses] )
+		solarMasses[#solarMasses]["orbitRadius"] = m.orbitRadius
+		solarMasses[#solarMasses]["orbitAngle"] = m.orbitAngle
+		solarMasses[#solarMasses]["radialVelocity"] = m.radialVelocity
+		solarMasses[#solarMasses]["originX"] = m.originX
+		solarMasses[#solarMasses]["originY"] = m.originY
 	end
 end
 
@@ -170,32 +187,29 @@ function game:newMass( index )
 		proto["orbit"] = 0
 		proto["x"] = maxX / 2 -- center of game area
 		proto["y"] = maxY / 2
-		proto["radius"] = math.random( 250, 1000 ) -- for a gas giant
-		proto["mass"] = math.random( 1, 25 ) * ( 10 ^ 26 ) --10000 -- ( 10 ^ 26 without scaling )
+		proto["radius"] = math.random( 250, 1000 ) -- for a gas giant (scaled by 100000 meters)
+		proto["mass"] = math.random( 1, 25 ) * ( 10 ^ 26 )
 		proto["color"] = game:newColor()
 	else  -- index > 0 are for moons ...
-		-- moons must orbit outside 1.5x radius of planet
-		local orbitRadius = solar_mass[1].massShape:getRadius() * 2 * index
+		-- moons must orbit outside 2x radius of planet
+		local orbitRadius = solarMasses[1].massShape:getRadius() * 2 * index
 		local orbitAngle = math.pi * math.random( 0, 1024 ) / 512
-		local planet = solar_mass[1].massBody
+		local planet = solarMasses[1].body
 		proto["orbit"] = index -- needs to be random
 		proto["x"] = math.sin( orbitAngle ) * orbitRadius + planet:getX()
 		proto["y"] = math.cos( orbitAngle ) * orbitRadius + planet:getY()
-		proto["radius"] = math.random( 10, 40 ) -- for a solid, round moon
-		proto["mass"] = math.random( 1, 25 ) * ( 10 ^ 22 ) -- ( 10 ^ 22 without scaling )
+		proto["radius"] = math.random( 10, 40 ) -- for a solid, round moon (scaled by 100000 meters)
+		proto["mass"] = math.random( 1, 25 ) * ( 10 ^ 22 )
 		proto["color"] = game:newColor()
 		proto["orbitRadius"] = orbitRadius
 		proto["orbitAngle"] = orbitAngle
+        local radius = orbitRadius * distanceScale
 		-- w = v / r  ... where w is angular velocity, v is tangental velocity, and r is radius to origin
-		proto["angularVelocity"] = (
-                                     (
-                                       (
-                                         ( planet:getMass() ^ 2 ) * gravity /
-                                         ( ( proto.mass + planet:getMass() ) * orbitRadius * distanceScale )
-                                       ) ^ ( 1 / 2 )
-                                     ) / ( orbitRadius  * distanceScale )
-                                   ) * timeScale
-		proto["originX"] = planet:getX()
+		proto["radialVelocity"] = ( ( ( planet:getMass() ^ 2 ) * gravity /
+                                      ( ( proto.mass + planet:getMass() ) * radius )
+                                    ) ^ ( 1 / 2 )
+                                  ) / radius -- rad / s
+ 		proto["originX"] = planet:getX()
 		proto["originY"] = planet:getY()
 	end
 
@@ -213,7 +227,7 @@ end
 
 function game:draw()
 	--Allow quick return to default settings
-	love.graphics.push()
+	--love.graphics.push()
 	-- Get the current camera position and apply it
 	currentX, currentY, screenZoom = theCamera:adjust()
 	-- WARNING: Scale must come before translate, they are not commutative properties!
@@ -237,9 +251,13 @@ function game:draw()
 		y = y + 1
 	end
 
+	--Return to default settings to draw static objects
+	--love.graphics.scale( 1 )
+
 	-- Now draw the text on the screen
 	-- NOTE: Text has "screen jitter"
 	-- WARNING: TEXT DRAWING IS PROCESS INTENSIVE!  CURRENTLY DISABLED!
+	love.graphics.setFont( digits )
 --	love.graphics.setFont(12)
 --	love.graphics.setColor(unpack(color["text"]))
 --	love.graphics.print("obj count: " .. #obj_draw, 50 + currentX, 50 + currentY)
@@ -247,18 +265,53 @@ function game:draw()
 --	love.graphics.print("Mouse X Coordinate: " .. (love.mouse.getX() + currentX), 50+currentX, 90+currentY)
 --	love.graphics.print("Mouse Y Coordinate: " .. (love.mouse.getY() + currentY), 50+currentX, 110+currentY)
 	love.graphics.print( fps, 5 + x, 5 + y )
+--	love.graphics.print( thePlayer:getBody():getAngularVelocity(), 5 + x, 15 + y )
+--	local velX, velY = thePlayer:getBody():getLinearVelocity()
+--	love.graphics.print( lowDt, 5 + x, 25 + y )
+--	love.graphics.print( highDt, 5 + x, 35 + y )
+--	love.graphics.print( lastA, 5 + x, 45 + y )
+--	love.graphics.print( thePlayer:getBody():getX(), 5 + x, 55 + y )
+--	love.graphics.print( thePlayer:getBody():getY(), 5 + x, 65 + y )
+--	love.graphics.print( thePlayer:getBody():getAngle(), 5 + x, 75 + y )
+--    love.graphics.print( lastAngle, 5 + x, 75 + y )
+--	love.graphics.print( lowA, 5 + x, 85 + y )
+--	love.graphics.print( highA, 5 + x, 95 + y )
 
 	--Return to default settings to draw static objects
-	love.graphics.pop()
+	--love.graphics.pop()
 end
 
 function game:update( dt )
+lastA = 0
 	seconds = seconds + dt
 	frames = frames + 1
 	if seconds > 1 then
 		fps = frames
 		frames = 0
 		seconds = seconds - 1
+--[[lowDt = 1
+highDt = 0
+lowA = 10000000000000000000000000000
+highA = -10000000000000000000000000000--]]
+	end
+--[[
+if dt < lowDt then lowDt = dt end
+if dt > highDt then highDt = dt end
+--]]
+	-- for each solar mass, apply gravitation force to each object
+	for index, solarMass in ipairs( solarMasses ) do
+		for i, orbital in ipairs( orbitals ) do
+			applyGravity( solarMass, orbital )
+		end
+		for i, ship in ipairs( ships ) do
+			applyGravity( solarMass, ship )
+		end
+		for i, autoObj in ipairs( autoObjs ) do
+			applyGravity( solarMass, autoObj )
+		end
+		for i, inertObj in ipairs( inertObjs ) do
+			applyGravity( solarMass, inertObj )
+		end
 	end
 
 	-- update all objects
@@ -269,15 +322,33 @@ function game:update( dt )
 	end
 end
 
+function applyGravity( solarMass, object, dt )
+	local difX = ( solarMass.body:getX() - object.body:getX() ) * distanceScale
+	local difY = ( solarMass.body:getY() - object.body:getY() ) * distanceScale
+	local dir = math.atan2( difY, difX )
+	local dis2 = ( difX ^ 2 + difY ^ 2 ) -- ^ ( 1 / 2 )
+	--local aG = gravity * ( solarMass.body:getMass() + object.body:getMass() ) / 
+    --                     ( dis2 * distanceScale )
+	local fG = gravity * ( solarMass.body:getMass() * object.body:getMass() ) / dis2
+
+    fG = fG * forceScale -- now scaled to pixels / s ^ 2
+--[[
+if lastA == 0 then lastA = fG end
+if lastA > highA then highA = fG end
+if lastA < lowA then lowA = fG end
+--]]
+	object:getBody():applyForce( math.cos( dir ) * fG , math.sin( dir ) * fG )
+end
+
 function game:keypressed( key, code )
 	if key == "escape" then
 		state = pause:new( game )
 	else
 		theCamera:keypressed(key)
-		if theControlBag:getTurn() == "STEP" then
-			if key == theControlBag:getLeft() then
+		if theConfigBag:getTurn() == "STEP" then
+			if key == theConfigBag:getLeft() then
 				thePlayer:turnStepLeft()
-			elseif key == theControlBag:getRight() then
+			elseif key == theConfigBag:getRight() then
 				thePlayer:turnStepRight()
 			end
 		end
@@ -293,12 +364,12 @@ end
 function game:destroy()
 	obj_draw = {}
 	draw_count = 0
-	solar_mass = {}
+	solarMasses = {}
 	numberOfMoons = 0
 	orbital = {}
 	ship = {}
 	x_ship = {}
-	ship_count = 0
+	shipCount = 0
 	auto_obj = {}
 	x_auto_obj = {}
 	auto_draw_count = 0

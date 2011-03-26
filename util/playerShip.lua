@@ -30,14 +30,16 @@ playerShip checks for keyboard input.
 require "subclass/class.lua"
 require "util/ship.lua"
 
+local theShip
+
 playerShip = class:new(...)
 
 --Function to instantiate the ship and assign keyboard controls
 function playerShip:init(theWorld, startX, startY, startAngle, aCoordBag, shipConfig)
 	-- Create the ship bound to this instance
-	self.theShip = ship:new(theWorld,startX,startY,startAngle,aCoordBag)
+	self.theShip = ship:new(theWorld,startX,startY,startAngle,aCoordBag, shipConfig)
 	-- Assign the key commands
-	self.thrustKey,self.leftKey,self.reverseKey,self.rightKey,self.stopTurnKey,self.stopThrustKey,self.turnMode = shipConfig:getAllControls()
+	self.thrustKey,self.leftKey,self.reverseKey,self.rightKey,self.stopTurnKey,self.stopThrustKey,self.orbitKey,self.turnMode = shipConfig:getAllControls()
 end
 
 --Draw the ship using its draw() function
@@ -76,9 +78,13 @@ function playerShip:update(dt)
 	if love.keyboard.isDown(self.stopTurnKey) then
 		self.theShip:stopTurn()
 	end
+	-- orbit planet
+	if love.keyboard.isDown(self.orbitKey) then
+		self.theShip:orbit( dt )
+	end
 	--Stop thrust OR reverse thrust.  NOT both.
 	if love.keyboard.isDown(self.stopThrustKey) then
-		self.theShip:stopThrust()
+		self.theShip:stopThrust( dt )
 	elseif love.keyboard.isDown(self.reverseKey) then
 		self.theShip:reverse()
 	end
@@ -103,4 +109,9 @@ end
 --Passes the ship's body up the stack.
 function playerShip:getBody()
 	return self.theShip:getBody()
+end
+
+-- the player's ship
+function playerShip:getShip()
+	return self.theShip
 end

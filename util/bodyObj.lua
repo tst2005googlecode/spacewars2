@@ -19,48 +19,24 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
-solarMass.lua
+bodyObj.lua  ...  superclass
 
-a planet, moon, etc ... that has a high mass which will affect all other objects 
-in the game area
+an object that exists in the "world" with position, mass, and rotational inertia
 
 --]]
 
 require "subclass/class.lua"
 
--- attributes
-local color
-local orbit
-local radius
-
 -- Box2D variables
-local body = {}
-local massShape = {}
+local body
 
-solarMass = class:new(...)
+bodyObj = class:new(...)
 
 -- Function to initialize the mass
-function solarMass:init( pWorld, pX, pY, pMass, pRadius, pOrbit, pColor )
-	self.color = pColor
-	self.orbit = pOrbit
-    self.radius = pRadius
-	self.body = love.physics.newBody( pWorld, pX, pY, pMass, 1 )
-	self.massShape = love.physics.newCircleShape( self.body, 0, 0, pRadius )
-	self.massShape:setMask(1)
+function bodyObj:initBody( pWorld, pX, pY, pMass, pRotateInertia )
+	self.body = love.physics.newBody( pWorld, pX, pY, pMass, pRotateInertia )
 end
 
-function solarMass:draw()
-	love.graphics.setColor( self.color )
-	love.graphics.circle( "fill", self.body:getX(), self.body:getY(), self.massShape:getRadius(), 100 )
-end
-
-function solarMass:update( dt )
-	if self.orbit > 0 then
-		self.orbitAngle = self.orbitAngle + self.radialVelocity * dt * timeScale
-		if self.orbitAngle > maxAngle then
-			self.orbitAngle = self.orbitAngle - maxAngle
-		end
-		self.body:setX( self.originX + math.cos( self.orbitAngle ) * self.orbitRadius )
-		self.body:setY( self.originY + math.sin( self.orbitAngle ) * self.orbitRadius )
-	end
+function bodyObj:getBody()
+	return self.body
 end

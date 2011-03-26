@@ -114,6 +114,8 @@ end
 -- the player's ship
 function playerShip:getShip()
 	return self.theShip
+end
+
 function playerShip:getX()
 	return self.theShip:getX()
 end

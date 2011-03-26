@@ -66,11 +66,11 @@ function solarMass:update( dt )
 end
 
 function solarMass:getX()
-	return self.massBody:getX()
+	return self.body:getX()
 end
 
 function solarMass:getY()
-	return self.massBody:getY()
+	return self.body:getY()
 end
 
 function solarMass:getRadius()

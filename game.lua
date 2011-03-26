@@ -231,7 +231,7 @@ end
 
 function game:draw()
 	--Allow quick return to default settings
-	--love.graphics.push()
+	love.graphics.push()
 	-- Get the current camera position and apply it
 	currentX, currentY, screenZoom = theCamera:adjust()
 	-- WARNING: Scale must come before translate, they are not commutative properties!
@@ -258,10 +258,15 @@ function game:draw()
 	--Return to default settings to draw static objects
 	--love.graphics.scale( 1 )
 
+	--Return to default settings to draw static objects
+	love.graphics.pop()
+	theRadar:draw(obj_draw)
+	love.graphics.setFont( digits )
+	love.graphics.print(fps, 5, 5)
+
 	-- Now draw the text on the screen
 	-- NOTE: Text has "screen jitter"
 	-- WARNING: TEXT DRAWING IS PROCESS INTENSIVE!  CURRENTLY DISABLED!
-	love.graphics.setFont( digits )
 --	love.graphics.setFont(12)
 --	love.graphics.setColor(unpack(color["text"]))
 --	love.graphics.print("obj count: " .. #obj_draw, 50 + currentX, 50 + currentY)
@@ -279,12 +284,6 @@ function game:draw()
 --    love.graphics.print( lastAngle, 5 + x, 75 + y )
 --	love.graphics.print( lowA, 5 + x, 85 + y )
 --	love.graphics.print( highA, 5 + x, 95 + y )
-
-	--Return to default settings to draw static objects
-	--love.graphics.pop()
-	theRadar:draw(obj_draw)
-	love.graphics.setFont( digits )
-	love.graphics.print(fps, 5, 5)
 end
 
 function game:update( dt )

@@ -320,11 +320,11 @@ function ship:getTurnAccel()
 end
 
 function ship:getX()
-	return self.shipBody:getX()
+	return self.body:getX()
 end
 
 function ship:getY()
-	return self.shipBody:getY()
+	return self.body:getY()
 end
 
 function ship:getPoints()

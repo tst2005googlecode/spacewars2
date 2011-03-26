@@ -61,6 +61,8 @@ function ship:init(theWorld, startX, startY, startAngle, aCoordBag)
 	self.easyTurn = 0.005
 	self.turnStep = 0
 	self.turnAccel = false
+
+	self.shipPoly:setMask(1)
 end
 
 -- Simply draws the ship

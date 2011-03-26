@@ -35,10 +35,12 @@ local right
 local stopTurn
 local stopThrust
 local turn
+local orbit
+local mass
 
 controlBag = class:new(...)
 
-function controlBag:init(thrustKey,leftKey,reverseKey,rightKey,stopTurnKey,stopThrustKey,turnType)
+function controlBag:init(thrustKey,leftKey,reverseKey,rightKey,stopTurnKey,stopThrustKey,turnType, orbitKey, pMass)
 	self.thrust = thrustKey
 	self.left = leftKey
 	self.reverse = reverseKey
@@ -46,6 +48,8 @@ function controlBag:init(thrustKey,leftKey,reverseKey,rightKey,stopTurnKey,stopT
 	self.stopTurn = stopTurnKey
 	self.stopThrust = stopThrustKey
 	self.turn = turnType
+    self.orbit = orbitKey
+	self.mass = pMass
 end
 
 function controlBag:getThrust()
@@ -76,6 +80,14 @@ function controlBag:getTurn()
 	return self.turn
 end
 
+function controlBag:getOrbit()
+	return self.orbit
+end
+
+function controlBag:getMass()
+	return self.mass
+end
+
 function controlBag:getAllControls()
-	return self.thrust,self.left,self.reverse,self.right,self.stopTurn,self.stopThrust,self.turn
+	return self.thrust,self.left,self.reverse,self.right,self.stopTurn,self.stopThrust,self.turn, self.orbit
 end

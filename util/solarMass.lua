@@ -31,9 +31,10 @@ require "subclass/class.lua"
 -- attributes
 local color
 local orbit
+local radius
 
 -- Box2D variables
-local massBody = {}
+local body = {}
 local massShape = {}
 
 solarMass = class:new(...)
@@ -42,24 +43,25 @@ solarMass = class:new(...)
 function solarMass:init( pWorld, pX, pY, pMass, pRadius, pOrbit, pColor )
 	self.color = pColor
 	self.orbit = pOrbit
-	self.massBody = love.physics.newBody( pWorld, pX, pY, pMass, 1 )
-	self.massShape = love.physics.newCircleShape( self.massBody, 0, 0, pRadius )
+    self.radius = pRadius
+	self.body = love.physics.newBody( pWorld, pX, pY, pMass, 1 )
+	self.massShape = love.physics.newCircleShape( self.body, 0, 0, pRadius )
 	self.massShape:setMask(1)
 end
 
 function solarMass:draw()
 	love.graphics.setColor( self.color )
-	love.graphics.circle( "fill", self.massBody:getX(), self.massBody:getY(), self.massShape:getRadius(), 100 )
+	love.graphics.circle( "fill", self.body:getX(), self.body:getY(), self.massShape:getRadius(), 100 )
 end
 
 function solarMass:update( dt )
 	if self.orbit > 0 then
-		self.orbitAngle = self.orbitAngle + self.angularVelocity * dt
+		self.orbitAngle = self.orbitAngle + self.radialVelocity * dt * timeScale
 		if self.orbitAngle > maxAngle then
 			self.orbitAngle = self.orbitAngle - maxAngle
 		end
-		self.massBody:setX( self.originX + math.cos( self.orbitAngle ) * self.orbitRadius )
-		self.massBody:setY( self.originY + math.sin( self.orbitAngle ) * self.orbitRadius )
+		self.body:setX( self.originX + math.cos( self.orbitAngle ) * self.orbitRadius )
+		self.body:setY( self.originY + math.sin( self.orbitAngle ) * self.orbitRadius )
 	end
 end
 

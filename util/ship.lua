@@ -46,7 +46,7 @@ ship = bodyObj:new(...)
 -- Function to initialize the ship body, shape, angle, and border awareness
 function ship:init( theWorld, startX, startY, startAngle, aCoordBag, shipConfig )
 	--if shipConfig == nil then ship:error() end
-	bodyObj:initBody( theWorld, startX, startY, shipConfig.mass, shipConfig.mass * ( 25 * 10 ) * ( 100000 ^ 2 ) / 6 )
+	self:initBody( theWorld, startX, startY, shipConfig.mass, shipConfig.mass * ( 25 * 10 ) * ( 100000 ^ 2 ) / 6 )
 	-- initial angle is 0 (right), so point ship to the right
 	self.shipPoly = love.physics.newPolygonShape(self.body, 15, 0, -10, 10, -10, -10, -12, 0)
 	self.body:setAngle(startAngle)

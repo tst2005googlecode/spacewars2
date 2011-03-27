@@ -33,10 +33,12 @@ require "controls.lua"
 menu = class:new(...)
 
 function menu:init()
-	self.buttons = {new = 	button:new("New Game", 400, 250),
-					options = 	button:new("Options", 400, 350),
-					exit = 		button:new("Exit", 400, 550)}
-
+	self.buttons = 
+    {
+        new     = button:new("New Game", 400, 250),
+		options = button:new("Options",  400, 350),
+		exit    = button:new("Exit",     400, 550)
+    }
 end
 
 function menu:update(dt)
@@ -54,7 +56,6 @@ function menu:mousepressed(x, y, button)
 				state = options:new()
 			elseif n == "exit" then
 				love.event.push("q")
-				love.graphics.setMode(sWidth, sHeight, false, false, 0)
 			end
 		end
 	end

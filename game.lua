@@ -26,6 +26,7 @@ main game control and framework
 
 require "subclass/class.lua"
 require "util/playerShip.lua"
+require "util/aiShip.lua"
 require "util/solarMass.lua"
 require "util/camera.lua"
 require "util/coordBag.lua"
@@ -48,6 +49,7 @@ local theConfigBag
 -- Box2D holder variables
 local theWorld
 local thePlayer
+-- global constants/variables
 gravity = 0
 lightSpeed = 0
 maxAngle = 0
@@ -62,7 +64,7 @@ local currentX
 local currentY
 -- Radar, it must be drawn separately
 local theRadar
-local radarRadius = 2000
+local radarRadius = 8000
 -- Current game state
 local gameState
 -- Misc stuff
@@ -137,11 +139,18 @@ function game:init( coord, control )
 	-- create controls and player ship
 	theCoordBag = coordBag:new(minX,maxX,screenX,minY,maxY,screenY)
 	theConfigBag = controlBag:new("w","a","s","d","q","e","r","NORMAL",100000)
-	thePlayer = playerShip:new( theWorld, maxX/4, maxY/4, math.random() * maxAngle, theCoordBag, theConfigBag  )
+	thePlayer = playerShip:new( theWorld, maxX/4, maxY/4, math.random() * maxAngle, theCoordBag, theConfigBag )
 	ships[#ships + 1] = thePlayer:getShip()
 	shipCount = shipCount + 1
 	game:addDrawable( thePlayer )
 	game:addUpdatable( thePlayer )
+
+    -- create a dummy ship
+    ai = aiShip:new( theWorld, theCoordBag, { mass = 100000 } )
+	ships[#ships + 1] = aiShip:getShip()
+	shipCount = shipCount + 1
+    game:addDrawable( ai )
+    game:addUpdatable( ai )--]]
 
 	-- reset the camera and radar
 	game:reset()
@@ -240,9 +249,9 @@ function game:draw()
 
 	-- draw all objects
 	for i, obj in ipairs( obj_draw ) do
-		--if obj:draw then
+		if obj.draw then
 			obj:draw()
-		--end
+		end
 	end
 
 	local x = math.floor( currentX )
@@ -321,9 +330,9 @@ if dt > highDt then highDt = dt end
 
 	-- update all objects
 	for i, obj in ipairs( obj_update ) do
-		--if obj:update then
+		if obj.update then
 			obj:update( dt )
-		--end
+		end
 	end
 end
 
@@ -368,20 +377,22 @@ function game:reset()
 end
 
 function game:destroy()
-	obj_draw = {}
-	draw_count = 0
-	solarMasses = {}
-	numberOfMoons = 0
-	orbital = {}
-	ship = {}
-	x_ship = {}
-	shipCount = 0
-	auto_obj = {}
-	x_auto_obj = {}
-	auto_draw_count = 0
-	inert_obj = {}
-	x_inert_obj = {}
-	inert_draw_count = 0
-	obj_update = {}
-	update_count = 0
+    thePlayer = {}
+    obj_draw = {}
+    draw_count = 0
+    solarMasses = {}
+    numberOfMoons = 0
+    orbitals = {}
+    ships = {}
+    x_ships = {}
+    shipCount = 0
+    autoObjs = {}
+    x_autoObjs = {}
+    autoObjCount = 0
+    inertObjs = {}
+    x_inertObjs = {}
+    inertObjCount = 0
+    obj_update = {}
+    update_count = 0
+    theWorld = {}
 end

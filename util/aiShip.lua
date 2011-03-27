@@ -19,35 +19,36 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
-playerShip.lua
+aihip.lua
 
-This class implements a dummy controlled ship.
+This class implements an ai controlled ship.
 The ship used is an instance of ship.lua.
-dummyShip chooses a random spawn point and direction.
+aiShip chooses a random spawn point and direction.
 	Then it flies for 600 update cycles before killing ignition.
 --]]
 
 require "subclass/class.lua"
 require "util/ship.lua"
 
-dummyShip = class:new(...)
+local theShip
+
+aiShip = class:new(...)
 
 --Function to instantiate the ship.
-function dummyShip:init(theWorld,aCoordBag)
+function aiShip:init(theWorld,aCoordBag,shipConfig)
 	local startX = math.random(0,aCoordBag:getMaxX())
 	local startY = math.random(0,aCoordBag:getMaxY())
-	local startAng = (math.random(1,628))/100
-	self.theShip = ship:new(theWorld,startX,startY,startAng,aCoordBag)
---	self.theShip = ship:new(theWorld,aCoordBag:getMaxX()/4,aCoordBag:getMaxY()/4,startAng,aCoordBag)
+	local startAngle = math.random() * maxAngle
+	self.theShip = ship:new(theWorld,startX,startY,startAngle,aCoordBag, shipConfig)
 	self.fuel = 600
 end
 
-function dummyShip:draw()
-	love.graphics.setColor(unpack(color["ship"]))
+function aiShip:draw()
+	love.graphics.setColor(unpack(color["ai"]))
 	self.theShip:draw()
 end
 
-function dummyShip:update(dt)
+function aiShip:update(dt)
 	if(self.fuel > 0) then
 		self.theShip:thrust()
 		self.fuel = self.fuel - 1
@@ -55,14 +56,19 @@ function dummyShip:update(dt)
 	self.theShip:warpDrive()
 end
 
-function dummyShip:getX()
+-- the ai's ship
+function aiShip:getShip()
+	return self.theShip
+end
+
+function aiShip:getX()
 	return self.theShip:getX()
 end
 
-function dummyShip:getY()
+function aiShip:getY()
 	return self.theShip:getY()
 end
 
-function dummyShip:getType()
-	return "dummyShip"
+function aiShip:getType()
+	return "aiShip"
 end

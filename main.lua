@@ -10,7 +10,8 @@ function love.load()
 				main = {63,193,245},
 				text = {76,77,78},
 				overlay = {255,255,255,235},
-				ship = {255,255,255} }
+				ship = {255,255,255},
+				ai = {255,96,96} }
 	font = {	default = love.graphics.newFont(24),
 				large = love.graphics.newFont(32),
 				huge = love.graphics.newFont(72),
@@ -22,7 +23,7 @@ function love.load()
 	audio = true			-- whether audio should be on or off
 
 	-- Creates a dummy file to force directory creation
-	if(not love.filesystem.exists("dummy.txt")) then
+	if (not love.filesystem.exists("dummy.txt")) then
 		love.filesystem.write("dummy.txt", "")
 	end
 

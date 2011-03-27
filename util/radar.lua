@@ -50,8 +50,8 @@ function radar:draw(obj_table)
 			self:drawPlayer(obj)
 		elseif(theType == "solarMass") then
 			self:drawSolar(obj)
-		elseif(theType == "dummyShip") then
-			self:drawDummy(obj)
+		elseif(theType == "aiShip") then
+			self:drawAI(obj)
 		end
 	end
 end
@@ -82,7 +82,7 @@ function radar:drawSolar(obj)
 	end
 end
 
-function radar:drawDummy(obj)
+function radar:drawAI(obj)
 	local x = obj:getX()
 	local y = obj:getY()
 	local theRad = 1

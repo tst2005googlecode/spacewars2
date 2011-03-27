@@ -46,7 +46,12 @@ function solarMass:init( pWorld, pX, pY, pMass, pRadius, pOrbit, pColor )
     self.radius = pRadius
 	self.body = love.physics.newBody( pWorld, pX, pY, pMass, 1 )
 	self.massShape = love.physics.newCircleShape( self.body, 0, 0, pRadius )
-	self.massShape:setMask(1)
+--	self.massShape:setMask(1)
+	self.massShape:setSensor(true)
+
+	self.data = {}
+	self.data.status = "SOLAR"
+	self.massShape:setData(self.data)
 end
 
 function solarMass:draw()

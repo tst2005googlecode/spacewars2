@@ -83,7 +83,7 @@ lastAngle = 0
 local obj_draw = {}
 local draw_count = 0
 -- objects that will not change much
-solarMasses = {} -- Planet/moons
+local solarMasses = {} -- Planet/moons
 local numberOfMoons = 0
 orbitals = {} -- stations, platforms, and other constructed orbitals
 -- objects that will likely change frequently
@@ -101,7 +101,11 @@ local inertObjCount = 0
 local obj_update = {}
 local update_count = 0
 
+local needRespawn
+
+
 game = class:new(...)
+
 
 function game:init( coord, control )
 	-- set to full screen
@@ -120,11 +124,12 @@ function game:init( coord, control )
     forceScale = timeScale ^ 2 / distanceScale / worldScale -- proportional to square of time scale
 
 	-- for basic number output only
-	digits = love.graphics.newImageFont( "images/digits.png", "1234567890.-" )
-	love.graphics.setFont( digits )
+--	digits = love.graphics.newImageFont( "images/digits.png", "1234567890.-" )
+--	love.graphics.setFont( digits )
 
 	-- declare the world
 	theWorld = love.physics.newWorld( minX - 100, minY - 100, maxX + 100, maxY + 100 )
+	theWorld:setCallbacks(add,nil,nil,nil)
     -- 100 pixels per meter!!
 	theWorld:setMeter( worldScale ) -- Box2D can't hangle large spaces (should be 1 pixel = 100 km!)
 	game:addUpdatable( theWorld )
@@ -152,8 +157,12 @@ function game:init( coord, control )
     game:addDrawable( ai )
     game:addUpdatable( ai )--]]
 
-	-- reset the camera and radar
-	game:reset()
+	-- Setup the camera and radar!
+	theCamera = camera:new(theCoordBag,thePlayer:getBody())
+	theRadar = radar:new(radarRadius,thePlayer:getBody())
+
+	-- The player doesn't need to respawn when the game starts!
+	needRespawn = false
 end
 
 function game:generateMasses( pNumberOfMoons )
@@ -265,38 +274,28 @@ function game:draw()
 	end
 
 	--Return to default settings to draw static objects
-	--love.graphics.scale( 1 )
-
-	--Return to default settings to draw static objects
 	love.graphics.pop()
 	theRadar:draw(obj_draw)
 	love.graphics.setFont( digits )
+	love.graphics.setColor(255,255,255)
 	love.graphics.print(fps, 5, 5)
 
-	-- Now draw the text on the screen
-	-- NOTE: Text has "screen jitter"
-	-- WARNING: TEXT DRAWING IS PROCESS INTENSIVE!  CURRENTLY DISABLED!
---	love.graphics.setFont(12)
---	love.graphics.setColor(unpack(color["text"]))
---	love.graphics.print("obj count: " .. #obj_draw, 50 + currentX, 50 + currentY)
---	love.graphics.print("Y Coordinate: " .. theBody:getY(), 50+currentX, 70+currentY)
---	love.graphics.print("Mouse X Coordinate: " .. (love.mouse.getX() + currentX), 50+currentX, 90+currentY)
---	love.graphics.print("Mouse Y Coordinate: " .. (love.mouse.getY() + currentY), 50+currentX, 110+currentY)
---	love.graphics.print( thePlayer:getBody():getAngularVelocity(), 5 + x, 15 + y )
---	local velX, velY = thePlayer:getBody():getLinearVelocity()
---	love.graphics.print( lowDt, 5 + x, 25 + y )
---	love.graphics.print( highDt, 5 + x, 35 + y )
---	love.graphics.print( lastA, 5 + x, 45 + y )
---	love.graphics.print( thePlayer:getBody():getX(), 5 + x, 55 + y )
---	love.graphics.print( thePlayer:getBody():getY(), 5 + x, 65 + y )
---	love.graphics.print( thePlayer:getBody():getAngle(), 5 + x, 75 + y )
---    love.graphics.print( lastAngle, 5 + x, 75 + y )
---	love.graphics.print( lowA, 5 + x, 85 + y )
---	love.graphics.print( highA, 5 + x, 95 + y )
+	--If the player ship has crashed, then tell the user what to do.
+	if(needRespawn == true) then
+		local text = "You have crashed, please press Enter to respawn!"
+		love.graphics.setFont(font["default"])
+		local textWidth = font["default"]:getWidth(text)
+		local xPos = (screenX - textWidth)/2
+		local yPos = 200
+		love.graphics.print(text, xPos, yPos)
+		love.graphics.setFont(font["small"])
+	end
 end
 
 function game:update( dt )
-lastA = 0
+-- If the player needs to respawn, then freeze the game, otherwise, continue.
+if needRespawn == false then
+	lastA = 0
 	seconds = seconds + dt
 	frames = frames + 1
 	if seconds > 1 then
@@ -335,13 +334,14 @@ if dt > highDt then highDt = dt end
 		end
 	end
 end
+end
 
 function applyGravity( solarMass, object, dt )
 	local difX = ( solarMass.body:getX() - object.body:getX() ) * distanceScale
 	local difY = ( solarMass.body:getY() - object.body:getY() ) * distanceScale
 	local dir = math.atan2( difY, difX )
 	local dis2 = ( difX ^ 2 + difY ^ 2 ) -- ^ ( 1 / 2 )
-	--local aG = gravity * ( solarMass.body:getMass() + object.body:getMass() ) / 
+	--local aG = gravity * ( solarMass.body:getMass() + object.body:getMass() ) /
     --                     ( dis2 * distanceScale )
 	local fG = gravity * ( solarMass.body:getMass() * object.body:getMass() ) / dis2
 
@@ -355,25 +355,20 @@ if lastA < lowA then lowA = fG end
 end
 
 function game:keypressed( key, code )
+	--Ship has crashed, so wait for input to respawn.
+	if needRespawn == true then
+		if key == "return" then
+			needRespawn = false
+			thePlayer:respawn()
+		end
+	end
+	--Escape key opens the pause menu.
 	if key == "escape" then
 		state = pause:new( game )
 	else
+		--Handle camera adjustments.
 		theCamera:keypressed(key)
-		if theConfigBag:getTurn() == "STEP" then
-			if key == theConfigBag:getLeft() then
-				thePlayer:turnStepLeft()
-			elseif key == theConfigBag:getRight() then
-				thePlayer:turnStepRight()
-			end
-		end
 	end
-end
-
-function game:reset()
-	-- reset the position of the camera and set the radar
-	theCamera = camera:new(theCoordBag,thePlayer:getBody())
-	currentX, currentY = theCamera:adjust()
-	theRadar = radar:new(radarRadius,thePlayer:getBody())
 end
 
 function game:destroy()
@@ -395,4 +390,47 @@ function game:destroy()
     obj_update = {}
     update_count = 0
     theWorld = {}
+	theCamera = {}
+	theRadar = {}
+end
+
+--Callback function to handle collisions based on object status.
+function add(a,b,coll)
+	if a.status == "PLAYERSHIP" then
+		playerCollide(a,b)
+	elseif b.status == "PLAYERSHIP" then
+		playerCollide(b,a)
+	elseif a.status == "AISHIP" then
+		aiCollide(a,b)
+	elseif b.status == "AISHIP" then
+		aiCollide(b,a)
+	end
+end
+
+--Handles player collisions. Set needRespawn = true whenever player ship is DEAD.
+function playerCollide(a,b)
+	if b.status == "SOLAR" then
+		a.status = "DEAD"
+		needRespawn = true
+	elseif b.status == "AISHIP" then
+		a.status = "DEAD"
+		b.status = "DEAD"
+		needRespawn = true
+	elseif b.status == "DEBRIS" then
+	elseif b.status == "LASER" then
+	elseif b.status == "MISSILE" then
+	end
+end
+
+--Handles AI collisions.
+function aiCollide(a,b)
+	if b.status == "SOLAR" then
+		a.status = "DEAD"
+	elseif b.status == "AISHIP" then
+		a.status = "DEAD"
+		b.status = "DEAD"
+	elseif b.status == "DEBRIS" then
+	elseif b.status == "LASER" then
+	elseif b.status == "MISILE" then
+	end
 end

@@ -37,7 +37,8 @@ playerShip = class:new(...)
 --Function to instantiate the ship and assign keyboard controls
 function playerShip:init(theWorld, startX, startY, startAngle, aCoordBag, shipConfig)
 	-- Create the ship bound to this instance
-	self.theShip = ship:new(theWorld,startX,startY,startAngle,aCoordBag, shipConfig)
+	self.theShip = ship:new(theWorld,startX,startY,startAngle,aCoordBag,shipConfig)
+	self.theShip:setStatus("PLAYERSHIP")
 	-- Assign the key commands
 	self.thrustKey,self.leftKey,self.reverseKey,self.rightKey,self.stopTurnKey,self.stopThrustKey,self.orbitKey,self.turnMode = shipConfig:getAllControls()
 end
@@ -48,48 +49,61 @@ function playerShip:draw()
 	self.theShip:draw()
 end
 
+function playerShip:keypressed(key)
+	if self.turnMode == "STEP" then
+		if key == theConfigBag:getLeft() then
+			thePlayer:turnStepLeft()
+		elseif key == theConfigBag:getRight() then
+			thePlayer:turnStepRight()
+		end
+	end
+end
+
 --Checks every dt seconds for input, and executes the appropriate function
 function playerShip:update(dt)
-	--Thrust controls
-	if love.keyboard.isDown(self.thrustKey) then
-		self.theShip:thrust()
-	end
-	--Turn left
-	if love.keyboard.isDown( self.leftKey ) then
-		if ( self.turnMode == "EASY" ) then
-			self.theShip:easyLeft()
-		elseif ( self.turnMode == "NORMAL" ) then
-			self.theShip:normalLeft()
+	if(self.theShip:getStatus() == "DEAD") then
+	else
+		--Thrust controls
+		if love.keyboard.isDown(self.thrustKey) then
+			self.theShip:thrust()
 		end
-	end
-	--Turn right
-	if love.keyboard.isDown( self.rightKey ) then
-		if ( self.turnMode == "EASY" ) then
-			self.theShip:easyRight()
-		elseif ( self.turnMode == "NORMAL" ) then
-			self.theShip:normalRight()
+		--Turn left
+		if love.keyboard.isDown( self.leftKey ) then
+			if ( self.turnMode == "EASY" ) then
+				self.theShip:easyLeft()
+			elseif ( self.turnMode == "NORMAL" ) then
+				self.theShip:normalLeft()
+			end
 		end
+		--Turn right
+		if love.keyboard.isDown( self.rightKey ) then
+			if ( self.turnMode == "EASY" ) then
+				self.theShip:easyRight()
+			elseif ( self.turnMode == "NORMAL" ) then
+				self.theShip:normalRight()
+			end
+		end
+		-- accelerate turn if turning
+		if self.theShip:getTurnAccel() then
+			self.theShip:accelTurn()
+		end
+		--Stop turning
+		if love.keyboard.isDown(self.stopTurnKey) then
+			self.theShip:stopTurn()
+		end
+		-- orbit planet
+		if love.keyboard.isDown(self.orbitKey) then
+			self.theShip:orbit( dt )
+		end
+		--Stop thrust OR reverse thrust.  NOT both.
+		if love.keyboard.isDown(self.stopThrustKey) then
+			self.theShip:stopThrust( dt )
+		elseif love.keyboard.isDown(self.reverseKey) then
+			self.theShip:reverse()
+		end
+		--Activate the ship's warpdrive if needed.
+		self.theShip:warpDrive()
 	end
-	-- accelerate turn if turning
-	if self.theShip:getTurnAccel() then
-		self.theShip:accelTurn()
-	end
-	--Stop turning
-	if love.keyboard.isDown(self.stopTurnKey) then
-		self.theShip:stopTurn()
-	end
-	-- orbit planet
-	if love.keyboard.isDown(self.orbitKey) then
-		self.theShip:orbit( dt )
-	end
-	--Stop thrust OR reverse thrust.  NOT both.
-	if love.keyboard.isDown(self.stopThrustKey) then
-		self.theShip:stopThrust( dt )
-	elseif love.keyboard.isDown(self.reverseKey) then
-		self.theShip:reverse()
-	end
-	--Activate the ship's warpdrive if needed.
-	self.theShip:warpDrive()
 end
 
 function playerShip:turnStepLeft()
@@ -106,6 +120,12 @@ function playerShip:turnStepRight()
 	--end
 end
 
+-- Respawn the player's ship
+function playerShip:respawn()
+	self.theShip:respawn()
+	self.theShip:setStatus("PLAYERSHIP")
+end
+
 --Passes the ship's body up the stack.
 function playerShip:getBody()
 	return self.theShip:getBody()
@@ -116,18 +136,22 @@ function playerShip:getShip()
 	return self.theShip
 end
 
+-- the player's X position
 function playerShip:getX()
 	return self.theShip:getX()
 end
 
+-- the player's Y position
 function playerShip:getY()
 	return self.theShip:getY()
 end
 
+-- the points making up the player's polygon
 function playerShip:getPoints()
 	return self.theShip:getPoints()
 end
 
+-- the type of ship this is
 function playerShip:getType()
 	return "playerShip"
 end

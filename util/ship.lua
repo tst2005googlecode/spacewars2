@@ -64,7 +64,13 @@ function ship:init( theWorld, startX, startY, startAngle, aCoordBag, shipConfig 
 	self.turnStep = 0
 	self.turnAccel = false
 
-	self.shipPoly:setMask(1)
+--	self.shipPoly:setMask(1)
+	self.shipPoly:setSensor(true)
+
+	self.data = {}
+	self.data.status = "SHIP"
+	self.data.armor = 12500
+	self.shipPoly:setData(self.data)
 end
 
 -- Simply draws the ship
@@ -191,15 +197,15 @@ function ship:orbit( dt )
     local difX = solarMass.body:getX() - self.body:getX()
     local difY = solarMass.body:getY() - self.body:getY()
     local dist = hypotenuse( difX, difY )
-    
+
     -- Is the ship within range to orbit?  Need to know the max ship width ...
     -- 15 pixels is approximate for now, for half of max width
     if dist > solarMass.radius + 15 and dist < solarMass.radius * 8 then
         local dir = math.atan2( difY, difX )
         -- orbit velocity in pixels / second
-        local scaledOrbitVel = 
+        local scaledOrbitVel =
             ( ( ( solarMass.body:getMass() ^ 2 ) * gravity /
-                ( ( self.body:getMass() + solarMass.body:getMass() ) * 
+                ( ( self.body:getMass() + solarMass.body:getMass() ) *
                   dist * distanceScale )
               ) ^ ( 1 / 2 )
             ) * timeScale / distanceScale -- required velocity to orbit at current radius
@@ -215,7 +221,7 @@ function ship:orbit( dt )
         local forceAngle = math.atan2( velDifY, velDifX )
         lastAngle = scaledOrbitVel
         local forceVel = hypotenuse( velDifX, velDifY ) -- scalar in force direction
-        
+
         -- apply 1/2 thrust in forceAngle direction ... use less force if needed
         local f = self.baseThrust * forceScale / 4 -- scaled force to apply
         -- compare velocity
@@ -224,7 +230,7 @@ function ship:orbit( dt )
         end
         self.body:applyForce( f * math.cos( forceAngle ), f * math.sin( forceAngle ) )
     end
-    
+
 --[[ modified old code from Game Maker ...
         newThrust = maxThrust / 2;
         Dif = Dir - direction;
@@ -310,6 +316,27 @@ end
 function ship:tractor()
 end
 
+-- Respawn the ship in a random quadrant within 800 pixels of the borders, pointed in a random angle
+function ship:respawn()
+	x = math.random(0,800)
+	y = math.random(0,800)
+	xSide = math.random(0,1)
+	ySide = math.random(0,1)
+	if xSide == 1 then
+		x = self.maxX - x
+	end
+	if ySide == 1 then
+		y = self.maxY - y
+	end
+	angle = math.random() * maxAngle
+	self.body:setX(x)
+	self.body:setY(y)
+	self.body:setAngle(angle)
+	self.body:setLinearVelocity(0,0)
+	self.body:setAngularVelocity(0)
+	self.body:setAngle(0)
+end
+
 --[[] Returns the ship body for use by other classes, such as a camera!
 function ship:getBody()
 	return self.body
@@ -319,17 +346,31 @@ function ship:getTurnAccel()
 	return self.turnAccel
 end
 
+-- Get the body's X position
 function ship:getX()
 	return self.body:getX()
 end
 
+-- Get the body's Y position
 function ship:getY()
 	return self.body:getY()
 end
 
+-- Get the points that make up the ship polygon
 function ship:getPoints()
 	return self.shipPoly:getPoints()
 end
+
+-- Get the ship's current status
+function ship:getStatus()
+	return self.data.status
+end
+
+-- Set the ship's current status
+function ship:setStatus(stat)
+	self.data.status = stat
+end
+
 
 -- Function to check maximum linear velocity.
 -- CURRENTLY NOT IN USE!

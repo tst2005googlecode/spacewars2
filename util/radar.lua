@@ -89,7 +89,7 @@ function radar:drawAI(obj)
 	if(self:checkBounds(x,y) == true) then
 		x = (obj:getX() - self.body:getX() + self.radius)/self.scale
 		y = (obj:getY() - self.body:getY() + self.radius)/self.scale
-		love.graphics.setColor(255,265,0)
+		love.graphics.setColor(255,165,0)
 		love.graphics.circle("fill",self.offX + x, self.offY + y, theRad, 10)
 	end
 end

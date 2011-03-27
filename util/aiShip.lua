@@ -40,19 +40,28 @@ function aiShip:init(theWorld,aCoordBag,shipConfig)
 	local startY = math.random(0,aCoordBag:getMaxY())
 	local startAngle = math.random() * maxAngle
 	self.theShip = ship:new(theWorld,startX,startY,startAngle,aCoordBag, shipConfig)
+	self.theShip:setStatus("AISHIP")
 	self.fuel = 600
 end
 
+--Draw the aiShip
 function aiShip:draw()
 	love.graphics.setColor(unpack(color["ai"]))
 	self.theShip:draw()
 end
 
 function aiShip:update(dt)
-	if(self.fuel > 0) then
+	-- aiShips currently respawn instantaneously
+	if(self.theShip:getStatus() == "DEAD") then
+		self.theShip:respawn()
+		self.theShip:setStatus("AISHIP")
+		self.fuel = 600
+	--If the aiShip has fuel, then it can still thrust
+	elseif(self.fuel > 0) then
 		self.theShip:thrust()
 		self.fuel = self.fuel - 1
 	end
+	--If the aiShip reaches a border, then warp it!
 	self.theShip:warpDrive()
 end
 
@@ -61,14 +70,17 @@ function aiShip:getShip()
 	return self.theShip
 end
 
+-- the AI's X position
 function aiShip:getX()
 	return self.theShip:getX()
 end
 
+-- the AI's Y position
 function aiShip:getY()
 	return self.theShip:getY()
 end
 
+-- the AI's type
 function aiShip:getType()
 	return "aiShip"
 end

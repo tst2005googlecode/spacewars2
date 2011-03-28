@@ -12,8 +12,8 @@ function missile:init(aWorld, x, y, startAngle, aCoordBag, shipConfig, xVel, yVe
 
 	self.minX,self.maxX,self.screenX,self.minY,self.maxY,self.screenY = aCoordBag:getCoords()
 
-	self.fuel = 600
-	self.killswitch = 600
+	self.fuel = 6000
+	self.killswitch = 6000
 
 	self.baseThrust = 10 * 100
 	self.baseTorque = 10 ^ 3 * 10000
@@ -39,8 +39,11 @@ function missile:draw()
 end
 
 function missile:update(dt)
+	--Missiles that collide are marked CLEANUP to be destroyed
+	if(self.data.status == "CLEANUP") then
+		self:destroy()
 	--Missiles can't reliably track over the border, so it self-destructs safely
-	if(self:offedge() == true) then
+	elseif(self:offedge() == true) then
 		self:destroy()
 	--Missile has fuel to thrust with
 	elseif(self.fuel > 0) then

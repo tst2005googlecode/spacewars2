@@ -477,7 +477,9 @@ function playerCollide(a,b)
 	elseif b.status == "LASER" then
 	elseif b.status == "MISSILE" then
 		if b.owner ~= "PLAYERSHIP" then
+			b.status = "CLEANUP"
 		end
+	--Temp, if you die for no reason, you didn't completely dereference DEAD object
 	elseif b.status == "DEAD" then
 		a.status = "DEAD"
 		needRespawn = true
@@ -495,19 +497,27 @@ function aiCollide(a,b)
 	elseif b.status == "LASER" then
 	elseif b.status == "MISSILE" then
 		if b.owner ~= "AISHIP" then
+			a.status = "CLEANUP"
 		end
 	end
 end
 
 function missileCollide(a,b)
+	--If a missile collides with anything it is marked for CLEANUP
 	if b.status == "SOLAR" then
-		a.status = "DEAD"
+		a.status = "CLEANUP"
 	elseif b.status == "DEBRIS" then
+		a.status = "CLEANUP"
+		b.status = "CLEANUP"
 	elseif b.status == "LASER" then
+		if a.owner~= b.owner then
+			a.status = "CLEANUP"
+			b.status = "CLEANUP"
+		end
 	elseif b.status == "MISSILE" then
 		if a.owner ~= b.owner then
-			a.status = "DEAD"
-			b.status = "DEAD"
+			a.status = "CLEANUP"
+			b.status = "CLEANUP"
 		end
 	end
 end

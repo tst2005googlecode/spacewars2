@@ -31,6 +31,7 @@ This ship is aware of the edges of the world.
 
 require "util/bodyObj.lua"
 require "util/functions.lua"
+require "util/missile.lua"
 
 -- Movement constants
 local maxLinearV -- NOT CURRENTLY IN USE!
@@ -47,11 +48,16 @@ ship = bodyObj:new(...)
 function ship:init( theWorld, startX, startY, startAngle, aCoordBag, shipConfig )
 	--if shipConfig == nil then ship:error() end
 	self:initBody( theWorld, startX, startY, shipConfig.mass, shipConfig.mass * ( 25 * 10 ) * ( 100000 ^ 2 ) / 6 )
+
 	-- initial angle is 0 (right), so point ship to the right
 	self.shipPoly = love.physics.newPolygonShape(self.body, 15, 0, -10, 10, -10, -10, -12, 0)
 	self.body:setAngle(startAngle)
 
+	--coordiante variables
+	self.coordBag = aCoordBag
 	self.minX,self.maxX,self.screenX,self.minY,self.maxY,self.screenY = aCoordBag:getCoords()
+
+	self.shipConfig = shipCOnfig
 
 	-- these need to be set from shipConfig
 	self.maxLinearV = 30 --NOT CURRENTLY IN USE!
@@ -67,6 +73,10 @@ function ship:init( theWorld, startX, startY, startAngle, aCoordBag, shipConfig 
 --	self.shipPoly:setMask(1)
 	self.shipPoly:setSensor(true)
 
+	--store the world for laser and missile creation
+	self.world = theWorld
+
+	--ship data, has a default of SHIP for self.data.status which should be overwritten
 	self.data = {}
 	self.data.status = "SHIP"
 	self.data.armor = 12500
@@ -310,6 +320,11 @@ end
 
 -- Fires a missile
 function ship:missile()
+	local angle = self.body:getAngle()
+	local x = self.body:getX() + math.cos(angle) * 25
+	local y = self.body:getY() + math.sin(angle) * 25
+	local xVel, yVel = self.body:getLinearVelocity()
+	return missile:new(self.world, x, y, angle, self.coordBag, self.shipConfig, xVel, yVel)
 end
 
 -- Fires a tractor beam

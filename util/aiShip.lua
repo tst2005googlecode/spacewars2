@@ -70,6 +70,11 @@ function aiShip:getShip()
 	return self.theShip
 end
 
+--Get aiShip's new missiles
+function aiShip:getNewMissiles()
+	return {}
+end
+
 -- the AI's X position
 function aiShip:getX()
 	return self.theShip:getX()

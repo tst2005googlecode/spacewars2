@@ -83,7 +83,7 @@ lastAngle = 0
 local obj_draw = {}
 local draw_count = 0
 -- objects that will not change much
-local solarMasses = {} -- Planet/moons
+solarMasses = {} -- Planet/moons
 local numberOfMoons = 0
 orbitals = {} -- stations, platforms, and other constructed orbitals
 -- objects that will likely change frequently
@@ -102,6 +102,7 @@ local obj_update = {}
 local update_count = 0
 
 local needRespawn
+debug = ""
 
 
 game = class:new(...)
@@ -189,9 +190,19 @@ function game:addDrawable( obj )
 	obj_draw[draw_count] = obj
 end
 
+function game:removeDrawable( index )
+	table.remove(obj_draw,index)
+	draw_count = draw_count - 1
+end
+
 function game:addUpdatable( obj )
 	update_count = update_count + 1
 	obj_update[update_count] = obj
+end
+
+function game:removeUpdatable( index )
+	table.remove(obj_update,index)
+	update_count = update_count - 1
 end
 
 function game:newMass( index )
@@ -256,11 +267,18 @@ function game:draw()
 	love.graphics.scale( screenZoom )
 	love.graphics.translate( -currentX, -currentY )
 
+	--remove dead objects
+	for i, obj in ipairs( obj_draw ) do
+		if obj:getType() == "missile" then
+			if obj:getStatus() == "DEAD" then
+				game:removeDrawable(i)
+			end
+		end
+	end
+
 	-- draw all objects
 	for i, obj in ipairs( obj_draw ) do
-		if obj.draw then
-			obj:draw()
-		end
+		obj:draw()
 	end
 
 	local x = math.floor( currentX )
@@ -279,6 +297,8 @@ function game:draw()
 	love.graphics.setFont( digits )
 	love.graphics.setColor(255,255,255)
 	love.graphics.print(fps, 5, 5)
+	love.graphics.print(thePlayer:getMissileBank(),100,5)
+--	love.graphics.print(debug,5,500)
 
 	--If the player ship has crashed, then tell the user what to do.
 	if(needRespawn == true) then
@@ -311,6 +331,26 @@ highA = -10000000000000000000000000000--]]
 if dt < lowDt then lowDt = dt end
 if dt > highDt then highDt = dt end
 --]]
+
+	-- Check for objects that need to be added or removed
+	for i, obj in ipairs( obj_update ) do
+		if(obj.getType) then
+			-- Look for new missiles to add to the simulation
+			if(obj:getType() == "playerShip") then
+				for j, missile in ipairs(obj:getNewMissiles()) do
+					game:addDrawable( missile )
+					game:addUpdatable( missile )
+					autoObjs[#autoObjs+1] = missile
+				end
+			-- Check if the missile is dead, and if so, remove it
+			elseif(obj:getType() == "missile") then
+				if(obj:getStatus() == "DEAD") then
+					game:removeUpdatable( i )
+				end
+			end
+		end
+	end
+
 	-- for each solar mass, apply gravitation force to each object
 	for index, solarMass in ipairs( solarMasses ) do
 		for i, orbital in ipairs( orbitals ) do
@@ -320,7 +360,16 @@ if dt > highDt then highDt = dt end
 			applyGravity( solarMass, ship )
 		end
 		for i, autoObj in ipairs( autoObjs ) do
-			applyGravity( solarMass, autoObj )
+			if(autoObj.getType) then
+				if(autoObj:getType() == "missile") then
+					if(autoObj:getStatus() == "DEAD") then
+						table.remove(autoObjs,i)
+					else applyGravity(solarMass, autoObj)
+					end
+				else applyGravity(solarMass, autoObj)
+				end
+			else applyGravity( solarMass, autoObj )
+			end
 		end
 		for i, inertObj in ipairs( inertObjs ) do
 			applyGravity( solarMass, inertObj )
@@ -368,7 +417,12 @@ function game:keypressed( key, code )
 	else
 		--Handle camera adjustments.
 		theCamera:keypressed(key)
+		thePlayer:keypressed(key)
 	end
+end
+
+function game:mousepressed(x,y,button)
+	thePlayer:mousepressed(x,y,button)
 end
 
 function game:destroy()
@@ -404,6 +458,10 @@ function add(a,b,coll)
 		aiCollide(a,b)
 	elseif b.status == "AISHIP" then
 		aiCollide(b,a)
+	elseif a.status == "MISSILE" then
+		missileCollide(a,b)
+	elseif b.status == "MISSILE" then
+		missileCollide(b,a)
 	end
 end
 
@@ -419,6 +477,11 @@ function playerCollide(a,b)
 	elseif b.status == "DEBRIS" then
 	elseif b.status == "LASER" then
 	elseif b.status == "MISSILE" then
+		if b.owner ~= "PLAYERSHIP" then
+		end
+	elseif b.status == "DEAD" then
+		a.status = "DEAD"
+		needRespawn = true
 	end
 end
 
@@ -431,6 +494,21 @@ function aiCollide(a,b)
 		b.status = "DEAD"
 	elseif b.status == "DEBRIS" then
 	elseif b.status == "LASER" then
-	elseif b.status == "MISILE" then
+	elseif b.status == "MISSILE" then
+		if b.owner ~= "AISHIP" then
+		end
+	end
+end
+
+function missileCollide(a,b)
+	if b.status == "SOLAR" then
+		a.status = "DEAD"
+	elseif b.status == "DEBRIS" then
+	elseif b.status == "LASER" then
+	elseif b.status == "MISSILE" then
+		if a.owner ~= b.owner then
+			a.status = "DEAD"
+			b.status = "DEAD"
+		end
 	end
 end

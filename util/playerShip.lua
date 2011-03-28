@@ -41,6 +41,10 @@ function playerShip:init(theWorld, startX, startY, startAngle, aCoordBag, shipCo
 	self.theShip:setStatus("PLAYERSHIP")
 	-- Assign the key commands
 	self.thrustKey,self.leftKey,self.reverseKey,self.rightKey,self.stopTurnKey,self.stopThrustKey,self.orbitKey,self.turnMode = shipConfig:getAllControls()
+
+	self.missiles = {}
+	self.newMissiles = {}
+	self.missileBank = 10
 end
 
 --Draw the ship using its draw() function
@@ -52,9 +56,23 @@ end
 function playerShip:keypressed(key)
 	if self.turnMode == "STEP" then
 		if key == theConfigBag:getLeft() then
-			thePlayer:turnStepLeft()
+			self.theShip:stepLeft()
 		elseif key == theConfigBag:getRight() then
-			thePlayer:turnStepRight()
+			self.theShip:stepRight()
+		end
+	end
+end
+
+function playerShip:mousepressed(x,y,button)
+	--Fire missile on right mouse click if the ship is alive
+	if(button == "r" and self.theShip:getStatus() ~= "DEAD") then
+		if(self.missileBank > 0) then
+			local aMissile = self.theShip:missile()
+			aMissile:setOwner("PLAYERSHIP")
+			self.missiles[#self.missiles+1] = aMissile
+			self.newMissiles[#self.newMissiles+1] = aMissile
+			self.missileBank = self.missileBank - 1
+			aMissile = nil
 		end
 	end
 end
@@ -63,6 +81,13 @@ end
 function playerShip:update(dt)
 	if(self.theShip:getStatus() == "DEAD") then
 	else
+		--Checking for dead missiles is always a vaild operation
+		for i,missile in ipairs(self.missiles) do
+			if missile:getStatus() == "DEAD" then
+				table.remove(self.missiles,i)
+				self.missileBank = self.missileBank + 1
+			end
+		end
 		--Thrust controls
 		if love.keyboard.isDown(self.thrustKey) then
 			self.theShip:thrust()
@@ -106,20 +131,6 @@ function playerShip:update(dt)
 	end
 end
 
-function playerShip:turnStepLeft()
-	-- Turn left step
-	--if self.turnMode == "STEP" then
-		self.theShip:stepLeft()
-	--end
-end
-
-function playerShip:turnStepRight()
-	-- Turn Right step
-	--if self.turnMode == "STEP" then
-		self.theShip:stepRight()
-	--end
-end
-
 -- Respawn the player's ship
 function playerShip:respawn()
 	self.theShip:respawn()
@@ -134,6 +145,20 @@ end
 -- the player's ship
 function playerShip:getShip()
 	return self.theShip
+end
+
+-- the player's new missiles
+function playerShip:getNewMissiles()
+	local returnMissiles = {}
+	returnMissiles = self.newMissiles
+	self.newMissiles = nil
+	self.newMissiles = {}
+	return returnMissiles
+end
+
+-- the player's remaining missiles
+function playerShip:getMissileBank()
+	return self.missileBank
 end
 
 -- the player's X position

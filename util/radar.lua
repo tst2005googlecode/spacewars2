@@ -52,6 +52,8 @@ function radar:draw(obj_table)
 			self:drawSolar(obj)
 		elseif(theType == "aiShip") then
 			self:drawAI(obj)
+		elseif(theType == "missile") then
+			self:drawMissile(obj)
 		end
 	end
 end
@@ -83,6 +85,18 @@ function radar:drawSolar(obj)
 end
 
 function radar:drawAI(obj)
+	local x = obj:getX()
+	local y = obj:getY()
+	local theRad = 1
+	if(self:checkBounds(x,y) == true) then
+		x = (obj:getX() - self.body:getX() + self.radius)/self.scale
+		y = (obj:getY() - self.body:getY() + self.radius)/self.scale
+		love.graphics.setColor(255,0,0)
+		love.graphics.circle("fill",self.offX + x, self.offY + y, theRad, 10)
+	end
+end
+
+function radar:drawMissile(obj)
 	local x = obj:getX()
 	local y = obj:getY()
 	local theRad = 1

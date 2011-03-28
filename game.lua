@@ -125,8 +125,7 @@ function game:init( coord, control )
     forceScale = timeScale ^ 2 / distanceScale / worldScale -- proportional to square of time scale
 
 	-- for basic number output only
---	digits = love.graphics.newImageFont( "images/digits.png", "1234567890.-" )
---	love.graphics.setFont( digits )
+	digits = love.graphics.newImageFont( "images/digits.png", "1234567890.-" )
 
 	-- declare the world
 	theWorld = love.physics.newWorld( minX - 100, minY - 100, maxX + 100, maxY + 100 )

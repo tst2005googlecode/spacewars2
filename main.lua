@@ -5,6 +5,8 @@ config = {}
 state = {} --this is what gets called into action, whether that be the game, level editor, whatever...
 
 function love.load()
+	-- Set the directory before we even try to do anything!
+	love.filesystem.setIdentity("Spacewars!II")
   --Resources
 	color =	 {	background = {240,243,247},
 				main = {63,193,245},

@@ -33,9 +33,9 @@ function missile:target(aBody)
 end
 
 function missile:draw()
-	if(self.data.status ~= "DEAD") then
+--	if(self.data.status ~= "DEAD") then
 		love.graphics.polygon("line", self.missilePoly:getPoints())
-	end
+--	end
 end
 
 function missile:update(dt)
@@ -116,6 +116,10 @@ end
 
 function missile:getY()
 	return self.body:getY()
+end
+
+function missile:getBody()
+	return self.body
 end
 
 function missile:getType()

@@ -352,10 +352,10 @@ function ship:respawn()
 	self.body:setAngle(0)
 end
 
---[[] Returns the ship body for use by other classes, such as a camera!
+-- Returns the ship body for use by other classes, such as a camera!
 function ship:getBody()
 	return self.body
-end--]]
+end
 
 function ship:getTurnAccel()
 	return self.turnAccel

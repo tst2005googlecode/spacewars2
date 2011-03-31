@@ -132,7 +132,7 @@ function game:init( coord, control )
 	theWorld:setCallbacks(add,nil,nil,nil)
     -- 100 pixels per meter!!
 	theWorld:setMeter( worldScale ) -- Box2D can't hangle large spaces (should be 1 pixel = 100 km!)
-	game:addUpdatable( theWorld )
+--	game:addUpdatable( theWorld )
 
 	-- set a new random seed
 	math.randomseed( os.time() )
@@ -147,15 +147,15 @@ function game:init( coord, control )
 	thePlayer = playerShip:new( theWorld, maxX/4, maxY/4, math.random() * maxAngle, theCoordBag, theConfigBag )
 	ships[#ships + 1] = thePlayer:getShip()
 	shipCount = shipCount + 1
-	game:addDrawable( thePlayer )
+--	game:addDrawable( thePlayer )
 	game:addUpdatable( thePlayer )
 
     -- create a dummy ship
     ai = aiShip:new( theWorld, theCoordBag, { mass = 100000 } )
 	ships[#ships + 1] = aiShip:getShip()
 	shipCount = shipCount + 1
-    game:addDrawable( ai )
-    game:addUpdatable( ai )--]]
+--	game:addDrawable( ai )
+	game:addUpdatable( ai )
 
 	-- Setup the camera and radar!
 	theCamera = camera:new(theCoordBag,thePlayer:getBody())
@@ -169,12 +169,13 @@ function game:generateMasses( pNumberOfMoons )
 	-- for now, always generate a planet
 	local m = game:newMass( 0 )
 	solarMasses[#solarMasses + 1] = solarMass:new( theWorld, m.x, m.y, m.mass, m.radius, 0, m.color )
-	game:addDrawable( solarMasses[#solarMasses] )
+--	game:addDrawable( solarMasses[#solarMasses] )
+	game:addUpdatable( solarMasses[#solarMasses] )
 
 	for i = 1, pNumberOfMoons do
 		m = game:newMass( i )
 		solarMasses[#solarMasses + 1] = solarMass:new( theWorld, m.x, m.y, m.mass, m.radius, m.orbit, m.color )
-		game:addDrawable( solarMasses[#solarMasses] )
+--		game:addDrawable( solarMasses[#solarMasses] )
 		game:addUpdatable( solarMasses[#solarMasses] )
 		solarMasses[#solarMasses]["orbitRadius"] = m.orbitRadius
 		solarMasses[#solarMasses]["orbitAngle"] = m.orbitAngle
@@ -183,7 +184,7 @@ function game:generateMasses( pNumberOfMoons )
 		solarMasses[#solarMasses]["originY"] = m.originY
 	end
 end
-
+--[[
 function game:addDrawable( obj )
 	draw_count = draw_count + 1
 	obj_draw[draw_count] = obj
@@ -193,7 +194,7 @@ function game:removeDrawable( index )
 	table.remove(obj_draw,index)
 	draw_count = draw_count - 1
 end
-
+]]--
 function game:addUpdatable( obj )
 	update_count = update_count + 1
 	obj_update[update_count] = obj
@@ -265,7 +266,7 @@ function game:draw()
 	-- WARNING: Scale must come before translate, they are not commutative properties!
 	love.graphics.scale( screenZoom )
 	love.graphics.translate( -currentX, -currentY )
-
+--[[
 	--remove dead objects
 	for i, obj in ipairs( obj_draw ) do
 		if obj:getType() == "missile" then
@@ -274,9 +275,9 @@ function game:draw()
 			end
 		end
 	end
-
+]]--
 	-- draw all objects
-	for i, obj in ipairs( obj_draw ) do
+	for i, obj in ipairs( obj_update ) do
 		obj:draw()
 	end
 
@@ -292,7 +293,7 @@ function game:draw()
 
 	--Return to default settings to draw static objects
 	love.graphics.pop()
-	theRadar:draw(obj_draw)
+	theRadar:draw(obj_update)
 	love.graphics.setFont( digits )
 	love.graphics.setColor(255,255,255)
 	love.graphics.print(fps, 5, 5)
@@ -301,7 +302,7 @@ function game:draw()
 
 	--If the player ship has crashed, then tell the user what to do.
 	if(needRespawn == true) then
-		local text = "You have crashed, please press Enter to respawn!"
+		local text = "Your ship is destroyed, please press Enter to respawn!"
 		love.graphics.setFont(font["default"])
 		local textWidth = font["default"]:getWidth(text)
 		local xPos = (screenX - textWidth)/2
@@ -330,26 +331,7 @@ highA = -10000000000000000000000000000--]]
 if dt < lowDt then lowDt = dt end
 if dt > highDt then highDt = dt end
 --]]
-
-	-- Check for objects that need to be added or removed
-	for i, obj in ipairs( obj_update ) do
-		if(obj.getType) then
-			-- Look for new missiles to add to the simulation
-			if(obj:getType() == "playerShip") then
-				for j, missile in ipairs(obj:getNewMissiles()) do
-					game:addDrawable( missile )
-					game:addUpdatable( missile )
-					autoObjs[#autoObjs+1] = missile
-				end
-			-- Check if the missile is dead, and if so, remove it
-			elseif(obj:getType() == "missile") then
-				if(obj:getStatus() == "DEAD") then
-					game:removeUpdatable( i )
-				end
-			end
-		end
-	end
-
+--[[
 	-- for each solar mass, apply gravitation force to each object
 	for index, solarMass in ipairs( solarMasses ) do
 		for i, orbital in ipairs( orbitals ) do
@@ -358,6 +340,7 @@ if dt > highDt then highDt = dt end
 		for i, ship in ipairs( ships ) do
 			applyGravity( solarMass, ship )
 		end
+		--Save iteration time by handling dead objects now
 		for i, autoObj in ipairs( autoObjs ) do
 			if(autoObj.getType) then
 				if(autoObj:getType() == "missile") then
@@ -374,6 +357,15 @@ if dt > highDt then highDt = dt end
 			applyGravity( solarMass, inertObj )
 		end
 	end
+]]--
+--[[
+	for index, solarMass in ipairs( solarMasses) do
+		for i, obj in ipairs( obj_update ) do
+			if (obj:getType() ~= "solarMass") then
+				applyGravity( solarMass, obj )
+			end
+		end
+	end
 
 	-- update all objects
 	for i, obj in ipairs( obj_update ) do
@@ -381,25 +373,75 @@ if dt > highDt then highDt = dt end
 			obj:update( dt )
 		end
 	end
+]]--
+
+	-- for each object, apply gravity and then update
+	for i, obj in ipairs( obj_update) do
+		if(obj:getType() ~= "solarMass") then
+			applyGravity(obj)
+		end
+		obj:update(dt)
+	end
+
+	-- update the world
+	theWorld:update( dt )
+
+	-- Check for objects that need to be added or removed
+	-- This is done last to prevent draw failures
+	for i, obj in ipairs( obj_update ) do
+--		if(obj.getType) then
+			-- Look for new missiles to add to the simulation
+			if(obj:getType() == "playerShip") then
+				for j, missile in ipairs(obj:getNewMissiles()) do
+--					game:addDrawable( missile )
+					game:addUpdatable( missile )
+--					autoObjs[#autoObjs+1] = missile
+				end
+			-- Check if the missile is dead, and if so, remove it
+			elseif(obj:getType() == "missile") then
+				if(obj:getStatus() == "DEAD") then
+					game:removeUpdatable( i )
+				end
+			end
+--		end
+	end
 end
 end
 
+--[[
 function applyGravity( solarMass, object, dt )
-	local difX = ( solarMass.body:getX() - object.body:getX() ) * distanceScale
-	local difY = ( solarMass.body:getY() - object.body:getY() ) * distanceScale
+--	local difX = ( solarMass.body:getX() - object.body:getX() ) * distanceScale
+--	local difY = ( solarMass.body:getY() - object.body:getY() ) * distanceScale
+	local difX = ( solarMass.body:getX() - object:getBody():getX() ) * distanceScale
+	local difY = ( solarMass.body:getY() - object:getBody():getY() ) * distanceScale
 	local dir = math.atan2( difY, difX )
 	local dis2 = ( difX ^ 2 + difY ^ 2 ) -- ^ ( 1 / 2 )
 	--local aG = gravity * ( solarMass.body:getMass() + object.body:getMass() ) /
     --                     ( dis2 * distanceScale )
-	local fG = gravity * ( solarMass.body:getMass() * object.body:getMass() ) / dis2
+--	local fG = gravity * ( solarMass.body:getMass() * object.body:getMass() ) / dis2
+	local fG = gravity * ( solarMass.body:getMass() * object:getBody():getMass() ) / dis2
 
     fG = fG * forceScale -- now scaled to pixels / s ^ 2
---[[
+--[
 if lastA == 0 then lastA = fG end
 if lastA > highA then highA = fG end
 if lastA < lowA then lowA = fG end
---]]
+--]
 	object:getBody():applyForce( math.cos( dir ) * fG , math.sin( dir ) * fG )
+end
+]]--
+
+function applyGravity( object, dt )
+	for i,solarMass in ipairs(solarMasses) do
+		local difX = ( solarMass.body:getX() - object:getBody():getX() ) * distanceScale
+		local difY = ( solarMass.body:getY() - object:getBody():getY() ) * distanceScale
+		local dir = math.atan2( difY, difX )
+		local dis2 = ( difX ^ 2 + difY ^ 2 ) -- ^ ( 1 / 2 )
+		local fG = gravity * ( solarMass.body:getMass() * object:getBody():getMass() ) / dis2
+
+		fG = fG * forceScale -- now scaled to pixels / s ^ 2
+		object:getBody():applyForce( math.cos( dir ) * fG , math.sin( dir ) * fG )
+	end
 end
 
 function game:keypressed( key, code )
@@ -497,7 +539,7 @@ function aiCollide(a,b)
 	elseif b.status == "LASER" then
 	elseif b.status == "MISSILE" then
 		if b.owner ~= "AISHIP" then
-			a.status = "CLEANUP"
+			b.status = "CLEANUP"
 		end
 	end
 end

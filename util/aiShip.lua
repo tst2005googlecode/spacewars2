@@ -85,6 +85,10 @@ function aiShip:getY()
 	return self.theShip:getY()
 end
 
+function aiShip:getBody()
+	return self.theShip:getBody()
+end
+
 -- the AI's type
 function aiShip:getType()
 	return "aiShip"

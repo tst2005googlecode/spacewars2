@@ -70,6 +70,41 @@ function solarMass:update( dt )
 	end
 end
 
+function solarMass:applyGravity( object, dt )
+	local theBody = object:getBody()
+	local difX = ( self.body:getX() - theBody:getX() ) * distanceScale
+	local difY = ( self.body:getY() - theBody:getY() ) * distanceScale
+	local dir = math.atan2( difY, difX )
+	local dis2 = ( difX ^ 2 + difY ^ 2 ) -- ^ ( 1 / 2 )
+	local fG = gravity * ( self.body:getMass() * theBody:getMass() ) / dis2
+
+	fG = fG * forceScale -- now scaled to pixels / s ^ 2
+	theBody:applyForce( math.cos( dir ) * fG , math.sin( dir ) * fG )
+end
+
+--[[
+function applyGravity( solarMass, object, dt )
+--	local difX = ( solarMass.body:getX() - object.body:getX() ) * distanceScale
+--	local difY = ( solarMass.body:getY() - object.body:getY() ) * distanceScale
+	local difX = ( solarMass.body:getX() - object:getBody():getX() ) * distanceScale
+	local difY = ( solarMass.body:getY() - object:getBody():getY() ) * distanceScale
+	local dir = math.atan2( difY, difX )
+	local dis2 = ( difX ^ 2 + difY ^ 2 ) -- ^ ( 1 / 2 )
+	--local aG = gravity * ( solarMass.body:getMass() + object.body:getMass() ) /
+    --                     ( dis2 * distanceScale )
+--	local fG = gravity * ( solarMass.body:getMass() * object.body:getMass() ) / dis2
+	local fG = gravity * ( solarMass.body:getMass() * object:getBody():getMass() ) / dis2
+
+    fG = fG * forceScale -- now scaled to pixels / s ^ 2
+--[
+if lastA == 0 then lastA = fG end
+if lastA > highA then highA = fG end
+if lastA < lowA then lowA = fG end
+--]
+	object:getBody():applyForce( math.cos( dir ) * fG , math.sin( dir ) * fG )
+end
+]]--
+
 function solarMass:getX()
 	return self.body:getX()
 end

@@ -2,9 +2,10 @@ require "subclass/class.lua"
 require "util/bodyObj.lua"
 
 missile = bodyObj:new(...)
+local mass = 10
 
 function missile:init(aWorld, x, y, startAngle, aCoordBag, shipConfig, xVel, yVel)
-	self:initBody(aWorld, x, y, 10, 10 * ( 25 * 10 ) * ( 100000 ^ 2 ) / 6)
+	self:initBody(aWorld, x, y, mass, mass * ( 25 * 10 ) * ( 100000 ^ 2 ) / 6)
 
 	self.missilePoly = love.physics.newPolygonShape(self.body, 9, 0, -7, 7, -7, -7)
 	self.body:setAngle(startAngle)
@@ -14,9 +15,10 @@ function missile:init(aWorld, x, y, startAngle, aCoordBag, shipConfig, xVel, yVe
 
 	self.fuel = 6000
 	self.killswitch = 6000
+	self.holdTime = 5
 
-	self.baseThrust = 10 * 100
-	self.baseTorque = 10 ^ 3 * 10000
+	self.baseThrust = mass * 100
+	self.baseTorque = mass ^ 3 * 10000
 	self.easyTurn = 0.005 / timeScale
 
 	self.missilePoly:setSensor(true)
@@ -33,33 +35,34 @@ function missile:target(aBody)
 end
 
 function missile:draw()
---	if(self.data.status ~= "DEAD") then
-		love.graphics.polygon("line", self.missilePoly:getPoints())
---	end
+	love.graphics.polygon("line", self.missilePoly:getPoints())
 end
 
 function missile:update(dt)
-	--Missiles that collide are marked CLEANUP to be destroyed
-	if(self.data.status == "CLEANUP") then
-		self:destroy()
+	if(self.data.status == "DEAD") then
+		--Hold down timer to make sure EVERYTHING stops referencing it
+		if(self.holdTime > 0) then
+			self.holdTime = self.holdTime - 1
+		else
+			self:destroy()
+		end
 	--Missiles can't reliably track over the border, so it self-destructs safely
 	elseif(self:offedge() == true) then
-		self:destroy()
+		self.data.status = "DEAD"
 	--Missile has fuel to thrust with
 	elseif(self.fuel > 0) then
 		self:thrust()
-		self.fuel = self.fuel - 1
+		self.fuel = self.fuel - (1000 * dt)
 	--Missile drifts until killswitch time elapses
 	elseif(self.killswitch > 0) then
-		self.killswitch = self.killswitch - 1
+		self.killswitch = self.killswitch - (1000 * dt)
 	--Missile is marked DEAD
 	else
-		self:destroy()
+		self.data.status = "DEAD"
 	end
 end
 
 function missile:destroy()
-	self.data.status = "DEAD"
 	self.missilePoly:destroy()
 	self.body:destroy()
 	self.missilePoly = nil

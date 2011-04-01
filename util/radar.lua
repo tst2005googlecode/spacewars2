@@ -28,6 +28,7 @@ The radar covers a radius from the center, which is the playerShip.
 The scale of the radar is the diameter divided by the radar's size.
 --]]
 require "util/camera.lua"
+require "subclass/class.lua"
 radar = class:new(...)
 
 --The width and height of the radar
@@ -40,6 +41,7 @@ local playerColor = {255,255,255}
 local aiColor = {255,0,0}
 local missileColor = {255,165,0}
 local solarColor = {34,139,34}
+local debrisColor = {205,133,63,255}
 
 function radar:init(theRadius,theBody)
 	self.offX = 0
@@ -69,6 +71,9 @@ function radar:draw(obj_table)
 			self:drawGeneric(obj)
 		elseif(theType == "missile") then
 			love.graphics.setColor(missileColor)
+			self:drawGeneric(obj)
+		elseif(theType == "debris") then
+			love.graphics.setColor(debrisColor)
 			self:drawGeneric(obj)
 		end
 	end

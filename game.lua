@@ -31,6 +31,7 @@ require "util/solarMass.lua"
 require "util/camera.lua"
 require "util/coordBag.lua"
 require "util/controlBag.lua"
+require "util/debris.lua"
 require "util/radar.lua"
 require "pause.lua"
 
@@ -40,6 +41,8 @@ local minY = 0
 -- Coordinate variables holding max x,y World coordinates
 local maxX = 32768
 local maxY = 32768
+--local maxX = 16384
+--local maxY = 16384
 -- Coordinate variables holding max x,y Screen coordinates
 local screenX = love.graphics.getWidth()
 local screenY = love.graphics.getHeight()
@@ -156,6 +159,12 @@ function game:init( coord, control )
 	shipCount = shipCount + 1
 --	game:addDrawable( ai )
 	game:addUpdatable( ai )
+
+	-- create all the debris
+	for i = 1,100 do
+		local debris = debris:new(theWorld, theCoordBag)
+		game:addUpdatable( debris )
+	end
 
 	-- Setup the camera and radar!
 	theCamera = camera:new(theCoordBag,thePlayer:getBody())
@@ -376,9 +385,11 @@ if dt > highDt then highDt = dt end
 ]]--
 
 	-- for each object, apply gravity and then update
-	for i, obj in ipairs( obj_update) do
+	for i, obj in ipairs( obj_update ) do
 		if(obj:getType() ~= "solarMass") then
-			applyGravity(obj)
+			for i, solarMass in ipairs (solarMasses) do
+				solarMass:applyGravity(obj)
+			end
 		end
 		obj:update(dt)
 	end
@@ -430,7 +441,7 @@ if lastA < lowA then lowA = fG end
 	object:getBody():applyForce( math.cos( dir ) * fG , math.sin( dir ) * fG )
 end
 ]]--
-
+--[[
 function applyGravity( object, dt )
 	for i,solarMass in ipairs(solarMasses) do
 		local difX = ( solarMass.body:getX() - object:getBody():getX() ) * distanceScale
@@ -443,7 +454,7 @@ function applyGravity( object, dt )
 		object:getBody():applyForce( math.cos( dir ) * fG , math.sin( dir ) * fG )
 	end
 end
-
+--]]
 function game:keypressed( key, code )
 	--Ship has crashed, so wait for input to respawn.
 	if needRespawn == true then
@@ -503,6 +514,14 @@ function add(a,b,coll)
 		missileCollide(a,b)
 	elseif b.status == "MISSILE" then
 		missileCollide(b,a)
+	elseif a.status == "LASER" then
+		laserCollide(a,b)
+	elseif b.status == "LASER" then
+		laserCollide(b,a)
+	elseif a.status == "DEBRIS" then
+		debrisCollide(a,b)
+	elseif b.status == "DEBRIS" then
+		debrisCollide(b,a)
 	end
 end
 
@@ -516,15 +535,13 @@ function playerCollide(a,b)
 		b.status = "DEAD"
 		needRespawn = true
 	elseif b.status == "DEBRIS" then
+		b.status = "DEAD"
 	elseif b.status == "LASER" then
+		b.status = "DEAD"
 	elseif b.status == "MISSILE" then
 		if b.owner ~= "PLAYERSHIP" then
-			b.status = "CLEANUP"
+			b.status = "DEAD"
 		end
-	--Temp, if you die for no reason, you didn't completely dereference DEAD object
-	elseif b.status == "DEAD" then
-		a.status = "DEAD"
-		needRespawn = true
 	end
 end
 
@@ -536,10 +553,12 @@ function aiCollide(a,b)
 		a.status = "DEAD"
 		b.status = "DEAD"
 	elseif b.status == "DEBRIS" then
+		b.status = "DEAD"
 	elseif b.status == "LASER" then
+		b.status = "DEAD"
 	elseif b.status == "MISSILE" then
 		if b.owner ~= "AISHIP" then
-			b.status = "CLEANUP"
+			b.status = "DEAD"
 		end
 	end
 end
@@ -547,19 +566,41 @@ end
 function missileCollide(a,b)
 	--If a missile collides with anything it is marked for CLEANUP
 	if b.status == "SOLAR" then
-		a.status = "CLEANUP"
+		a.status = "DEAD"
 	elseif b.status == "DEBRIS" then
-		a.status = "CLEANUP"
-		b.status = "CLEANUP"
+		a.status = "DEAD"
+		b.status = "DEAD"
 	elseif b.status == "LASER" then
 		if a.owner~= b.owner then
-			a.status = "CLEANUP"
-			b.status = "CLEANUP"
+			a.status = "DEAD"
+			b.status = "DEAD"
 		end
 	elseif b.status == "MISSILE" then
 		if a.owner ~= b.owner then
-			a.status = "CLEANUP"
-			b.status = "CLEANUP"
+			a.status = "DEAD"
+			b.status = "DEAD"
 		end
+	end
+end
+
+function laserCollide(a,b)
+	--Laser collisions mark it for CLEANUP
+	if b.status == "SOLAR" then
+		a.status = "DEAD"
+	--Lasers disipate on debris
+	elseif b.status == "DEBRIS" then
+		a.status = "DEAD"
+	elseif b.status == "LASER" then
+		--Should lasers pass through each other?
+	end
+end
+
+function debrisCollide(a,b)
+	--Debris collisions mark it for CLEANUP
+	if b.status == "SOLAR" then
+		a.status = "DEAD"
+	elseif b.status == "DEBRIS" then
+		a.status = "DEAD"
+		b.status = "DEAD"
 	end
 end

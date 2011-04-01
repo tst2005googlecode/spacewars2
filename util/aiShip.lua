@@ -59,7 +59,7 @@ function aiShip:update(dt)
 	--If the aiShip has fuel, then it can still thrust
 	elseif(self.fuel > 0) then
 		self.theShip:thrust()
-		self.fuel = self.fuel - 1
+		self.fuel = self.fuel - (1000 * dt)
 	end
 	--If the aiShip reaches a border, then warp it!
 	self.theShip:warpDrive()

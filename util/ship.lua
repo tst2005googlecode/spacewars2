@@ -79,7 +79,7 @@ function ship:init( theWorld, startX, startY, startAngle, aCoordBag, shipConfig 
 	--ship data, has a default of SHIP for self.data.status which should be overwritten
 	self.data = {}
 	self.data.status = "SHIP"
-	self.data.armor = 12500
+	self.data.armor = 10000
 	self.shipPoly:setData(self.data)
 end
 
@@ -350,6 +350,7 @@ function ship:respawn()
 	self.body:setLinearVelocity(0,0)
 	self.body:setAngularVelocity(0)
 	self.body:setAngle(0)
+	self.data.armor = 10000
 end
 
 -- Returns the ship body for use by other classes, such as a camera!

@@ -91,40 +91,36 @@ function playerShip:update(dt)
 		--Thrust controls
 		if love.keyboard.isDown(self.thrustKey) then
 			self.theShip:thrust()
+		elseif love.keyboard.isDown(self.reverseKey) then
+			self.theShip:reverse()
+		elseif love.keyboard.isDown(self.stopThrustKey) then
+			self.theShip:stopThrust( dt )
 		end
 		--Turn left
 		if love.keyboard.isDown( self.leftKey ) then
-			if ( self.turnMode == "EASY" ) then
-				self.theShip:easyLeft()
-			elseif ( self.turnMode == "NORMAL" ) then
-				self.theShip:normalLeft()
+			if (love.keyboard.isDown( self.rightKey ) == false) then
+				if ( self.turnMode == "EASY" ) then
+					self.theShip:easyLeft()
+				elseif ( self.turnMode == "NORMAL" ) then
+					self.theShip:normalLeft()
+				end
 			end
-		end
-		--Turn right
-		if love.keyboard.isDown( self.rightKey ) then
+		elseif love.keyboard.isDown( self.rightKey ) then
 			if ( self.turnMode == "EASY" ) then
 				self.theShip:easyRight()
 			elseif ( self.turnMode == "NORMAL" ) then
 				self.theShip:normalRight()
 			end
+		elseif love.keyboard.isDown(self.stopTurnKey) then
+			self.theShip:stopTurn()
 		end
 		-- accelerate turn if turning
 		if self.theShip:getTurnAccel() then
 			self.theShip:accelTurn()
 		end
-		--Stop turning
-		if love.keyboard.isDown(self.stopTurnKey) then
-			self.theShip:stopTurn()
-		end
 		-- orbit planet
 		if love.keyboard.isDown(self.orbitKey) then
 			self.theShip:orbit( dt )
-		end
-		--Stop thrust OR reverse thrust.  NOT both.
-		if love.keyboard.isDown(self.stopThrustKey) then
-			self.theShip:stopThrust( dt )
-		elseif love.keyboard.isDown(self.reverseKey) then
-			self.theShip:reverse()
 		end
 		--Activate the ship's warpdrive if needed.
 		self.theShip:warpDrive()
@@ -142,12 +138,12 @@ function playerShip:getBody()
 	return self.theShip:getBody()
 end
 
--- the player's ship
+--Passes the player's ship up the stack
 function playerShip:getShip()
 	return self.theShip
 end
 
--- the player's new missiles
+--Passes new missiles up the stack
 function playerShip:getNewMissiles()
 	local returnMissiles = {}
 	returnMissiles = self.newMissiles
@@ -156,7 +152,7 @@ function playerShip:getNewMissiles()
 	return returnMissiles
 end
 
--- the player's remaining missiles
+--Returns the players remaining missiles.
 function playerShip:getMissileBank()
 	return self.missileBank
 end

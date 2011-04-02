@@ -31,8 +31,9 @@ require "util/button.lua"
 
 pause = class:new(...)
 
-function pause:init(aGame)
-	temp = aGame
+function pause:init(aGame, aControlBag)
+	self.temp = aGame
+	self.tempControl = aControlBag
 	self.buttons = {resume = button:new("Resume", 400, 250),
 					quit = button:new("Quit", 400, 350)}
 end
@@ -47,10 +48,10 @@ function pause:mousepressed(x, y, button)
 	for n,b in pairs(self.buttons) do
 		if b:mousepressed(x,y,buttons) then
 			if n == "resume" then
-				state = temp
+				state = self.temp
 			elseif n == "quit" then
-				temp:destroy()
-				state = menu:new()
+				self.temp:destroy()
+				state = menu:new(self.tempControl)
 			end
 		end
 	end
@@ -64,6 +65,6 @@ end
 
 function pause:keypressed(key)
 	if key == "escape" then
-		state = temp
+		state = self.temp
 	end
 end

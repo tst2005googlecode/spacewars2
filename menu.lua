@@ -32,8 +32,9 @@ require "controls.lua"
 
 menu = class:new(...)
 
-function menu:init()
-	self.buttons = 
+function menu:init(aControlBag)
+	self.controlBag = aControlBag
+	self.buttons =
     {
         new     = button:new("New Game", 400, 250),
 		options = button:new("Options",  400, 350),
@@ -51,9 +52,9 @@ function menu:mousepressed(x, y, button)
 	for n,b in pairs(self.buttons) do
 		if b:mousepressed(x,y,buttons) then
 			if n == "new" then
-				state = game:new()
+				state = game:new(self.controlBag)
 			elseif n == "options" then
-				state = options:new()
+				state = options:new(self.controlBag)
 			elseif n == "exit" then
 				love.event.push("q")
 			end

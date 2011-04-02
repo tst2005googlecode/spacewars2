@@ -48,7 +48,7 @@ local screenX = love.graphics.getWidth()
 local screenY = love.graphics.getHeight()
 -- Bag variables
 local theCoordBag
-local theConfigBag
+local theControlBag
 -- Box2D holder variables
 local theWorld
 local thePlayer
@@ -111,7 +111,7 @@ debug = ""
 game = class:new(...)
 
 
-function game:init( coord, control )
+function game:init( aControlBag, coord )
 	-- set to full screen
 	--local modes = love.graphics.getModes()
     --love.graphics.setMode( modes[#modes].width, modes[#modes].height, true, false, 0 )
@@ -146,15 +146,15 @@ function game:init( coord, control )
 
 	-- create controls and player ship
 	theCoordBag = coordBag:new(minX,maxX,screenX,minY,maxY,screenY)
-	theConfigBag = controlBag:new("w","a","s","d","q","e","r","NORMAL",100000)
-	thePlayer = playerShip:new( theWorld, maxX/4, maxY/4, math.random() * maxAngle, theCoordBag, theConfigBag )
+	theControlBag = aControlBag
+	thePlayer = playerShip:new( theWorld, maxX/4, maxY/4, math.random() * maxAngle, theCoordBag, theControlBag )
 	ships[#ships + 1] = thePlayer:getShip()
 	shipCount = shipCount + 1
 --	game:addDrawable( thePlayer )
 	game:addUpdatable( thePlayer )
 
     -- create a dummy ship
-    ai = aiShip:new( theWorld, theCoordBag, { mass = 100000 } )
+    ai = aiShip:new( theWorld, theCoordBag, theControlBag)
 	ships[#ships + 1] = aiShip:getShip()
 	shipCount = shipCount + 1
 --	game:addDrawable( ai )
@@ -465,7 +465,7 @@ function game:keypressed( key, code )
 	end
 	--Escape key opens the pause menu.
 	if key == "escape" then
-		state = pause:new( game )
+		state = pause:new( game, theControlBag )
 	else
 		--Handle camera adjustments.
 		theCamera:keypressed(key)

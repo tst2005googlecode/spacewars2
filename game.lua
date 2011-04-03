@@ -384,7 +384,7 @@ function game:keypressed( key, code )
 	end
 	--Escape key opens the pause menu.
 	if key == "escape" then
-		state = pause:new( game, theControlBag )
+		state = pause:new( game, theConfigBag )
 	else
 		--Handle camera adjustments.
 		theCamera:keypressed(key)

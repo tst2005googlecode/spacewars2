@@ -28,42 +28,62 @@ The radar covers a radius from the center, which is the playerShip.
 The scale of the radar is the diameter divided by the radar's size.
 --]]
 require "util/camera.lua"
+require "subclass/class.lua"
 radar = class:new(...)
-local size = 100
+
+--The width and height of the radar
+local size = 120
+
+--Colors used to build the radar
+local frameColor = {255,255,255}
+local bgColor = {0,0,0,128}
+local playerColor = {255,255,255}
+local aiColor = {255,0,0}
+local missileColor = {255,165,0}
+local solarColor = {34,139,34}
+local debrisColor = {205,133,63,255}
 
 function radar:construct(theRadius,theBody)
-	self.offX = 5
-	self.offY = 5
+	self.offX = 0
+	self.offY = 0
 	self.radius = theRadius
 	self.body = theBody
 	self.scale = (self.radius*2)/size
 end
 
 function radar:draw(obj_table)
-	love.graphics.setColor(255,255,255)
-	love.graphics.rectangle("line",self.offX-5,self.offX-5,size+15,size+15)
-	for id, obj in pairs(obj_table) do
-		theType = obj:getType() or "n/a"
-		if(theType == "playerShip") then
-			self:drawPlayer(obj)
-		elseif(theType == "solarMass") then
+	love.graphics.setColor(frameColor)
+	love.graphics.rectangle("line",self.offX,self.offY,size+10,size+10)
+	love.graphics.setColor(bgColor)
+	love.graphics.rectangle("fill",self.offX+1,self.offY+1,size+9,size+9)
+	for i,obj in ipairs(obj_table) do
+		theType = obj:getType()
+		if(theType == "solarMass") then
+			love.graphics.setColor(solarColor)
 			self:drawSolar(obj)
+		elseif(theType == "playerShip") then
+			love.graphics.setColor(playerColor)
+			self:drawGeneric(obj)
 		elseif(theType == "aiShip") then
-			self:drawAI(obj)
+			love.graphics.setColor(aiColor)
+			self:drawGeneric(obj)
 		elseif(theType == "missile") then
-			self:drawMissile(obj)
+			love.graphics.setColor(missileColor)
+			self:drawGeneric(obj)
+		elseif(theType == "debris") then
+			love.graphics.setColor(debrisColor)
+			self:drawGeneric(obj)
 		end
 	end
 end
 
-function radar:drawPlayer(obj)
+function radar:drawGeneric(obj)
 	local x = obj:getX()
 	local y = obj:getY()
 	local theRad = 1
 	if(self:checkBounds(x,y) == true) then
 		x = (obj:getX() - self.body:getX() + self.radius)/self.scale
 		y = (obj:getY() - self.body:getY() + self.radius)/self.scale
-		love.graphics.setColor(255,255,255)
 		love.graphics.circle("fill",self.offX + x, self.offY + y, theRad, 10)
 	end
 end
@@ -77,31 +97,6 @@ function radar:drawSolar(obj)
 		y = (obj:getY() - self.body:getY() + self.radius)/self.scale
 		theRad = theRad/self.scale
 		if(theRad < 1) then theRad = 1 end
-		love.graphics.setColor(34,139,34)
-		love.graphics.circle("fill",self.offX + x, self.offY + y, theRad, 10)
-	end
-end
-
-function radar:drawAI(obj)
-	local x = obj:getX()
-	local y = obj:getY()
-	local theRad = 1
-	if(self:checkBounds(x,y) == true) then
-		x = (obj:getX() - self.body:getX() + self.radius)/self.scale
-		y = (obj:getY() - self.body:getY() + self.radius)/self.scale
-		love.graphics.setColor(255,0,0)
-		love.graphics.circle("fill",self.offX + x, self.offY + y, theRad, 10)
-	end
-end
-
-function radar:drawMissile(obj)
-	local x = obj:getX()
-	local y = obj:getY()
-	local theRad = 1
-	if(self:checkBounds(x,y) == true) then
-		x = (obj:getX() - self.body:getX() + self.radius)/self.scale
-		y = (obj:getY() - self.body:getY() + self.radius)/self.scale
-		love.graphics.setColor(255,165,0)
 		love.graphics.circle("fill",self.offX + x, self.offY + y, theRad, 10)
 	end
 end
@@ -118,8 +113,6 @@ function radar:checkBounds(x,y)
 	end
 	return false
 end
-
---]]
 
 --[[ THIS VERSION OF DRAWPLAYER/SOLAR RENDERS THE ENTIRE WORLD IN THE RADAR
 function radar:drawPlayer(obj)

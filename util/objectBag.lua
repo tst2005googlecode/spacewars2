@@ -70,7 +70,6 @@ function objectBag:getNew( ... )
 	local anObject
 	if #self.recycled > 0 then -- reuse an object
 		anObject = table.remove( self.recycled )
-		print( "reuse ", anObject.index )
 		anObject:activate()
 		if anObject.init then
 			anObject:init( ... )

@@ -2,6 +2,7 @@ require "subclass/class.lua"
 require "util/bodyObject.lua"
 
 local color
+local mass = 10
 
 missile = bodyObject:new(...)
 
@@ -12,8 +13,9 @@ function missile:construct(aWorld, x, y, startAngle, aCoordBag, shipConfig, xVel
 	self.minX,self.maxX,self.screenX,self.minY,self.maxY,self.screenY = aCoordBag:getCoords()
 	self.missilePoly:setSensor(true)
 	self.missilePoly:setData( self )
+	self.holdTime = 5
 	self.data = {}
-	self.data.objectType = types.missile
+	self.objectType = types.missile
 
 	self:init( aWorld, x, y, startAngle, aCoordBag, shipConfig, xVel, yVel )
 end
@@ -24,8 +26,8 @@ function missile:init(aWorld, x, y, startAngle, aCoordBag, shipConfig, xVel, yVe
 	self.body:setLinearVelocity(xVel,yVel)
 	self.body:setPosition( x, y )
 
-	self.baseThrust = 10 * 100
-	self.baseTorque = 10 ^ 3 * 10000
+	self.baseThrust = mass * 100
+	self.baseTorque = mass ^ 3 * 10000
 	self.easyTurn = 0.005 / timeScale
 
 	self.color = shipConfig.color
@@ -45,26 +47,31 @@ function missile:draw()
 	if self.isActive then
 		love.graphics.setColor( unpack( self.color ) )
 		love.graphics.polygon("line", self.missilePoly:getPoints())
-	else
-		print( "missile not drawn" )
 	end
 end
 
 function missile:update(dt)
+	--[[if(self.data.status == "DEAD") then
+		--Hold down timer to make sure EVERYTHING stops referencing it
+		if(self.holdTime > 0) then
+			self.holdTime = self.holdTime - 1
+		else
+			self:destroy()
+		end
+		return
+	end--]]
 	--Missiles can't reliably track over the border, so it self-destructs safely
 	if(self:offedge() == true) then
 		self:destroy()
-		print( "missile off edge" )
 	--Missile has fuel to thrust with
 	elseif(self.fuel > 0) then
 		self:thrust()
-		self.fuel = self.fuel - 1
+		self.fuel = self.fuel - (1000 * dt)
 	--Missile drifts until killswitch time elapses
 	elseif(self.killswitch > 0) then
-		self.killswitch = self.killswitch - 1
+		self.killswitch = self.killswitch - (1000 * dt)
 	else -- out of time:  self destruct
 		self:destroy()
-		print( "missile out of time" )
 	end
 end
 

@@ -1,10 +1,14 @@
 require "menu.lua"
+require "util/controlBag.lua"
 
 sWidth, sHeight = 800, 600
 config = {}
 state = {} --this is what gets called into action, whether that be the game, level editor, whatever...
+local theControlBag = controlBag:new("w","a","s","d","q","e","r","NORMAL",100000)
 
 function love.load()
+	-- Set the directory before we even try to do anything!
+	love.filesystem.setIdentity("Spacewars!II")
 	--Resources
 	color = {	background = {240,243,247},
 				main = {63,193,245},
@@ -31,7 +35,7 @@ function love.load()
 	love.graphics.setBackgroundColor(0,0,0)
 	love.graphics.setMode(sWidth, sHeight, false, false, 0)
 
-	state = menu:new()
+	state = menu:new(theControlBag)
 end
 
 function love.update(dt)

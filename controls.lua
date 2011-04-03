@@ -26,23 +26,30 @@ This class implements the controls menu for Spacewars!II.
 
 require "subclass/class.lua"
 require "util/button.lua"
+require "util/controlBag.lua"
 
 controls = class:new()
 
-function controls:construct()
-	self.buttons = {thrustforward = button:new("Thrust Forward", 400, 100),
-						thrustreverse = button:new("Thrust Reverse" ,400, 150),
-						rotateleft	= button:new("Rotate Left"  , 400, 200),
-						rotateright = button:new("Rotate Right", 400, 250),
-						stoprotate = button:new("Stop Rotate", 400, 300),
-						Stopallmotion = button:new("Stop All Motion", 400,350),
-						back = button:new("Back" , 400, 550)
-}
+function controls:construct(aControlBag)
+	self.control = {}
+	self.control["Thrust"] = aControlBag:getThrust()
 
+	self.buttons = {Thrust = button:new("Thrust = " .. self.control["Thrust"], 400, 100),
+					Reverse = button:new("Reverse" ,400, 150),
+					Left    = button:new("Left"  , 400, 200),
+					Right = button:new("Right", 400, 250),
+					StopTurn = button:new("StopTurn", 400, 300),
+					StopMotion = button:new("StopMotion", 400,350),
+					Back = button:new("Back" , 400, 550)}
+	self.needInput = false
+	self.change = ""
 end
 
 function controls:draw()
-love.graphics.setFont(font["small"])
+	love.graphics.setFont(font["small"])
+	if(self.needInput == true) then
+		love.graphics.print("Please enter the key for " .. self.change,100,450)
+	end
 	for n,b in pairs(self.buttons) do
 		b:draw()
 	end
@@ -55,11 +62,15 @@ function controls:update(dt)
 end
 
 function controls:mousepressed(x,y,button)
-	for n,b in pairs(self.buttons) do
+	if(self.needInput == false) then
+		for n,b in pairs(self.buttons) do
 			if b:mousepressed(x,y,button) then
-				if n == "back" then
-						   state = menu:new()
-				
+				if n == "Back" then
+					self:back()
+				else
+					self.needInput = true
+					self.change = n
+				end
 			end
 		end
 	end
@@ -67,6 +78,16 @@ end
 
 function controls:keypressed(key)
 	if key == "escape" then
+		self:back()
 		state = menu:new()
+	elseif self.needInput == true then
+		self.control[self.change] = key
+		self.needInput = false
+		self.buttons[self.change]:changeText(self.change .. " = " .. self.control[self.change])
 	end
+end
+
+function controls:back()
+	local theControlBag = controlBag:new(self.control["Thrust"],"a","s","d","q","e","r","NORMAL",100000)
+	state = menu:new(theControlBag)
 end

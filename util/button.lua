@@ -71,3 +71,7 @@ if self.hover then
 	end
 	return false
 end
+
+function button:changeText(theText)
+	self.text = theText
+end

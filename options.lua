@@ -20,6 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
 options.lua
+require "utils/controlBag.lua"
 
 This class implements the options menu for Spacewars!II.
 --]]
@@ -29,14 +30,13 @@ require "util/button.lua"
 
 options = class:new()
 
-function options:construct()
+function options:construct(aControlBag)
 	self.buttons = {controls = button:new("Controls", 400, 350),
-                          game = button:new("Game" , 400, 500)}   
- 
+					game = button:new("Game" , 400, 500)}
+	self.controlBag = aControlBag
 end
 
 function options:draw()
- 
 	for n,b in pairs(self.buttons) do
 		b:draw()
 	end
@@ -52,9 +52,9 @@ function options:mousepressed(x,y,button)
 	for n,b in pairs(self.buttons) do
 		if b:mousepressed(x,y,button) then
 			if n == "controls" then
-				state = controls:new()
-                        elseif n == "game" then
-                               state = menu:new()
+				state = controls:new(self.controlBag)
+			elseif n == "game" then
+				state = menu:new(self.controlBag)
 			end
 		end
 	end
@@ -62,6 +62,6 @@ end
 
 function options:keypressed(key)
 	if key == "escape" then
-		state = menu:new()
+		state = menu:new(self.controlBag)
 	end
 end

@@ -33,6 +33,7 @@ require "util/camera.lua"
 require "util/coordBag.lua"
 require "util/controlBag.lua"
 require "util/objectBag.lua"
+require "util/debris.lua"
 require "util/radar.lua"
 require "pause.lua"
 
@@ -62,12 +63,14 @@ local minY = 0
 -- Coordinate variables holding max x,y World coordinates
 local maxX = 32768
 local maxY = 32768
+--local maxX = 16384
+--local maxY = 16384
 -- Coordinate variables holding max x,y Screen coordinates
 local screenX = love.graphics.getWidth()
 local screenY = love.graphics.getHeight()
 -- Bag variables
 local theCoordBag
-local theConfigBag
+theConfigBag = {}
 -- Box2D holder variables
 local theWorld
 local thePlayer
@@ -100,7 +103,7 @@ local needRespawn
 
 game = class:new(...)
 
-function game:construct( coord, control )
+function game:construct( aControlBag, coord )
 	-- set selected screen resolution
 	--local modes = love.graphics.getModes()
 	--love.graphics.setMode( modes[#modes].width, modes[#modes].height, true, false, 0 )
@@ -147,7 +150,7 @@ function game:construct( coord, control )
 
 	-- configure controls and player ship
 	theCoordBag = coordBag:new(minX,maxX,screenX,minY,maxY,screenY)
-	theConfigBag = controlBag:new("w","a","s","d","q","e","r","EASY",100000)
+	theConfigBag = aControlBag
 	theConfigBag["color"] = color["ship"]
 	theConfigBag["shipType"] = "playerShip"
 	theConfigBag:setStartPosition( game:randomeStartLocation() )
@@ -158,6 +161,12 @@ function game:construct( coord, control )
 	-- setup the camera and HUD elements
 	theCamera = camera:new( theCoordBag, aShip.body )
 	theRadar = radar:new( radarRadius, aShip.body )
+
+	-- create all the debris
+	for i = 1, 100 do
+		local aDebris = debris:new( theWorld, theCoordBag )
+		game:addActive( aDebris )
+	end
 
 	-- create enemy ship(s)
 	theConfigBag = copyTable( theConfigBag )
@@ -293,7 +302,7 @@ function game:draw()
 
 	-- If the player ship has crashed, then tell the user what to do.
 	if(needRespawn == true) then
-		local text = "You have crashed, please press Enter to respawn!"
+		local text = "Your ship is destroyed, please press Enter to respawn!"
 		love.graphics.setFont(font["default"])
 		local textWidth = font["default"]:getWidth(text)
 		local xPos = (screenX - textWidth)/2
@@ -375,7 +384,7 @@ function game:keypressed( key, code )
 	end
 	--Escape key opens the pause menu.
 	if key == "escape" then
-		state = pause:new( game )
+		state = pause:new( game, theControlBag )
 	else
 		--Handle camera adjustments.
 		theCamera:keypressed(key)
@@ -405,31 +414,42 @@ end
 
 --Callback function to handle collisions based on object type.
 function add( a, b, coll )
-	if a.data.objectType == types.ship then
+	if a.objectType == types.ship then
 		shipCollide( a, b )
-	elseif b.data.objectType == types.ship then
+	elseif b.objectType == types.ship then
 		shipCollide( b, a )
-	elseif a.data.objectType == types.missile then
+	elseif a.objectType == types.missile then
 		missileCollide( a, b )
-	elseif b.data.objectType == types.missile then
+	elseif b.objectType == types.missile then
 		missileCollide( b, a )
+	elseif a.objectType == types.laser then
+		laserCollide( a, b )
+	elseif b.objectType == types.laser then
+		laserCollide( b, a )
+	elseif a.objectType == types.debris then
+		debrisCollide( a, b )
+	elseif b.objectType == types.debris then
+		debrisCollide( b, a )
 	end
 end
 
 --Handles player collisions. Set needRespawn = true whenever player ship is destroyed.
 function shipCollide( a, b )
-	if b.data.objectType == types.solarMass then
+	if b.objectType == types.solarMass then
 		a:destroy()
 		if a.controller == thePlayer then
 			needRespawn = true
 		end
-	elseif b.data.objectType == types.ship then
+	elseif b.objectType == types.ship then
 		a:destroy()
 		b:destroy()
 		needRespawn = true
-	elseif b.data.objectType == types.debris then
-	elseif b.data.objectType == types.laser then
-	elseif b.data.objectType == types.missile then
+	elseif b.objectType == types.debris then
+		b:respawn()
+	elseif b.objectType == types.laser then
+		a:destroy()
+		b:destroy()
+	elseif b.objectType == types.missile then
 		if b.data.owner ~= a.data.owner then
 			a:destroy()
 			b:destroy()
@@ -442,15 +462,38 @@ end
 
 -- missile collisions with other objects
 function missileCollide( a, b )
-	if b.data.objectType == types.solarMass then
+	if b.objectType == types.solarMass then
 		a:destroy()
-		missiles:recycle( a )
-	elseif b.data.objectType == types.debris then
-	elseif b.data.objectType == types.laser then
-	elseif b.data.objectType == types.missile then
+	elseif b.objectType == types.debris then
+		a:destroy()
+		b:respawn()
+	elseif b.objectType == types.laser then
+		a:destroy()
+		b:destroy()
+	elseif b.objectType == types.missile then
 		if a.owner ~= b.owner then
 			a:destroy()
 			b:destroy()
 		end
+	end
+end
+
+function laserCollide(a,b)
+	if b.objectType == types.solarMass then
+		a:destroy()
+	--Lasers disipate on debris
+	elseif b.objectType == types.debris then
+		a:destroy()
+	elseif b.objectType == types.laser then
+		-- laser beams can't hurt each other
+	end
+end
+
+function debrisCollide(a,b)
+	if b.objectType == types.solarMass then
+		a:respawn()
+	elseif b.objectType == types.debris then
+		a:respawn()
+		b:respawn()
 	end
 end

@@ -79,6 +79,7 @@ function ship:construct( theWorld, controlledBy, aCoordBag, shipConfig )
 
 --	self.shipPoly:setMask(1)
 	self.shipPoly:setSensor(true)
+	self.shipPoly:setData( self )
 	self.color = shipConfig.color
 
 	--store the world for laser and missile creation
@@ -86,10 +87,9 @@ function ship:construct( theWorld, controlledBy, aCoordBag, shipConfig )
 
 	--ship data, has a default of SHIP for self.data.status which should be overwritten
 	self.data = {}
-	self.data.objectType = types.ship
+	self.objectType = types.ship
 	self.data.owner = self.controller
-	self.data.armor = 12500
-	self.shipPoly:setData( self )
+	self.data.armor = 10000
 	self.data.missiles = {}
 	self.data.newMissiles = {}
 	self.data.missileBank = 10
@@ -387,6 +387,7 @@ function ship:respawn()
 	self.body:setAngle(angle)
 	self.body:setLinearVelocity(0,0)
 	self.body:setAngularVelocity(0)
+	self.data.armor = 10000
 end
 
 --[[] Returns the ship body for use by other classes, such as a camera!

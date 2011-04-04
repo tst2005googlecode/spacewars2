@@ -63,32 +63,64 @@ function controlBag:getThrust()
 	return self.thrust
 end
 
+function controlBag:setThrust(key)
+	self.thrust = key
+end
+
 function controlBag:getLeft()
 	return self.left
+end
+
+function controlBag:setLeft(key)
+	self.left = key
 end
 
 function controlBag:getReverse()
 	return self.reverse
 end
 
+function controlBag:setReverse(key)
+	self.reverse = key
+end
+
 function controlBag:getRight()
 	return self.right
+end
+
+function controlBag:setRight(key)
+	self.right = key
 end
 
 function controlBag:getStopTurn()
 	return self.stopTurn
 end
 
+function controlBag:setStopTurn(key)
+	self.stopTurn = key
+end
+
 function controlBag:getStopThrust()
 	return self.stopThrust
+end
+
+function controlBag:setStopThrust()
+	self.stopThrust = key
 end
 
 function controlBag:getTurn()
 	return self.turn
 end
 
+function controlBag:setTurn(aString)
+	self.turn = aString
+end
+
 function controlBag:getOrbit()
 	return self.orbit
+end
+
+function controlBag:setOrbit(key)
+	self.orbit = key
 end
 
 function controlBag:getAllControls()
@@ -99,6 +131,10 @@ end
 
 function controlBag:getMass()
 	return self.mass
+end
+
+function controlBag:setMass(number)
+	self.mass = number
 end
 
 function controlBag:setStartPosition( pStartX, pStartY, pStartAngle )

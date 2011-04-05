@@ -164,7 +164,7 @@ function game:construct( aControlBag, coord )
 
 	-- create all the debris
 	for i = 1, 100 do
-		local aDebris = debris:new( theWorld, theCoordBag )
+		local aDebris = junk:getNew( theWorld, theCoordBag, "", 0, 0 )
 		game:addActive( aDebris )
 	end
 
@@ -445,7 +445,7 @@ function shipCollide( a, b )
 		b:destroy()
 		needRespawn = true
 	elseif b.objectType == types.debris then
-		b:respawn()
+		b:destroy()
 	elseif b.objectType == types.laser then
 		a:destroy()
 		b:destroy()
@@ -466,7 +466,7 @@ function missileCollide( a, b )
 		a:destroy()
 	elseif b.objectType == types.debris then
 		a:destroy()
-		b:respawn()
+		b:destroy()
 	elseif b.objectType == types.laser then
 		a:destroy()
 		b:destroy()
@@ -491,9 +491,9 @@ end
 
 function debrisCollide(a,b)
 	if b.objectType == types.solarMass then
-		a:respawn()
+		a:destroy()
 	elseif b.objectType == types.debris then
-		a:respawn()
-		b:respawn()
+		a:destroy()
+		b:destroy()
 	end
 end

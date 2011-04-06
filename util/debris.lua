@@ -151,14 +151,12 @@ end
 function debris:warp()
 	if(self.body:getX() > self.coord:getMaxX()) then
 		self.body:setX(self.coord:getMinX())
-	end
-	if(self.body:getX() < self.coord:getMinX()) then
+	elseif(self.body:getX() < self.coord:getMinX()) then
 		self.body:setX(self.coord:getMaxX())
 	end
 	if(self.body:getY() > self.coord:getMaxY()) then
 		self.body:setY(self.coord:getMinY())
-	end
-	if(self.body:getY() < self.coord:getMinY()) then
+	elseif(self.body:getY() < self.coord:getMinY()) then
 		self.body:setY(self.coord:getMaxY())
 	end
 end

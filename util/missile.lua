@@ -95,14 +95,12 @@ end
 function missile:offedge()
 	if(self.body:getX() > self.maxX) then
 		return true
-	end
-	if(self.body:getX() < self.minX) then
+	elseif(self.body:getX() < self.minX) then
 		return true
 	end
 	if(self.body:getY() > self.maxY) then
 		return true
-	end
-	if(self.body:getY() < self.minY) then
+	elseif(self.body:getY() < self.minY) then
 		return true
 	end
 	return false

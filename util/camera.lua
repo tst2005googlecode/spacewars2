@@ -76,14 +76,12 @@ function camera:adjust()
 	local currentY = ((self.maxY - self.screenY/self.zoom) / 2) + (self.myBody:getY() - (self.maxY / 2))
 	if currentX < self.minX then
 		currentX = self.minX
-	end
-	if currentX > (self.maxX - self.screenX/self.zoom) then
+	elseif currentX > (self.maxX - self.screenX/self.zoom) then
 		currentX = self.maxX - self.screenX/self.zoom
 	end
 	if currentY < self.minY then
 		currentY = self.minY
-	end
-	if currentY > (self.maxY - self.screenY/self.zoom) then
+	elseif currentY > (self.maxY - self.screenY/self.zoom) then
 		currentY = self.maxY - self.screenY/self.zoom
 	end
 	return currentX, currentY, self.zoom

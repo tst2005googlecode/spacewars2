@@ -57,48 +57,44 @@ function radar:draw(obj_table)
 	love.graphics.setColor(bgColor)
 	love.graphics.rectangle("fill",self.offX+1,self.offY+1,size+9,size+9)
 	for i,obj in ipairs(obj_table) do
-		theType = obj:getType()
-		if(theType == "solarMass") then
-			love.graphics.setColor(solarColor)
-			self:drawSolar(obj)
-		elseif(theType == "playerShip") then
-			love.graphics.setColor(playerColor)
-			self:drawGeneric(obj)
-		elseif(theType == "aiShip") then
-			love.graphics.setColor(aiColor)
-			self:drawGeneric(obj)
-		elseif(theType == "missile") then
-			love.graphics.setColor(missileColor)
-			self:drawGeneric(obj)
-		elseif(theType == "debris") then
-			love.graphics.setColor(debrisColor)
-			self:drawGeneric(obj)
+		local x = obj:getX()
+		local y = obj:getY()
+		if(self:checkBounds(x,y) == true) then
+			theType = obj:getType()
+			if(theType == "solarMass") then
+				love.graphics.setColor(solarColor)
+				self:drawSolar(obj)
+			elseif(theType == "playerShip") then
+				love.graphics.setColor(playerColor)
+				self:drawGeneric(obj)
+			elseif(theType == "aiShip") then
+				love.graphics.setColor(aiColor)
+				self:drawGeneric(obj)
+			elseif(theType == "missile") then
+				love.graphics.setColor(missileColor)
+				self:drawGeneric(obj)
+			elseif(theType == "debris") then
+				love.graphics.setColor(debrisColor)
+				self:drawGeneric(obj)
+			end
 		end
 	end
 end
 
 function radar:drawGeneric(obj)
-	local x = obj:getX()
-	local y = obj:getY()
 	local theRad = 1
-	if(self:checkBounds(x,y) == true) then
-		x = (obj:getX() - self.body:getX() + self.radius)/self.scale
-		y = (obj:getY() - self.body:getY() + self.radius)/self.scale
-		love.graphics.circle("fill",self.offX + x, self.offY + y, theRad, 10)
-	end
+	local x = (obj:getX() - self.body:getX() + self.radius)/self.scale
+	local y = (obj:getY() - self.body:getY() + self.radius)/self.scale
+	love.graphics.circle("fill",self.offX + x, self.offY + y, theRad, 10)
 end
 
 function radar:drawSolar(obj)
-	local x = obj:getX()
-	local y = obj:getY()
 	local theRad = obj:getRadius()
-	if(self:checkBounds(x,y) == true) then
-		x = (obj:getX() - self.body:getX() + self.radius)/self.scale
-		y = (obj:getY() - self.body:getY() + self.radius)/self.scale
-		theRad = theRad/self.scale
-		if(theRad < 1) then theRad = 1 end
-		love.graphics.circle("fill",self.offX + x, self.offY + y, theRad, 10)
-	end
+	local x = (obj:getX() - self.body:getX() + self.radius)/self.scale
+	local y = (obj:getY() - self.body:getY() + self.radius)/self.scale
+	theRad = theRad/self.scale
+	if(theRad < 1) then theRad = 1 end
+	love.graphics.circle("fill",self.offX + x, self.offY + y, theRad, 10)
 end
 
 function radar:checkBounds(x,y)

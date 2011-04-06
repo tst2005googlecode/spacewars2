@@ -38,10 +38,10 @@ function controls:construct(aControlBag)
         self.control["Right"] = aControlBag:getRight()
         self.control["StopTurn"] = aControlBag:getStopTurn()
         self.control["StopThurst"] = aControlBag:getStopThrust()
-        
-        
-         
-        
+
+
+
+
 
 	self.buttons = {Thrust =  button:new("Thrust = " .. self.control["Thrust"], 400, 100),
 			Reverse = button:new("Reverse = " .. self.control["Reverse"] ,400, 150),
@@ -98,6 +98,6 @@ end
 
 function controls:back()
 	local theControlBag = controlBag:new(self.control["Thrust"],self.control["Left"],self.control["Reverse"],
-                   self.control["Right"],self.control["StopTurn"],self.control["StopThurst"],"r","NORMAL",100000)
+                   self.control["Right"],self.control["StopTurn"],self.control["StopThrust"],"r","NORMAL",100000)
 	state = menu:new(theControlBag)
 end

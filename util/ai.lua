@@ -34,21 +34,21 @@ ai = class:new(...)
 
 --Function to instantiate the ship.
 function ai:construct()
-	self.cycles = 600
+	self.cycles = 1000
 	self.state = { respawn = false }
 end
 
-function ai:updateControls( shipState )
+function ai:updateControls( shipState, dt )
 	local commands = {}
 	-- AIs currently respawn instantaneously
 	if self.state.respawn then
 		commands[ #commands + 1 ] = "respawn"
 		self.state.respawn = false
-		self.cycles = 600
+		self.cycles = 1000
 	-- if the AI has time left, then it can still thrust
 	elseif self.cycles > 0 then
 		commands[ #commands + 1 ] = "thrust"
-		self.cycles = self.cycles - 1
+		self.cycles = self.cycles - dt * timeScale
 	end
 
 	return commands

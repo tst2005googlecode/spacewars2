@@ -57,7 +57,7 @@ function ship:construct( theWorld, controlledBy, aCoordBag, shipConfig )
 	self.shipType = shipConfig.shipType
 
 	-- initial angle is 0 (right), so point ship to the right
-	self.shipPoly = love.physics.newPolygonShape(self.body, 15, 0, -10, 10, -10, -10, -12, 0)
+	self.shipPoly = love.physics.newPolygonShape(self.body, 15, 0, -10, -10, -15, 0, -10, 10)
 	self.body:setAngle( shipConfig.startAngle )
 
 	--coordinate variables
@@ -69,9 +69,9 @@ function ship:construct( theWorld, controlledBy, aCoordBag, shipConfig )
 	-- these need to be set from shipConfig
 	self.maxLinearV = 30 --NOT CURRENTLY IN USE!
 	self.maxAngleV = 0.1 * timeScale
-	self.baseThrust = shipConfig.mass * 400
-	self.baseTorque = shipConfig.mass ^ 3 * 10000
-	self.easyTurn = 0.005 / timeScale
+	self.baseThrust = shipConfig.mass * 500
+	self.baseTorque = shipConfig.mass ^ 3 * 50000
+	self.easyTurn = 0.0000005 * timeScale
 
 	-- state controls for step turning
 	self.turnStep = 0
@@ -85,30 +85,38 @@ function ship:construct( theWorld, controlledBy, aCoordBag, shipConfig )
 	--store the world for laser and missile creation
 	self.world = theWorld
 
-	--ship data, has a default of SHIP for self.data.status which should be overwritten
+	--ship data
 	self.data = {}
 	self.objectType = types.ship
 	self.data.owner = self.controller
-	self.data.armor = 10000
-	self.data.missiles = {}
+	self.data.armor = 12500
+	self.data.missiles = {} -- active missiles
 	self.data.newMissiles = {}
 	self.data.missileBank = 10
+	self.data.laserEngaged = false
+	self.data.minimumLaserCharge = 1
+	self.data.laserCharge = 1
+	self.data.laserUse = 1
 end
 
 function ship:draw()
 	love.graphics.setColor( unpack( self.color ) )
-	love.graphics.polygon( "line", self.shipPoly:getPoints() )
+	love.graphics.polygon( "fill", self.shipPoly:getPoints() )
 end
 
 -- checks every dt seconds for commands, and execute the appropriate function
 function ship:update( dt )
-	local commands = self.controller:updateControls( self.data )
+	-- get commands from controller
+	local commands = self.controller:updateControls( self.data, dt )
+	-- check for respawn
 	if self.data.status == "DEAD" then
 		if commands[1] == "respawn" then
 			self:respawn()
 		end
 		return
 	end
+	-- charge laser
+	self.data.laserCharge = 1
 	-- checking for dead missiles is always a vaild operation
 	for i, aMissile in ipairs( self.data.missiles ) do
 		if not aMissile.isActive then
@@ -116,6 +124,7 @@ function ship:update( dt )
 			self.data.missileBank = self.data.missileBank + 1
 		end
 	end
+	-- execute all commands from controller
 	for i, command in ipairs( commands ) do
 		if command == "stop" then
 			self:stopThrust( dt )
@@ -140,10 +149,16 @@ function ship:update( dt )
 		elseif command == "orbit" then
 			self:orbit( dt )
 		elseif command == "launchMissile" then
-			self:launchMissile()
+			self:launchMissile( love.mouse.getX(), love.mouse.getY() )
 		elseif command == "engageLaser" then
-			self:engageLaser()
+			self.data.laserEngaged = true
+		elseif command == "disengageLaser" then
+			self.data.laserEngaged = false
 		end
+	end
+	-- start/continue laser beam
+	if self.data.laserEngaged then
+		self:engageLaser( dt, love.mouse.getX(), love.mouse.getY() )
 	end
 	-- accelerate turn if turning
 	if self.turnAccel then
@@ -329,16 +344,32 @@ function ship:destroy()
 	self.controller.state.respawn = true
 end
 
--- engage laser
-function ship:engageLaser()
+-- engage laser, if sufficient laser charge/energy
+function ship:engageLaser( dt, x2, y2, endOfBeam )
+	-- track usage ... return if insufficient charge/energy
+	if self.data.laserCharge >= self.data.minimumLaserCharge then
+		self.data.laserCharge = self.data.laserCharge - self.data.laserUse * timeScale * dt
+	else
+		return
+	end
+	-- create a laser beam "particle"
+	local x1 = self.body:getX()
+	local y1 = self.body:getY()
+--	print( theCamera:getX() + x2, theCamera:getY() + y2 )
+	local angle = pointAngle( x1, y1, theCamera:getX() + x2 / theCamera.zoom, theCamera:getY() + y2 / theCamera.zoom )
+	local xVel = math.cos( angle ) * lightSpeed
+	local yVel = math.sin( angle ) * lightSpeed
+	local aLaserBeam = lasers:getNew( self.world, x1, y1, angle, self.coordBag, self, xVel, yVel )
+	aLaserBeam:setOwner( self.controller )
+	game:addActive( aLaserBeam )
 end
 
 -- launch a missile
-function ship:launchMissile( target ) -- target TODO
+function ship:launchMissile( x, y )
 	if self.data.missileBank > 0 then
 		local angle = self.body:getAngle()
-		local x = self.body:getX() + math.cos( angle ) * 25
-		local y = self.body:getY() + math.sin( angle ) * 25
+		local x = self.body:getX() -- + math.cos( angle ) * 25
+		local y = self.body:getY() -- + math.sin( angle ) * 25
 		local xVel, yVel = self.body:getLinearVelocity()
 		local aMissile = missiles:getNew( self.world, x, y, angle, self.coordBag, self.shipConfig, xVel, yVel )
 		aMissile:setOwner( self.controller )
@@ -346,7 +377,6 @@ function ship:launchMissile( target ) -- target TODO
 		self.data.newMissiles[ #self.data.newMissiles + 1 ] = aMissile
 		self.data.missileBank = self.data.missileBank - 1
 		game:addActive( aMissile )
-		print ( "launchedMissile" )
 	end
 end
 

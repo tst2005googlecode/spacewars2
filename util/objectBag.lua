@@ -38,6 +38,7 @@ local recycled    -- object references that are recycled
 objectBag = class:new(...)
 
 function objectBag:construct( anObjectClass )
+	assert( anObjectClass ~= nil, "class object is nil" )
 	self.objectClass = anObjectClass
 	self.objects = {}
 	self.recycled = {}
@@ -55,9 +56,9 @@ function objectBag:getRecycled()
 	return self.recycled
 end--]]
 
--- recycle an object no longer in play
+-- recycle an object no longer in play; assumes object is correct type
 function objectBag:recycle( anObject )
-	self.recycled[ #self.recycled + 1 ] = self.objects[ anObject.index ]
+	self.recycled[ #self.recycled + 1 ] = anObject -- self.objects[ anObject.index ]
 end
 
 -- returns number of objects created
@@ -69,7 +70,7 @@ end
 function objectBag:getNew( ... )
 	local anObject
 	if #self.recycled > 0 then -- reuse an object
-		anObject = table.remove( self.recycled )
+		anObject = table.remove( self.recycled, #self.recycled )
 		anObject:activate()
 		if anObject.init then
 			anObject:init( ... )

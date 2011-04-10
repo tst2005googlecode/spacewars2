@@ -32,6 +32,7 @@ require "util/button.lua"
 pause = class:new(...)
 
 function pause:construct(aGame, aControlBag)
+	love.mouse.setVisible( true ) -- hide the mouse cursor
 	self.temp = aGame
 	self.tempControl = aControlBag
 	self.buttons = {resume = button:new("Resume", 400, 250),
@@ -49,6 +50,7 @@ function pause:mousepressed(x, y, button)
 		if b:mousepressed(x,y,buttons) then
 			if n == "resume" then
 				state = self.temp
+				love.mouse.setVisible( false ) -- hide the mouse cursor
 			elseif n == "quit" then
 				self.temp:destroy()
 				state = menu:new(self.tempControl)
@@ -66,5 +68,6 @@ end
 function pause:keypressed(key)
 	if key == "escape" then
 		state = self.temp
+		love.mouse.setVisible( false ) -- hide the mouse cursor
 	end
 end

@@ -29,30 +29,24 @@ require "subclass/class.lua"
 debris = bodyObject:new(...)
 
 local color = {205,133,63,255}
+local mass = 0
 
 function debris:construct(aWorld, aCoordBag, location, x, y)
 	self.coord = aCoordBag
 	self.world = aWorld
 	self.data = {}
 	self.objectType = types.debris
-	self.mass = math.random(100000, 100000000)
-	self.body = love.physics.newBody(self.world, 0, 0, self.mass, 1)
+	self.body = love.physics.newBody(self.world, 0, 0, 1, 1)
 	self.shape = love.physics.newRectangleShape( self.body, 0, 0, 12, 12, math.random() * maxAngle)
-	self.isActive = true
-	if(location == "border") then
-		self:respawnBorder()
-	elseif(location == "ship") then
-		self:respawnShip(x,y)
-	else
-		self:respawnRandom()
-	end
-	self.shape:setData(self)
-	self.shape:setSensor(true)
+	self.shape:setData( self )
+
+	self:init( aWorld, aCoordBag, location, x, y )
 end
 
 function debris:init(aWorld, aCoordBag, location, x, y)
 	self.mass = math.random(100000,100000000)
-	self.body:setMass(self.mass)
+	self.body:setMass( 0, 0, self.mass, self.mass * ( 100000 ^ 2 ) / 6 )
+	self.body:wakeUp()
 	self.isActive = true
 	if(location == "border") then
 		self:respawnBorder()
@@ -62,7 +56,8 @@ function debris:init(aWorld, aCoordBag, location, x, y)
 		self:respawnRandom()
 	end
 	self.shape:setData(self)
-	self.shape:setSensor(true)
+	self.shape:setSensor( true )
+	self.data.status = ""
 end
 
 function debris:draw()
@@ -105,10 +100,6 @@ function debris:respawnBorder()
 		local yVel = math.random(10,80)
 		self.body:setLinearVelocity(xVel,yVel)
 	end
-	self.data.status = ""
-	self.shape:setData( self )
-	self.shape:setSensor(true)
-	self.holdTime = 5
 end
 
 function debris:respawnShip(x,y)
@@ -140,11 +131,13 @@ function debris:respawnRandom()
 end
 
 function debris:destroy()
+	self.shape:setSensor( false )
+	self.body:putToSleep()
 	self:deactivate()
 	self.data.status = "DEAD"
 	-- set motion and postiont to zero, or will still move in the world
 	self.body:setLinearVelocity( 0, 0 )
-	self.body:setPosition( 0,0 )
+	self.body:setPosition( -math.random( 10, 100 ), math.random( 10, 10000 ) )
 	junk:recycle( self )
 end
 

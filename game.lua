@@ -33,11 +33,15 @@ require "util/camera.lua"
 require "util/coordBag.lua"
 require "util/controlBag.lua"
 require "util/objectBag.lua"
+require "util/missile.lua"
+require "util/laser.lua"
 require "util/debris.lua"
 require "util/radar.lua"
 require "pause.lua"
 
--- global constants/variables
+-- declare constants/variables
+
+-- global constants
 gravity = 0
 lightSpeed = 0
 maxAngle = 0
@@ -45,15 +49,15 @@ quarterCircle = 0
 timeScale = 0     -- elapsed seconds, per second
 worldScale = 0    -- 100 pixels = 1 meter
 distanceScale = 0 -- virtual meters per pixel
-forceScale = 0
+forceScale = 0    -- scale to apply to force values
 
 -- global object framwork
-solarMasses = {} -- Planet/moons
-orbitals = {}    -- stations, platforms, and other constructed orbitals
-ships = {}       -- list of capital ships, drones/fighters, etc (players, AIs)
-missiles = {}    -- all the missiles
-lasers = {}      -- all the laser beams
-junk = {}        -- asteroids, debris, etc
+solarMasses = {}  -- Planet/moons
+orbitals = {}     -- stations, platforms, and other constructed orbitals
+ships = {}        -- list of capital ships, drones/fighters, etc (players, AIs)
+missiles = {}     -- all the missiles
+lasers = {}       -- all the laser beams
+junk = {}         -- asteroids, debris, etc
 
 types = {}       -- used by object framework
 
@@ -75,7 +79,7 @@ theConfigBag = {}
 local theWorld
 local thePlayer
 -- Camera control variables
-local theCamera
+theCamera = {}
 local currentX
 local currentY
 -- Radar, it must be drawn separately
@@ -108,16 +112,17 @@ function game:construct( aControlBag, coord )
 	--local modes = love.graphics.getModes()
 	--love.graphics.setMode( modes[#modes].width, modes[#modes].height, true, false, 0 )
 	--love.graphics.setMode( 1440, 900, true, false, 0 )
+	love.mouse.setVisible( false ) -- hide the mouse cursor ... will draw cross-hairs
 
-	-- constants and scalers
+	-- set constants and scalars
 	maxAngle = math.pi * 2
 	quarterCircle = math.pi / 2
 	gravity = 0.0000000000667428
-	lightSpeed = 299792458 -- meters per second
 	worldScale = 100       -- 100 pixels = 1 meter
 	distanceScale = 100000 -- meters per pixel (100 comes from world scale; see below)
-	timeScale = 250        -- elapsed seconds, per second
+	timeScale = 200        -- elapsed seconds, per second
 	forceScale = timeScale ^ 2 / distanceScale / worldScale -- proportional to square of time scale
+	lightSpeed = 299792458 * timeScale / distanceScale -- pixels per second
 
 	-- font for basic number output only
 	digits = love.graphics.newImageFont( "images/digits.png", "1234567890.-" )
@@ -298,7 +303,9 @@ function game:draw()
 	love.graphics.setColor(255,255,255)
 	love.graphics.print( fps, 5, 5 )
 	love.graphics.print( thePlayer.shipState.missileBank, 100, 5 )
+	game:drawCursor()
 --	love.graphics.print(debug,5,500)
+
 
 	-- If the player ship has crashed, then tell the user what to do.
 	if(needRespawn == true) then
@@ -310,6 +317,16 @@ function game:draw()
 		love.graphics.print(text, xPos, yPos)
 		love.graphics.setFont(font["small"])
 	end
+end
+
+function game:drawCursor()
+	love.graphics.setColor( 255, 64, 192 )
+	local mouseX = love.mouse.getX()
+	local mouseY = love.mouse.getY()
+	love.graphics.line( mouseX, mouseY, mouseX + 8, mouseY + 8 )
+	love.graphics.line( mouseX, mouseY, mouseX - 8, mouseY + 8 )
+	love.graphics.line( mouseX, mouseY, mouseX + 8, mouseY - 8 )
+	love.graphics.line( mouseX, mouseY, mouseX - 8, mouseY - 8 )
 end
 
 function game:update( dt )
@@ -396,6 +413,10 @@ function game:mousepressed(x,y,button)
 	thePlayer:mousepressed(x,y,button)
 end
 
+function game:mousereleased( x, y, button )
+	thePlayer:mousereleased( x, y, button )
+end
+
 function game:destroy()
 	thePlayer = {}
 	theWorld = {}
@@ -415,26 +436,26 @@ end
 --Callback function to handle collisions based on object type.
 function add( a, b, coll )
 	if a.objectType == types.ship then
-		shipCollide( a, b )
+		shipCollide( a, b, coll )
 	elseif b.objectType == types.ship then
-		shipCollide( b, a )
+		shipCollide( b, a, coll )
 	elseif a.objectType == types.missile then
-		missileCollide( a, b )
+		missileCollide( a, b, coll )
 	elseif b.objectType == types.missile then
-		missileCollide( b, a )
+		missileCollide( b, a, coll )
 	elseif a.objectType == types.laser then
-		laserCollide( a, b )
+		laserCollide( a, b, coll )
 	elseif b.objectType == types.laser then
-		laserCollide( b, a )
+		laserCollide( b, a, coll )
 	elseif a.objectType == types.debris then
-		debrisCollide( a, b )
+		debrisCollide( a, b, coll )
 	elseif b.objectType == types.debris then
-		debrisCollide( b, a )
+		debrisCollide( b, a, coll )
 	end
 end
 
 --Handles player collisions. Set needRespawn = true whenever player ship is destroyed.
-function shipCollide( a, b )
+function shipCollide( a, b, coll )
 	if b.objectType == types.solarMass then
 		a:destroy()
 		if a.controller == thePlayer then
@@ -447,8 +468,11 @@ function shipCollide( a, b )
 	elseif b.objectType == types.debris then
 		b:destroy()
 	elseif b.objectType == types.laser then
-		a:destroy()
-		b:destroy()
+		if b.data.owner ~= a.data.owner then
+			a:destroy()
+			b:destroy()
+			--b.body:setPosition( coll:getPosition() )
+		end
 	elseif b.objectType == types.missile then
 		if b.data.owner ~= a.data.owner then
 			a:destroy()
@@ -461,29 +485,35 @@ function shipCollide( a, b )
 end
 
 -- missile collisions with other objects
-function missileCollide( a, b )
+function missileCollide( a, b, coll )
 	if b.objectType == types.solarMass then
 		a:destroy()
 	elseif b.objectType == types.debris then
 		a:destroy()
 		b:destroy()
 	elseif b.objectType == types.laser then
-		a:destroy()
-		b:destroy()
+		if a.data.owner ~= b.data.owner then
+			a:destroy()
+			b:destroy()
+			--b.body:setPosition( coll:getPosition() )
+		end
 	elseif b.objectType == types.missile then
-		if a.owner ~= b.owner then
+		if a.data.owner ~= b.data.owner then
 			a:destroy()
 			b:destroy()
 		end
 	end
 end
 
-function laserCollide(a,b)
+function laserCollide( a, b, coll )
 	if b.objectType == types.solarMass then
 		a:destroy()
+		--a.body:setPosition( coll:getPosition() )
 	--Lasers disipate on debris
 	elseif b.objectType == types.debris then
 		a:destroy()
+		b:destroy()
+		--a.body:setPosition( coll:getPosition() )
 	elseif b.objectType == types.laser then
 		-- laser beams can't hurt each other
 	end

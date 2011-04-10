@@ -36,7 +36,7 @@ player = class:new(...)
 function player:construct( aCoordBag, shipConfig )
 	-- Assign the key commands
 	self.thrustKey,self.leftKey,self.reverseKey,self.rightKey,self.stopTurnKey,self.stopThrustKey,self.orbitKey,self.turnMode = shipConfig:getAllControls()
-	self.state = { stepLeft = false, stepRight = false, launchMissile = false, engageLaser = false, respawn = false }
+	self.state = { stepLeft = false, stepRight = false, launchMissile = false, engageLaser = false, disengageLaser = false, respawn = false }
 	self.shipState = { missileBank = 0 }
 end
 
@@ -51,12 +51,18 @@ function player:keypressed( key )
 end
 
 function player:mousepressed( x, y, button )
-	-- launch missile on right mouse click, engage laser on left click
-	if ( button == "r" ) then
+	if ( button == "r" ) then -- launch missile on right mouse click
 		self.state.launchMissile = true
-	end
+	end -- engage laser on left mouse click
 	if ( button == "l" ) then
 		self.state.engageLaser = true
+	end
+end
+
+function player:mousereleased( x, y, button )
+	-- disengage laser on left mouse up
+	if ( button == "l" ) then
+		self.state.disengageLaser = true
 	end
 end
 
@@ -122,6 +128,11 @@ function player:updateControls( theShipState )
 	if self.state.engageLaser then
 		commands[ #commands + 1 ] = "engageLaser"
 		self.state.engageLaser = false
+	end
+	-- disengage laser
+	if self.state.disengageLaser then
+		commands[ #commands + 1 ] = "disengageLaser"
+		self.state.disengageLaser = false
 	end
 
 	return commands

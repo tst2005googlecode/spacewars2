@@ -38,12 +38,13 @@ local minY
 local maxY
 local screenY
 local zoom
+local x
+local y
 
 camera = class:new(...)
 
 -- Assigns the borders of the game and the current body to follow
 function camera:construct(aCoordBag, aBody)
-	if aBody == nil then camera:error() end
 	self.minX,self.maxX,self.screenX,self.minY,self.maxY,self.screenY = aCoordBag:getCoords()
 	self.myBody = aBody
 	self.zoom = 1
@@ -84,7 +85,17 @@ function camera:adjust()
 	elseif currentY > (self.maxY - self.screenY/self.zoom) then
 		currentY = self.maxY - self.screenY/self.zoom
 	end
+	self.x = currentX
+	self.y = currentY
 	return currentX, currentY, self.zoom
+end
+
+function camera:getX()
+	return self.x
+end
+
+function camera:getY()
+	return self.y
 end
 
 --[[

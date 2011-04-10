@@ -1,8 +1,39 @@
+--[[
+Copyright (c) 2011 Team Tempest
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+
+missile.lua
+
+This class implements a missile object, which currently only thrusts once created 
+until it runs out of fuel ... self destructs when time expires after running out 
+of fuel.
+
+Causes damage to other object on impact with detonation.
+--]]
+
 require "subclass/class.lua"
 require "util/bodyObject.lua"
 
 local color
 local mass = 10
+local owner
 
 missile = bodyObject:new(...)
 
@@ -11,11 +42,11 @@ function missile:construct(aWorld, x, y, startAngle, aCoordBag, shipConfig, xVel
 	self:constructBody(aWorld, x, y, 10, 10 * ( 25 * 10 ) * ( 100000 ^ 2 ) / 6)
 	self.missilePoly = love.physics.newPolygonShape(self.body, 12, 0, 2, 4, -4, 4, -8, 0, -4, -4, 2, -4)
 	self.minX,self.maxX,self.screenX,self.minY,self.maxY,self.screenY = aCoordBag:getCoords()
-	self.missilePoly:setSensor(true)
 	self.missilePoly:setData( self )
 	self.holdTime = 5
 	self.data = {}
 	self.objectType = types.missile
+	self.mass = 10
 
 	self:init( aWorld, x, y, startAngle, aCoordBag, shipConfig, xVel, yVel )
 end
@@ -25,14 +56,16 @@ function missile:init(aWorld, x, y, startAngle, aCoordBag, shipConfig, xVel, yVe
 	self.body:setAngle(startAngle)
 	self.body:setLinearVelocity(xVel,yVel)
 	self.body:setPosition( x, y )
+	self.body:wakeUp()
+	self.missilePoly:setSensor( true )
 
-	self.baseThrust = mass * 100
-	self.baseTorque = mass ^ 3 * 10000
+	self.baseThrust = self.mass * 1000
+	self.baseTorque = self.mass ^ 3 * 10000
 	self.easyTurn = 0.005 / timeScale
 
 	self.color = shipConfig.color
-	self.fuel = 6000
-	self.killswitch = 6000
+	self.fuel = 50000
+	self.killswitch = 25000
 	self.target = {}
 
 	self.data.owner = ""
@@ -46,7 +79,7 @@ end
 function missile:draw()
 	if self.isActive then
 		love.graphics.setColor( unpack( self.color ) )
-		love.graphics.polygon("line", self.missilePoly:getPoints())
+		love.graphics.polygon("fill", self.missilePoly:getPoints())
 	end
 end
 
@@ -66,21 +99,24 @@ function missile:update(dt)
 	--Missile has fuel to thrust with
 	elseif(self.fuel > 0) then
 		self:thrust()
-		self.fuel = self.fuel - (1000 * dt)
+		self.fuel = self.fuel - ( dt * timeScale )
 	--Missile drifts until killswitch time elapses
 	elseif(self.killswitch > 0) then
-		self.killswitch = self.killswitch - (1000 * dt)
+		self.killswitch = self.killswitch - ( dt * timeScale )
 	else -- out of time:  self destruct
 		self:destroy()
 	end
 end
 
 function missile:destroy()
+	self.missilePoly:setSensor( false )
+	self.body:putToSleep()
 	self:deactivate()
 	self.data.status = "DEAD"
-	-- set motion and postiont to zero, or will still move in the world
+	-- set motion and position to zero, or will still move in the world
 	self.body:setLinearVelocity( 0, 0 )
-	self.body:setPosition( 0,0 )
+	self.body:setPosition( -math.random( 10, 100 ), math.random( 10, 10000 ) )
+	--self.body:setPosition( 0,0 )
 	missiles:recycle( self )
 end
 

@@ -29,11 +29,17 @@ function pointDistance( x1, y1, x2, y2 )
     return hypotenuse( x2 - x1, y2 - y1 )
 end
 
+-- return the angle in radians given two coordinates, from 1 to 2
+function pointAngle( x1, y1, x2, y2 )
+    return math.atan2( y2 - y1, x2 - x1 )
+end
+
 -- return the distance of hypotenuse for given x and y lengths
 function hypotenuse( x, y )
     return ( x ^ 2 + y ^ 2 ) ^ ( 1 / 2 )
 end
 
+-- copy a lua table as a clone (shallow copy)
 function copyTable( aTable )
     local newTable = {}
     for key, value in pairs( aTable ) do

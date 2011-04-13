@@ -102,13 +102,19 @@ lastAngle = 0
 
 -- all updatable and drawable objects (except theWorld)
 local activeObjects = {}
+local maxDebris
+local activeDebris
 
 local needRespawn
 
 game = class:new(...)
 
-function game:construct( aControlBag, coord )
+function game:construct( aConfigBag, coord )
+	-- set the bags up
+	theConfigBag = aConfigBag
+	theCoordBag = coordBag:new(minX,maxX,screenX,minY,maxY,screenY)
 	-- set selected screen resolution
+	love.graphics.setMode(theConfigBag:getResWidth(),theConfigBag:getResHeight(),theConfigBag:isFullscreen(),false,0)
 	--local modes = love.graphics.getModes()
 	--love.graphics.setMode( modes[#modes].width, modes[#modes].height, true, false, 0 )
 	--love.graphics.setMode( 1440, 900, true, false, 0 )
@@ -142,7 +148,7 @@ function game:construct( aControlBag, coord )
 	types.laser = "LASER"
 
 	-- declare the world
-	theWorld = love.physics.newWorld( minX - 100, minY - 100, maxX + 100, maxY + 100 )
+	theWorld = love.physics.newWorld( minX - 1000, minY - 1000, maxX + 1000, maxY + 1000 )
 	theWorld:setCallbacks(add,nil,nil,nil) -- collision, etc
 	-- 100 pixels per meter!!
 	theWorld:setMeter( worldScale ) -- Box2D can't hangle large spaces (should be 1 pixel = 100 km!)
@@ -154,8 +160,6 @@ function game:construct( aControlBag, coord )
 	game:generateMasses( math.random( 1, 4 ) + math.random( 1, 4 ) )
 
 	-- configure controls and player ship
-	theCoordBag = coordBag:new(minX,maxX,screenX,minY,maxY,screenY)
-	theConfigBag = aControlBag
 	theConfigBag["color"] = color["ship"]
 	theConfigBag["shipType"] = "playerShip"
 	theConfigBag:setStartPosition( game:randomeStartLocation() )
@@ -164,23 +168,26 @@ function game:construct( aControlBag, coord )
 	game:addActive( aShip )
 
 	-- setup the camera and HUD elements
-	theCamera = camera:new( theCoordBag, aShip.body )
+	theCamera = camera:new( theCoordBag, aShip.body, theConfigBag )
 	theRadar = radar:new( radarRadius, aShip.body )
 
+	activeDebris = 0
+	maxDebris = theConfigBag:getDebrisNum()
 	-- create all the debris
-	for i = 1, 100 do
-		local aDebris = junk:getNew( theWorld, theCoordBag, "", 0, 0 )
-		game:addActive( aDebris )
+	for i = 1, maxDebris do
+		game:generateDebris("",0,0)
 	end
 
 	-- create enemy ship(s)
-	theConfigBag = copyTable( theConfigBag )
-	theConfigBag:setStartPosition( game:randomeStartLocation() )
-	theConfigBag["color"] = color["ai"]
-	theConfigBag["shipType"] = "aiShip"
-	anAI = ai:new( theCoordBag, theConfigBag )
-	aShip = ships:getNew( theWorld, anAI, theCoordBag, theConfigBag )
-	game:addActive( aShip )
+	for i = 1, theConfigBag:getAiNum() do
+		theConfigBag = copyTable( theConfigBag )
+		theConfigBag:setStartPosition( game:randomeStartLocation() )
+		theConfigBag["color"] = color["ai"]
+		theConfigBag["shipType"] = "aiShip"
+		anAI = ai:new( theCoordBag, theConfigBag )
+		aShip = ships:getNew( theWorld, anAI, theCoordBag, theConfigBag )
+		game:addActive( aShip )
+	end
 
 	-- The player doesn't need to respawn when the game starts!
 	needRespawn = false
@@ -391,6 +398,12 @@ if lastA < lowA then lowA = fG end
 	anObject.body:applyForce( math.cos( dir ) * fG , math.sin( dir ) * fG )
 end
 
+function game:generateDebris( location, x, y )
+	local aDebris = junk:getNew( theWorld, theCoordBag, location, x, y )
+	game:addActive( aDebris )
+	activeDebris = activeDebris + 1
+end
+
 function game:keypressed( key, code )
 	--Ship has crashed, so wait for input to respawn.
 	if needRespawn == true then
@@ -467,6 +480,10 @@ function shipCollide( a, b, coll )
 		needRespawn = true
 	elseif b.objectType == types.debris then
 		b:destroy()
+		activeDebris = activeDebris - 1
+		if(activeDebris <= maxDebris) then
+			game:generateDebris("border",0,0)
+		end
 	elseif b.objectType == types.laser then
 		if b.data.owner ~= a.data.owner then
 			a:destroy()
@@ -491,6 +508,10 @@ function missileCollide( a, b, coll )
 	elseif b.objectType == types.debris then
 		a:destroy()
 		b:destroy()
+		activeDebris = activeDebris - 1
+		if(activeDebris <= maxDebris) then
+			game:generateDebris("border",0,0)
+		end
 	elseif b.objectType == types.laser then
 		if a.data.owner ~= b.data.owner then
 			a:destroy()
@@ -513,6 +534,10 @@ function laserCollide( a, b, coll )
 	elseif b.objectType == types.debris then
 		a:destroy()
 		b:destroy()
+		activeDebris = activeDebris - 1
+		if(activeDebris <= maxDebris) then
+			game:generateDebris("border",0,0)
+		end
 		--a.body:setPosition( coll:getPosition() )
 	elseif b.objectType == types.laser then
 		-- laser beams can't hurt each other
@@ -525,5 +550,13 @@ function debrisCollide(a,b)
 	elseif b.objectType == types.debris then
 		a:destroy()
 		b:destroy()
+		activeDebris = activeDebris - 2
+		-- Have to do it twice, because we lost two debris
+		if(activeDebris <= maxDebris) then
+			game:generateDebris("border",0,0)
+		end
+		if(activeDebris <= maxDebris) then
+			game:generateDebris("border",0,0)
+		end
 	end
 end

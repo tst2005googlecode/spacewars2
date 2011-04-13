@@ -21,11 +21,11 @@ THE SOFTWARE.
 
 objectBag.lua ... part of object framework
 
-This class is a data structure for holding an object type and its tables that 
-manage the object life.  All objects are held in the objects list ... inactive 
-or destroyed objects are added to the recycled list by id.  When a new 
-object is requested, the recycled list is first checked, and the last object in 
-the recycled list is returned if exists, otherwise a new object is created and 
+This class is a data structure for holding an object type and its tables that
+manage the object life.  All objects are held in the objects list ... inactive
+or destroyed objects are added to the recycled list by id.  When a new
+object is requested, the recycled list is first checked, and the last object in
+the recycled list is returned if exists, otherwise a new object is created and
 added to the objects table.
 --]]
 

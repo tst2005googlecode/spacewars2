@@ -21,7 +21,7 @@ THE SOFTWARE.
 
 player.lua
 
-This class implements a player control.  This checks the mouse and keyboard for 
+This class implements a player control.  This checks the mouse and keyboard for
 player input, which is supplied to the ship as commands on each update
 --]]
 
@@ -35,7 +35,7 @@ player = class:new(...)
 --Function to instantiate the ship and assign keyboard controls
 function player:construct( aCoordBag, shipConfig )
 	-- Assign the key commands
-	self.thrustKey,self.leftKey,self.reverseKey,self.rightKey,self.stopTurnKey,self.stopThrustKey,self.orbitKey,self.turnMode = shipConfig:getAllControls()
+	self.thrustKey,self.leftKey,self.reverseKey,self.rightKey,self.stopTurnKey,self.stopThrustKey,self.orbitKey,dummy1,dummy2,self.turnMode = shipConfig:getAllControls()
 	self.state = { stepLeft = false, stepRight = false, launchMissile = false, engageLaser = false, disengageLaser = false, respawn = false }
 	self.shipState = { missileBank = 0 }
 end

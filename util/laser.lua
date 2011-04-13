@@ -21,7 +21,7 @@ THE SOFTWARE.
 
 laser.lua
 
-This class implements a laser beam (simulated by particle) which will cause 
+This class implements a laser beam (simulated by particle) which will cause
 damage to impacted targets.
 --]]
 
@@ -45,7 +45,7 @@ function laser:construct( aWorld, x, y, startAngle, aCoordBag, aSource, velX, ve
 	self.minX,self.maxX,self.screenX,self.minY,self.maxY,self.screenY = aCoordBag:getCoords()
 
 	self.data = {}
-	
+
 	self:init( aWorld, x, y, startAngle, aCoordBag, aSource, velX, velY )
 end
 

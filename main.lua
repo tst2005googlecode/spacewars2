@@ -4,7 +4,7 @@ require "util/controlBag.lua"
 sWidth, sHeight = 800, 600
 config = {}
 state = {} --this is what gets called into action, whether that be the game, level editor, whatever...
-local theControlBag = controlBag:new("w","a","s","d","q","e","r","EASY",100000)
+local theControlBag = controlBag:new("w","a","s","d","q","e","r","1","2","EASY",800,600,false,9,4,100,100000)
 
 function love.load()
 	-- Set the directory before we even try to do anything!

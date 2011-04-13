@@ -376,6 +376,11 @@ if dt > highDt then highDt = dt end
 		end
 	end
 
+	-- respawn debris if possible
+	for i = activeDebris, maxDebris do
+		game:generateDebris("border",0,0)
+	end
+
 	-- update the world separate from the other objects
 	theWorld:update( dt )
 end
@@ -477,23 +482,30 @@ function shipCollide( a, b, coll )
 	elseif b.objectType == types.ship then
 		a:destroy()
 		b:destroy()
-		needRespawn = true
+		if (a.controller == thePlayer) then
+			needRespawn = true
+		elseif (b.controller == thePlayer) then
+			needRespawn = true
+		end
 	elseif b.objectType == types.debris then
 		b:destroy()
 		activeDebris = activeDebris - 1
-		if(activeDebris <= maxDebris) then
-			game:generateDebris("border",0,0)
-		end
 	elseif b.objectType == types.laser then
 		if b.data.owner ~= a.data.owner then
 			a:destroy()
 			b:destroy()
 			--b.body:setPosition( coll:getPosition() )
+			if(a.controller == thePlayer) then
+				needRespawn = true
+			end
 		end
 	elseif b.objectType == types.missile then
 		if b.data.owner ~= a.data.owner then
 			a:destroy()
 			b:destroy()
+			if(a.controller == thePlayer) then
+				needRespawn = true
+			end
 		end
 	--[[elseif b.status == "DEAD" then
 		a.status = "DEAD"
@@ -509,9 +521,6 @@ function missileCollide( a, b, coll )
 		a:destroy()
 		b:destroy()
 		activeDebris = activeDebris - 1
-		if(activeDebris <= maxDebris) then
-			game:generateDebris("border",0,0)
-		end
 	elseif b.objectType == types.laser then
 		if a.data.owner ~= b.data.owner then
 			a:destroy()
@@ -535,9 +544,6 @@ function laserCollide( a, b, coll )
 		a:destroy()
 		b:destroy()
 		activeDebris = activeDebris - 1
-		if(activeDebris <= maxDebris) then
-			game:generateDebris("border",0,0)
-		end
 		--a.body:setPosition( coll:getPosition() )
 	elseif b.objectType == types.laser then
 		-- laser beams can't hurt each other
@@ -551,12 +557,5 @@ function debrisCollide(a,b)
 		a:destroy()
 		b:destroy()
 		activeDebris = activeDebris - 2
-		-- Have to do it twice, because we lost two debris
-		if(activeDebris <= maxDebris) then
-			game:generateDebris("border",0,0)
-		end
-		if(activeDebris <= maxDebris) then
-			game:generateDebris("border",0,0)
-		end
 	end
 end

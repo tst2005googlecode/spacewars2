@@ -55,6 +55,7 @@ function laser:init( aWorld, x, y, startAngle, aCoordBag, aSource, velX, velY )
 		self.body:destroy()
 		self:constructBody( aWorld, x, y, 0.0000000001, 0 )
 	end
+	self:activate()
 	self.body:setAngle( startAngle )
 	self.body:setPosition( x, y )
 	self.body:wakeUp()

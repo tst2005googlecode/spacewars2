@@ -32,22 +32,26 @@ local color = {205,133,63,255}
 local mass = 0
 
 function debris:construct(aWorld, aCoordBag, location, x, y)
-	self.coord = aCoordBag
-	self.world = aWorld
-	self.data = {}
-	self.objectType = types.debris
-	self.body = love.physics.newBody(self.world, 0, 0, 1, 1)
+	self.minX,self.maxX,self.screenX,self.minY,self.maxY,self.screenY = aCoordBag:getCoords()
+	self:constructBody( aWorld, 0, 0, 1, 1 )
 	self.shape = love.physics.newRectangleShape( self.body, 0, 0, 12, 12, math.random() * maxAngle)
+	self.data = {}
 	self.shape:setData( self )
+	self.objectType = types.debris
 
 	self:init( aWorld, aCoordBag, location, x, y )
 end
 
 function debris:init(aWorld, aCoordBag, location, x, y)
-	self.mass = math.random(100000,100000000)
-	self.body:setMass( 0, 0, self.mass, self.mass * ( 100000 ^ 2 ) / 6 )
+	if self.body:isFrozen() then
+		-- get a new body ... the old one can no longer be used!!  :(
+		self.body:destroy()
+		self:constructBody( aWorld, 0, 0, 1, 1 )
+	end
+--	self.mass = math.random(100000,100000000)
+--	self.body:setMass( 0, 0, self.mass, self.mass * ( 100000 ^ 2 ) / 6 )
 	self.body:wakeUp()
-	self.isActive = true
+	self:activate()
 	if(location == "border") then
 		self:respawnBorder()
 	elseif(location == "ship") then
@@ -55,9 +59,8 @@ function debris:init(aWorld, aCoordBag, location, x, y)
 	else
 		self:respawnRandom()
 	end
-	self.shape:setData(self)
 	self.shape:setSensor( true )
-	self.data.status = ""
+	self.warpTimer = 0
 end
 
 function debris:draw()
@@ -66,35 +69,40 @@ function debris:draw()
 end
 
 function debris:update(dt)
-	self:warp()
+	--Debris don't move very fast, only check 1 time/second
+	self.warpTimer = self.warpTimer + dt * 1000
+	if(self.warpTimer > 1000) then
+		self:warp()
+		self.warpTimer = 0
+	end
 end
 
 function debris:respawnBorder()
 	local border = math.random(1,4)
 	if (border == 1) then
-		self.body:setX(self.coord:getMaxX())
-		self.body:setY(math.random(0,self.coord:getMaxY()))
+		self.body:setX(self.maxX)
+		self.body:setY(math.random(0,self.maxY))
 --		self:build(x,y)
 		local xVel = math.random(-80,-10)
 		local yVel = math.random(-80,80)
 		self.body:setLinearVelocity(xVel,yVel)
 	elseif (border == 2) then
-		local x = math.random(0,self.coord:getMaxX())
-		local y = self.coord:getMaxY()
+		self.body:setX(0,self.maxX)
+		self.body:setY(self.maxY)
 --		self:build(x,y)
 		local xVel = math.random(-80,80)
 		local yVel = math.random(-80,-10)
 		self.body:setLinearVelocity(xVel,yVel)
 	elseif (border == 3) then
-		self.body:setX(self.coord:getMinX())
-		self.body:setY(math.random(0,self.coord:getMaxY()))
+		self.body:setX(self.minX)
+		self.body:setY(math.random(0,self.maxY))
 --		self:build(x,y)
 		local xVel = math.random(10,80)
 		local yVel = math.random(-80,80)
 		self.body:setLinearVelocity(xVel,yVel)
 	else
-		self.body:setX(math.random(0,self.coord:getMaxX()))
-		self.body:setY(self.coord:getMinY())
+		self.body:setX(math.random(0,self.maxX))
+		self.body:setY(self.minY)
 --		self:build(x,y)
 		local xVel = math.random(-80,80)
 		local yVel = math.random(10,80)
@@ -116,14 +124,14 @@ function debris:respawnRandom()
 	local xSide = math.random(0,1)
 	local ySide = math.random(0,1)
 	if(xSide == 0) then
-		self.body:setX(self.coord:getMinX() + x)
+		self.body:setX(self.minX + x)
 	else
-		self.body:setX(self.coord:getMaxX() - x)
+		self.body:setX(self.maxX - x)
 	end
 	if(ySide == 0) then
-		self.body:setY(self.coord:getMinY() + y)
+		self.body:setY(self.minY + y)
 	else
-		self.body:setY(self.coord:getMaxY() - y)
+		self.body:setY(self.maxY - y)
 	end
 	local xVel = math.random(-80,80)
 	local yVel = math.random(-80,80)
@@ -142,15 +150,15 @@ function debris:destroy()
 end
 
 function debris:warp()
-	if(self.body:getX() > self.coord:getMaxX()) then
-		self.body:setX(self.coord:getMinX())
-	elseif(self.body:getX() < self.coord:getMinX()) then
-		self.body:setX(self.coord:getMaxX())
+	if(self.body:getX() > self.maxX) then
+		self.body:setX(self.minX)
+	elseif(self.body:getX() < self.minX) then
+		self.body:setX(self.maxX)
 	end
-	if(self.body:getY() > self.coord:getMaxY()) then
-		self.body:setY(self.coord:getMinY())
-	elseif(self.body:getY() < self.coord:getMinY()) then
-		self.body:setY(self.coord:getMaxY())
+	if(self.body:getY() > self.maxY) then
+		self.body:setY(self.minY)
+	elseif(self.body:getY() < self.minY) then
+		self.body:setY(self.maxY)
 	end
 end
 --[[

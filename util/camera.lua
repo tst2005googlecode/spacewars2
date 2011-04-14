@@ -44,10 +44,12 @@ local y
 camera = class:new(...)
 
 -- Assigns the borders of the game and the current body to follow
-function camera:construct(aCoordBag, aBody)
+function camera:construct(aCoordBag, aBody, aConfigBag)
 	self.minX,self.maxX,self.screenX,self.minY,self.maxY,self.screenY = aCoordBag:getCoords()
 	self.myBody = aBody
 	self.zoom = 1
+	self.zoomIn = aConfigBag:getZoomIn()
+	self.zoomOut = aConfigBag:getZoomOut()
 end
 
 -- Allows the camera to jump to another body if needed.
@@ -56,12 +58,12 @@ function camera:assign(aBody)
 end
 
 function camera:keypressed(key)
-	if key == "1" then
+	if key == self.zoomIn then
 		self.zoom = self.zoom + 0.125
 		if self.zoom > 2 then
 			self.zoom = 2
 		end
-	elseif key == "2" then
+	elseif key == self.zoomOut then
 		self.zoom = self.zoom - 0.125
 		if self.zoom < 0.125 then
 			self.zoom = 0.125

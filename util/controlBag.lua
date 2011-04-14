@@ -47,7 +47,7 @@ local startAngle
 
 controlBag = class:new(...)
 
-function controlBag:construct(thrustKey,leftKey,reverseKey,rightKey,stopTurnKey,stopThrustKey,turnType, orbitKey, pMass)
+function controlBag:construct(thrustKey,leftKey,reverseKey,rightKey,stopTurnKey,stopThrustKey, orbitKey, zoomInKey, zoomOutKey, turnType, width, height, screen, ai, moons, debris, pMass)
 	self.thrust = thrustKey
 	self.left = leftKey
 	self.reverse = reverseKey
@@ -56,6 +56,14 @@ function controlBag:construct(thrustKey,leftKey,reverseKey,rightKey,stopTurnKey,
 	self.stopThrust = stopThrustKey
 	self.turn = turnType
 	self.orbit = orbitKey
+	self.zoomIn = zoomInKey
+	self.zoomOut = zoomOutKey
+	self.resWidth = width
+	self.resHeight = height
+	self.fullscreen = screen
+	self.aiNum = ai
+	self.moonNum = moons
+	self.debrisNum = debris
 	self.mass = pMass
 end
 
@@ -123,8 +131,107 @@ function controlBag:setOrbit(key)
 	self.orbit = key
 end
 
+function controlBag:getZoomIn()
+	return self.zoomIn
+end
+
+function controlBag:setZoomIn(key)
+	self.zoomIn = key
+end
+
+function controlBag:getZoomOut()
+	return self.zoomOut
+end
+
+function controlBag:setZoomOut(key)
+	self.zoomOut = key
+end
+
+function controlBag:getResWidth()
+	return self.resWidth
+end
+
+function controlBag:setResWidth( width )
+	self.resWidth = width
+end
+
+function controlBag:getResHeight()
+	return self.resHeight
+end
+
+function controlBag:setResHeight( height )
+	self.resHeight = height
+end
+
+function controlBag:isFullscreen()
+	return self.fullscreen
+end
+
+function controlBag:setFullScreen( screen )
+	self.fullscreen = screen
+end
+
+function controlBag:getAiNum()
+	return self.aiNum
+end
+
+function controlBag:setAiNum( ai )
+	self.aiNum = ai
+end
+
+function controlBag:getMoonNum()
+	return self.moonNum
+end
+
+function controlBag:setMoonNum( moons )
+	self.moonNum = moons
+end
+
+function controlBag:getDebrisNum()
+	return self.debrisNum
+end
+
+function controlBag:setDebrisNum( debris )
+	self.debrisNum = debris
+end
+
+--Aggregate methods
+
 function controlBag:getAllControls()
-	return self.thrust,self.left,self.reverse,self.right,self.stopTurn,self.stopThrust,self.turn, self.orbit
+	return self.thrust,self.left,self.reverse,self.right,self.stopTurn,self.stopThrust,self.orbit,self.zoomIn,self.zoomOut,self.turn
+end
+
+function controlBag:setAllControls(thrustKey,leftKey,reverseKey,rightKey,stopTurnKey,stopThrustKey,orbitKey,zoomInKey,zoomOutKey,turnType)
+	self.thrust = thrustKey
+	self.left = leftKey
+	self.reverse = reverseKey
+	self.right = rightKey
+	self.stopTurn = stopTurnKey
+	self.stopThrust = stopThrustKey
+	self.turn = turnType
+	self.orbit = orbitKey
+	self.zoomIn = zoomInKey
+	self.zoomOut = zoomOutKey
+end
+
+function controlBag:getAllResolution()
+	return self.resWidth,self.resHeight,self.fullscreen
+end
+
+function controlBag:setAllResolution(width,height,screen)
+	self.resWidth = width
+	self.resHeight = height
+	self.fullscreen = screen
+end
+
+function controlBag:getAllOptions()
+	return self.aiNum,self.moonNum,self.debrisNum
+end
+
+function controlBag:setAllOptions(ai,moons,debris)
+	self.aiNum = ai
+	self.moonNum = moons
+	self.debrisNum = debris
 end
 
 -- the following are dynamic parameters

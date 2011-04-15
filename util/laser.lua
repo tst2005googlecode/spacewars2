@@ -63,6 +63,7 @@ function laser:init( aWorld, x, y, startAngle, aCoordBag, aSource, velX, velY )
 	self.body:setLinearVelocity( velX, velY )
 	self.source = aSource
 	self.color = aSource.color
+	self.data.damage = 20
 end
 
 function laser:draw()
@@ -77,6 +78,7 @@ function laser:draw()
 end
 
 function laser:update(dt)
+	self.data.damage = dt*1000
 	if self:offedge() == true then
 		self:destroy()
 	end

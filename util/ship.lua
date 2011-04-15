@@ -89,7 +89,8 @@ function ship:construct( theWorld, controlledBy, aCoordBag, shipConfig )
 	self.data = {}
 	self.objectType = types.ship
 	self.data.owner = self.controller
-	self.data.armor = 12500
+--	self.data.armor = 12500
+	self.data.armor = 2000
 	self.data.missiles = {} -- active missiles
 	self.data.newMissiles = {}
 	self.data.missileBank = 10
@@ -342,6 +343,11 @@ function ship:destroy()
 	--self:deactivate()
 	self.data.status = "DEAD"
 	self.controller.state.respawn = true
+	for i = 1,4 do
+		local aDebris = junk:getNew( self.world, self.coordBag, "ship", self.body:getX(), self.body:getY() )
+		game:addActive( aDebris )
+		activeDebris = activeDebris + 1
+	end
 end
 
 -- engage laser, if sufficient laser charge/energy
@@ -417,7 +423,7 @@ function ship:respawn()
 	self.body:setAngle(angle)
 	self.body:setLinearVelocity(0,0)
 	self.body:setAngularVelocity(0)
-	self.data.armor = 10000
+	self.data.armor = 2000
 end
 
 --[[] Returns the ship body for use by other classes, such as a camera!

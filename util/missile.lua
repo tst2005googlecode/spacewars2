@@ -21,8 +21,8 @@ THE SOFTWARE.
 
 missile.lua
 
-This class implements a missile object, which currently only thrusts once created 
-until it runs out of fuel ... self destructs when time expires after running out 
+This class implements a missile object, which currently only thrusts once created
+until it runs out of fuel ... self destructs when time expires after running out
 of fuel.
 
 Causes damage to other object on impact with detonation.
@@ -70,6 +70,8 @@ function missile:init(aWorld, x, y, startAngle, aCoordBag, shipConfig, xVel, yVe
 
 	self.data.owner = ""
 	self.data.status = ""
+	self.data.armor = 500
+	self.data.damage = 1000
 end
 
 function missile:target(aBody)

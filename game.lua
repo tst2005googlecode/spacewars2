@@ -103,7 +103,7 @@ lastAngle = 0
 -- all updatable and drawable objects (except theWorld)
 local activeObjects = {}
 local maxDebris
-local activeDebris
+activeDebris = 0
 
 local needRespawn
 
@@ -492,20 +492,26 @@ function shipCollide( a, b, coll )
 		activeDebris = activeDebris - 1
 	elseif b.objectType == types.laser then
 		if b.data.owner ~= a.data.owner then
-			a:destroy()
+			a.data.armor = a.data.armor - b.data.damage
+			if(a.data.armor <= 0) then
+				a:destroy()
+				if(a.controller == thePlayer) then
+					needRespawn = true
+				end
+			end
 			b:destroy()
 			--b.body:setPosition( coll:getPosition() )
-			if(a.controller == thePlayer) then
-				needRespawn = true
-			end
 		end
 	elseif b.objectType == types.missile then
 		if b.data.owner ~= a.data.owner then
-			a:destroy()
-			b:destroy()
-			if(a.controller == thePlayer) then
-				needRespawn = true
+			a.data.armor = a.data.armor - b.data.damage
+			if(a.data.armor <= 0) then
+				a:destroy()
+				if(a.controller == thePlayer) then
+					needRespawn = true
+				end
 			end
+			b:destroy()
 		end
 	--[[elseif b.status == "DEAD" then
 		a.status = "DEAD"
@@ -518,12 +524,18 @@ function missileCollide( a, b, coll )
 	if b.objectType == types.solarMass then
 		a:destroy()
 	elseif b.objectType == types.debris then
+		b.data.armor = b.data.armor - a.data.damage
+		if(b.data.armor <= 0) then
+			b:destroy()
+			activeDebris = activeDebris - 1
+		end
 		a:destroy()
-		b:destroy()
-		activeDebris = activeDebris - 1
 	elseif b.objectType == types.laser then
 		if a.data.owner ~= b.data.owner then
-			a:destroy()
+			a.data.armor = a.data.armor - b.data.damage
+			if(a.data.armor <= 0) then
+				a:destroy()
+			end
 			b:destroy()
 			--b.body:setPosition( coll:getPosition() )
 		end
@@ -541,9 +553,12 @@ function laserCollide( a, b, coll )
 		--a.body:setPosition( coll:getPosition() )
 	--Lasers disipate on debris
 	elseif b.objectType == types.debris then
+		b.data.armor = b.data.armor - a.data.damage
+		if(b.data.armor <= 0) then
+			b:destroy()
+			activeDebris = activeDebris - 1
+		end
 		a:destroy()
-		b:destroy()
-		activeDebris = activeDebris - 1
 		--a.body:setPosition( coll:getPosition() )
 	elseif b.objectType == types.laser then
 		-- laser beams can't hurt each other
@@ -554,8 +569,9 @@ function debrisCollide(a,b)
 	if b.objectType == types.solarMass then
 		a:destroy()
 	elseif b.objectType == types.debris then
-		a:destroy()
-		b:destroy()
-		activeDebris = activeDebris - 2
+--------DEBRIS DON'T DESTROY EACH OTHER
+--		a:destroy()
+--		b:destroy()
+--		activeDebris = activeDebris - 2
 	end
 end

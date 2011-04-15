@@ -61,6 +61,7 @@ function debris:init(aWorld, aCoordBag, location, x, y)
 	end
 	self.shape:setSensor( true )
 	self.warpTimer = 0
+	self.data.armor = 250
 end
 
 function debris:draw()

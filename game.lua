@@ -81,7 +81,7 @@ local theConfigBag = {}
 local theWorld
 local thePlayer
 --Camera control variables
-local theCamera = {}
+theCamera = {}
 local currentX
 local currentY
 --Radar, it must be drawn separately

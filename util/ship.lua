@@ -108,8 +108,12 @@ end
 --Draws the ship on the screen with the stored color.
 --]]
 function ship:draw()
-	love.graphics.setColor( unpack( self.color ) )
-	love.graphics.polygon( "fill", self.shipPoly:getPoints() )
+	--If a ship is destroyed, then it shouldn't be drawn.
+	--Used for the player's ship.
+	if(not self.controller.state.respawn) then
+		love.graphics.setColor( unpack( self.color ) )
+		love.graphics.polygon( "fill", self.shipPoly:getPoints() )
+	end
 end
 
 --[[

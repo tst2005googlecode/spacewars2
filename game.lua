@@ -105,7 +105,7 @@ lastAngle = 0
 local activeObjects = {}
 --Soft debris cap and total debris.
 local maxDebris
-local activeDebris = 0
+activeDebris = 0
 --Used to block the game when the player needs a respawn.
 local needRespawn
 
@@ -142,7 +142,7 @@ function game:construct( aConfigBag, coord )
 	lightSpeed = 299792458 * timeScale / distanceScale --Pixels per second
 
 	--Font for basic number output only
-	digits = love.graphics.newImageFont( "images/digits.png", "1234567890.-" )
+	digits = love.graphics.newImageFont( "images/digits.png", "1234567890.-ALM: " )
 
 	--Set up object framework
 	solarMasses = objectBag:new( solarMass )
@@ -359,7 +359,11 @@ function game:draw()
 	love.graphics.setFont( digits )
 	love.graphics.setColor(255,255,255)
 	love.graphics.print( fps, 5, 5 )
-	love.graphics.print( thePlayer.shipState.missileBank, 100, 5 )
+	--Draw ammo and armor to the right of the radar
+	love.graphics.rectangle("line",130,0,45,35)
+	love.graphics.print( "M: " .. thePlayer.shipState.missileBank, 135, 5 )
+	love.graphics.print( "L: " .. string.format("%.3f", thePlayer.shipState.laserCharge), 135, 15)
+	love.graphics.print( "A: " .. thePlayer.shipState.armor, 135, 25 )
 	--Draw the game cursor on top of everything.
 	game:drawCursor()
 --	love.graphics.print(debug,5,500)
@@ -601,8 +605,15 @@ function shipCollide( a, b, coll )
 		end
 	elseif b.objectType == types.debris then
 		--Debris are destroyed and inflict damage on the ship.
+		a.data.armor = a.data.armor - b.data.damage
 		b:destroy()
 		activeDebris = activeDebris - 1
+		if(a.data.armor <= 0) then
+			a:destroy()
+			if(a.controller == thePlayer) then
+				needRespawn = true
+			end
+		end
 	elseif b.objectType == types.laser then
 		--Enemy lasers are destroyed and inflict damage on the ship.
 		if b.data.owner ~= a.data.owner then

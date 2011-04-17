@@ -77,9 +77,10 @@ function debris:init(aWorld, aCoordBag, location, x, y)
 	else
 		self:respawnRandom()
 	end
-	--Initialize warping and armor.
+	--Initialize warping, armor, and damage.
 	self.warpTimer = 0
 	self.data.armor = 250
+	self.data.damage = 250
 end
 
 --[[

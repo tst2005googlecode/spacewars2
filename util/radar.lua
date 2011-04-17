@@ -22,8 +22,7 @@ THE SOFTWARE.
 radar.lua
 
 This class implements a radar system.
-The radar has an x and y offset for drawing on the screen.
-The radar covers a radius from the center, which is the playerShip.
+The radar covers a radius from the center, which is the player's ship.
 	For simplicity, the radius is figured on x/y axis, and drawn as a box.
 The scale of the radar is the diameter divided by the radar's size.
 --]]
@@ -43,6 +42,9 @@ local missileColor = {255,165,0}
 local solarColor = {34,139,34}
 local debrisColor = {205,133,63,255}
 
+--[[
+--Constructs and initializes a radar.
+--]]
 function radar:construct(theRadius,theBody)
 	self.offX = 0
 	self.offY = 0
@@ -51,29 +53,41 @@ function radar:construct(theRadius,theBody)
 	self.scale = (self.radius*2)/size
 end
 
+--[[
+--Draws the radar using the current list of active objects.
+--]]
 function radar:draw(obj_table)
+	--Draw the frame.
 	love.graphics.setColor(frameColor)
 	love.graphics.rectangle("line",self.offX,self.offY,size+10,size+10)
+	--Draw the background with 50% opacity.
 	love.graphics.setColor(bgColor)
 	love.graphics.rectangle("fill",self.offX+1,self.offY+1,size+9,size+9)
+	--Iterate through all active objects
 	for i,obj in ipairs(obj_table) do
 		local x = obj:getX()
 		local y = obj:getY()
 		if(self:checkBounds(x,y) == true) then
+			--Proceed with drawing the object to the radar.
 			theType = obj:getType()
 			if(theType == "solarMass") then
+				--Draw a solarMass
 				love.graphics.setColor(solarColor)
 				self:drawSolar(obj)
 			elseif(theType == "playerShip") then
+				--Draw a player
 				love.graphics.setColor(playerColor)
 				self:drawGeneric(obj)
 			elseif(theType == "aiShip") then
+				--Draw an ai
 				love.graphics.setColor(aiColor)
 				self:drawGeneric(obj)
 			elseif(theType == "missile") then
+				--Draw a missile
 				love.graphics.setColor(missileColor)
 				self:drawGeneric(obj)
 			elseif(theType == "debris") then
+				--Draw a debris
 				love.graphics.setColor(debrisColor)
 				self:drawGeneric(obj)
 			end
@@ -81,6 +95,10 @@ function radar:draw(obj_table)
 	end
 end
 
+--[[
+--This is a function to draw generic objects.
+--All non-solarMasses are very small, and so are drawn as a circle of radius 1.
+--]]
 function radar:drawGeneric(obj)
 	local theRad = 1
 	local x = (obj:getX() - self.body:getX() + self.radius)/self.scale
@@ -88,6 +106,10 @@ function radar:drawGeneric(obj)
 	love.graphics.circle("fill",self.offX + x, self.offY + y, theRad, 10)
 end
 
+--[[
+--This is a function to draw solarMass objects.
+--A solarMass is drawn on the radar to scale.
+--]]
 function radar:drawSolar(obj)
 	local theRad = obj:getRadius()
 	local x = (obj:getX() - self.body:getX() + self.radius)/self.scale
@@ -97,6 +119,11 @@ function radar:drawSolar(obj)
 	love.graphics.circle("fill",self.offX + x, self.offY + y, theRad, 10)
 end
 
+--[[
+--Check if an object is within the boundaries of the radar's scan radius.
+--If it is, return true, and the radar will draw it.
+--Otherwise, it returns false, and the object is skipped this cycle.
+--]]
 function radar:checkBounds(x,y)
 	if(x >= (self.body:getX() - self.radius)) then
 		if(x <= (self.body:getX() + self.radius)) then
@@ -109,6 +136,9 @@ function radar:checkBounds(x,y)
 	end
 	return false
 end
+
+--WARNING: The following are old or alternative implementations and should not be used.
+
 
 --[[ THIS VERSION OF DRAWPLAYER/SOLAR RENDERS THE ENTIRE WORLD IN THE RADAR
 function radar:drawPlayer(obj)

@@ -21,8 +21,9 @@ THE SOFTWARE.
 
 bodyObject.lua ... a superclass; part of object framework
 
-an object that exists in the "world" with position, mass, and rotational inertia
-
+An object that exists in the "world".
+It has position, mass, and rotational inertia.
+It also records active state for drawing/update purposes.
 --]]
 
 require "subclass/class.lua"
@@ -36,20 +37,31 @@ local objectType
 
 bodyObject = class:new(...)
 
--- Function to constructialize the mass
+--[[
+--Constructs and initializes a body with the specified coordinates and mass.
+--]]
 function bodyObject:constructBody( pWorld, pX, pY, pMass, pRotateInertia )
 	self.body = love.physics.newBody( pWorld, pX, pY, pMass, pRotateInertia )
 	self.isActive = true
 end
 
+--[[
+--Returns the body for any functions that need it for calculations.
+--]]
 function bodyObject:getBody()
 	return self.body
 end
 
+--[[
+--Activates a body to supply it for drawing and updating.
+--]]
 function bodyObject:activate()
 	self.isActive = true
 end
 
+--[[
+--Deactivates a body to remove it from drawing and updating.
+--]]
 function bodyObject:deactivate()
 	self.isActive = false
 end

@@ -22,14 +22,21 @@ THE SOFTWARE.
 button.lua
 
 This class implements a simple textual button.
+The button consists of text and position.
+Buttons highlight when the cursor is over them.
 --]]
 
 require "subclass/class"
 button = class:new(...)
 
+--[[
+--Construct and initialize a button for the screen.
+--]]
 function button:construct(text,x,y)
+	--New buttons are not hovered or clicked.
 	self.hover = false
 	self.click = false
+	--Set the initial properties.
 	self.text = text
 	self.width = font["large"]:getWidth(text)
 	self.height = font["large"]:getHeight()
@@ -38,8 +45,11 @@ function button:construct(text,x,y)
 
 end
 
+--[[
+--Draw a button to the screen.
+--If the button is hovered over, then highlight it.
+--]]
 function button:draw()
-
 	love.graphics.setFont(font["large"])
 	if self.hover then love.graphics.setColor(unpack(color["main"]))
 	else love.graphics.setColor(unpack(color["text"])) end
@@ -47,9 +57,12 @@ function button:draw()
 
 end
 
+--[[
+--Updates a button.
+--If the mouse is over the button, then flag it for highlighting.
+--Otherwise, ensure the button is NOT flagged.
+--]]
 function button:update(dt)
-	self.hover = false
-
 	local x = love.mouse.getX()
 	local y = love.mouse.getY()
 
@@ -58,12 +71,17 @@ function button:update(dt)
 		and y > self.y - self.height
 		and y < self.y then
 		self.hover = true
+	else
+		self.hover = false
 	end
 end
 
+--[[
+--Checks if a button has been clicked.
+--If a button is flagged as hovered, then it is logically the button clicked.
+--]]
 function button:mousepressed(x, y, button)
-
-if self.hover then
+	if self.hover then
 		if audio then
 			love.audio.play(sound["click"])
 		end
@@ -72,6 +90,10 @@ if self.hover then
 	return false
 end
 
+--[[
+--Provides support for changing a button's text.
+--Most notably used to change a button to reflect new user configurations.
+--]]
 function button:changeText(theText)
 	self.text = theText
 end

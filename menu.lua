@@ -22,6 +22,8 @@ THE SOFTWARE.
 menu.lua
 
 This class implements the main menu for Spacewars!II.
+The menu contains buttons to start a new game and to change the configuration.
+In the future, it might also contain a "How to Play" button.
 --]]
 
 require "game.lua"
@@ -32,8 +34,13 @@ require "controls.lua"
 
 menu = class:new(...)
 
+--[[
+--Both creates and initializes the main menu view.
+--]]
 function menu:construct(aControlBag)
+	--Store the configuration for passing to other views.
 	self.controlBag = aControlBag
+	--Initialize the buttons the user can click.
 	self.buttons =
 	{
 		new     = button:new("New Game", 400, 250),
@@ -42,34 +49,48 @@ function menu:construct(aControlBag)
 	}
 end
 
+--[[
+--Updates the menu by highlighting a button the user has hovered over.
+--]]
 function menu:update(dt)
 	for n,b in pairs(self.buttons) do
 		b:update(dt)
 	end
 end
 
+--[[
+--When the mouse is pressed, it checks if a button is under the cursor.
+--If it's the Exit button, then close the program.
+--Other buttons cause the appropriate view to be drawn.
+--]]
 function menu:mousepressed(x, y, button)
 	for n,b in pairs(self.buttons) do
 		if b:mousepressed(x,y,buttons) then
 			if n == "new" then
-				state = game:new(self.controlBag)
+				state = game:new(self.controlBag) --New Game
 			elseif n == "options" then
-				state = options:new(self.controlBag)
+				state = options:new(self.controlBag) --Open options
 			elseif n == "exit" then
-				love.event.push("q")
+				love.event.push("q") --Quit the program
 			end
 		end
 	end
 end
 
+--[[
+--Draws the various buttons to the screen.
+--]]
 function menu:draw()
 	for n,b in pairs(self.buttons) do
 		b:draw()
 	end
 end
 
+--[[
+--Checks for the escape key, if it is pressed, then the program quits.
+--]]
 function menu:keypressed(key)
 	if key == "escape" then
-		love.event.push("q")
+		love.event.push("q") --Quit the program
 	end
 end

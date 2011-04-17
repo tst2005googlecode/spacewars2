@@ -23,6 +23,14 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 ]]
 
+--[[
+Modification (c) 2011 Team Tempest
+
+This allows Lua to behave somewhat like an object oriented language.
+Provides support for classes and object instantiation.
+--]]
+
+
 __HAS_SECS_COMPATIBLE_CLASSES__ = true
 
 local class_mt = {}
@@ -33,12 +41,15 @@ end
 
 class = setmetatable({ __baseclass = {} }, class_mt)
 
+--[[
+--Creates a new instance of a specific class.
+--]]
 function class:new(...)
     local c = {}
     c.__baseclass = self
     setmetatable(c, getmetatable(self))
     if c.construct then
-        c:construct(...)
+        c:construct(...) --Construct the object using the argument list.
     end
     return c
-end 
+end

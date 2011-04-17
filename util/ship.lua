@@ -50,48 +50,52 @@ local data -- contains ship systems, state, etc
 
 ship = bodyObject:new(...)
 
--- Function to constructialize the ship body, shape, angle, and border awareness
+--[[
+--Constructs and initializes a ship object.
+--Initializes the body, shape, angle, and border awareness.
+--Also initializes control constants, armor, and weapon capacity.
+--]]
 function ship:construct( theWorld, controlledBy, aCoordBag, shipConfig )
-	self.controller = controlledBy -- player or AI
+	--Set the controller, and construct the ship.
+	self.controller = controlledBy
 	self:constructBody( theWorld, shipConfig.startX, shipConfig.startY, shipConfig.mass, shipConfig.mass * ( 25 * 10 ) * ( 100000 ^ 2 ) / 6 )
 	self.shipType = shipConfig.shipType
 
-	-- initial angle is 0 (right), so point ship to the right
+	--Set the initial angle for the ship.
 	self.shipPoly = love.physics.newPolygonShape(self.body, 15, 0, -10, -10, -15, 0, -10, 10)
 	self.body:setAngle( shipConfig.startAngle )
 
-	--coordinate variables
+	--Initialize world awareness and store configuration data.
 	self.coordBag = aCoordBag
 	self.minX,self.maxX,self.screenX,self.minY,self.maxY,self.screenY = aCoordBag:getCoords()
-
 	self.shipConfig = shipConfig
 
-	-- these need to be set from shipConfig
+	--Initialize propulsion constants.
 	self.maxLinearV = 30 --NOT CURRENTLY IN USE!
-	self.maxAngleV = 0.1 * timeScale
+	self.maxAngleV = 0.1 * timeScale --NOT CURRENTLY IN USE!
 	self.baseThrust = shipConfig.mass * 500
 	self.baseTorque = shipConfig.mass ^ 3 * 50000
 	self.easyTurn = 0.0000005 * timeScale
 
-	-- state controls for step turning
+	--State controls for step turning
 	self.turnStep = 0
 	self.turnAccel = false
 
---	self.shipPoly:setMask(1)
+	--Set the ship for simulation within the world.
 	self.shipPoly:setSensor(true)
 	self.shipPoly:setData( self )
 	self.color = shipConfig.color
 
-	--store the world for laser and missile creation
+	--Store a world reference for laser and missile creation
 	self.world = theWorld
 
-	--ship data
+	--Set the ship's data, including armor and weapon capacities.
 	self.data = {}
 	self.objectType = types.ship
 	self.data.owner = self.controller
---	self.data.armor = 12500
+
 	self.data.armor = 2000
-	self.data.missiles = {} -- active missiles
+	self.data.missiles = {}
 	self.data.newMissiles = {}
 	self.data.missileBank = 10
 	self.data.laserEngaged = false
@@ -100,32 +104,40 @@ function ship:construct( theWorld, controlledBy, aCoordBag, shipConfig )
 	self.data.laserUse = 1
 end
 
+--[[
+--Draws the ship on the screen with the stored color.
+--]]
 function ship:draw()
 	love.graphics.setColor( unpack( self.color ) )
 	love.graphics.polygon( "fill", self.shipPoly:getPoints() )
 end
 
+--[[
+--Updates the ship every dt seconds.
+--Polls the controller on every iteration for commands.
+--If possible, executes the commands requested by the controller.
+--]]
 -- checks every dt seconds for commands, and execute the appropriate function
 function ship:update( dt )
-	-- get commands from controller
+	--Get commands from controller
 	local commands = self.controller:updateControls( self.data, dt )
-	-- check for respawn
+	--Check for respawn
 	if self.data.status == "DEAD" then
 		if commands[1] == "respawn" then
 			self:respawn()
 		end
 		return
 	end
-	-- charge laser
+	--Charge laser
 	self.data.laserCharge = 1
-	-- checking for dead missiles is always a vaild operation
+	--Checking for dead missiles to replenish reserves.
 	for i, aMissile in ipairs( self.data.missiles ) do
 		if not aMissile.isActive then
 			table.remove( self.data.missiles, i )
 			self.data.missileBank = self.data.missileBank + 1
 		end
 	end
-	-- execute all commands from controller
+	--Execute all commands from controller
 	for i, command in ipairs( commands ) do
 		if command == "stop" then
 			self:stopThrust( dt )
@@ -157,24 +169,28 @@ function ship:update( dt )
 			self.data.laserEngaged = false
 		end
 	end
-	-- start/continue laser beam
+	--Start/continue laser beam
 	if self.data.laserEngaged then
 		self:engageLaser( dt, love.mouse.getX(), love.mouse.getY() )
 	end
-	-- accelerate turn if turning
+	--Sccelerate turn if using STEP mode.
 	if self.turnAccel then
 		self:accelTurn()
 	end
-	-- check boundary and activate the ship's warpdrive if needed.
+	--Check boundary and activate the ship's warp drive if needed.
 	self:warpDrive()
 end
 
--- A simple way to turn left
+--[[
+--A simple, constant turn to the left.
+--]]
 function ship:easyLeft()
 	self.body:setAngle( self.body:getAngle() - self.easyTurn * timeScale )
 end
 
--- An advanced way to turn left, it applies torque for angular acceleration
+--[[
+--An advanced, torque accelerated turn to the left.
+--]]
 function ship:normalLeft()
 	self.body:applyTorque( -self.baseTorque * forceScale )
 	--[[if self.body:getAngularVelocity() <= -self.maxAngleV then
@@ -182,18 +198,24 @@ function ship:normalLeft()
 	end--]]
 end
 
--- A complex way to turn left; apply torque for angular acceleration in steps
+--[[
+--An advanced turn to the left that causes the ship to continue rotating at a certain speed.
+--]]
 function ship:stepLeft()
 	self.turnAccel = true
 	self.turnStep = self.turnStep - 1
 end
 
--- A simple way to turn right
+--[[
+--A simple, constant turn to the right.
+--]]
 function ship:easyRight()
 	self.body:setAngle( self.body:getAngle() + self.easyTurn * timeScale )
 end
 
--- An advanced way to turn right, it applies torque for angular acceleration
+--[[
+--An advanced, torque accelerated turn to the right.
+--]]
 function ship:normalRight()
 	self.body:applyTorque( self.baseTorque * forceScale )
 	--[[if self.body:getAngularVelocity() >= self.maxAngleV then
@@ -201,24 +223,29 @@ function ship:normalRight()
 	end--]]
 end
 
--- A complex way to turn right; apply torque for angular acceleration in steps
+--[[
+--An advanced turn to the right that causes the ship to continue rotating at a certain speed.
+--]]
 function ship:stepRight()
 	self.turnAccel = true
 	self.turnStep = self.turnStep + 1
 end
 
--- In STEP mode, accelerate to set angular velocity
+--[[
+--Used in STEP mode to accelerate the constant turn rate.
+--]]
 function ship:accelTurn()
-	-- difference in current angular velocity and target angular velocity
+	--Find difference in current angular velocity and target angular velocity
 	local curVel = self.body:getAngularVelocity()
 	local targetVel = self.maxAngleV * self.turnStep / 8
 	local velDif = curVel - targetVel
-	-- stop accelerating if close enough to target
 	if math.abs( velDif ) <= self.baseTorque / 2 then
-		self.body:applyTorque( 0 ) -- bug in LOVE doesn't set velocity if no torque
+		--Stop accelerating if close enough to target
+		self.body:applyTorque( 0 ) --Bug in LOVE doesn't set velocity if no torque
 		self.body:setAngularVelocity( targetVel )
 		self.turnAccel = false
-	else -- otherwise, apply torque
+	else
+		--Otherwise, apply torque
 		if velDif > 0 then
 			self.body:applyTorque( -self.baseTorque * forceScale / 2 )
 		else
@@ -227,8 +254,10 @@ function ship:accelTurn()
 	end
 end
 
--- Applies torque counter to current angular velocity to stop rotation
--- Now a two-step process. If torque overcompensates, set velocity to 0.
+--[[
+--Applies torque counter to current angular velocity to stop rotation
+--If torque overcompensates, set angular velocity to 0.
+--]]
 function ship:stopTurn()
 	if self.body:getAngularVelocity() > 0 then
 		self.body:applyTorque( -self.baseTorque * forceScale )
@@ -241,81 +270,100 @@ function ship:stopTurn()
 			self.body:setAngularVelocity(0)
 		end
 	end
-	-- change step for step mode
+	--Change step for step mode
 	self.turnStep = math.floor( self.body:getAngularVelocity() * 8 / self.maxAngleV )
 end
 
--- Applies thrust to the ship, pointed in the direction the cone is facing
+--[[
+--Applies thrust to the ship, pointed in the direction the cone is facing
+--]]
 function ship:thrust()
 	local scaledThrust = self.baseThrust * forceScale
 	local angle = self.body:getAngle()
+	--Apply the proper amount of thrust in the X and Y directions.
 	local xThrust = math.cos( angle ) * scaledThrust
 	local yThrust = math.sin( angle ) * scaledThrust
 	self.body:applyForce( xThrust, yThrust )
 end
 
--- Applies thrust to the ship, pointed in the opposite direction of the cone
+--[[
+--Applies thrust to the ship, pointed in the opposite direction of the cone
+--Reversing occurs at 1/2 normal thrust.
+--]]
 function ship:reverse()
 	local halfThrustScaled = self.baseThrust * forceScale / 2
 	local angle = self.body:getAngle()
+	--Apply the proper amount of thrust in the X and Y directions.
 	local xThrust = math.cos( angle ) * halfThrustScaled
 	local yThrust = math.sin( angle ) * halfThrustScaled
 	self.body:applyForce( -xThrust, -yThrust  )
 end
 
--- Applies thrust to the ship, pointed in the opposite direction of MOVEMENT
+--[[
+--Applies thrust to the ship, pointed in the opposite direction of MOVEMENT
+--All stop occurs at 1/2 normal thrust.
+--]]
 function ship:stopThrust( dt )
 	local xVel, yVel = self.body:getLinearVelocity()
 	local halfThrustScaled = self.baseThrust * forceScale / 2
 	local minVel = halfThrustScaled * dt / self.body:getMass()
 	if math.abs( xVel ) < minVel and math.abs( yVel ) < minVel then
+		--Snap linear velocity to 0 and return
 		self.body:setLinearVelocity( 0, 0 )
 		return
 	end
-	local direction = math.atan2( yVel, xVel ) + math.pi -- opposite current vector
+	--Find the direction opposite the current vector.
+	local direction = math.atan2( yVel, xVel ) + math.pi
 	if direction > maxAngle then
+		--Roll the angle past 2*pi.
 		direction = direction - maxAngle
 	end
+	--Apply the proper amount of thrust in the X and Y directions.
 	local xThrust = halfThrustScaled * math.cos( direction )
 	local yThrust = halfThrustScaled * math.sin( direction )
 
 	self.body:applyForce( xThrust, yThrust )
 end
 
--- Applies thrust to the ship to orbit the nearest planet
+--[[
+--Applies thrust to the ship to orbit the nearest planet
+--WARNING: Uses the global solarMasses table.
+--]]
 function ship:orbit( dt )
-	local aSolarMass = solarMasses.objects[ 1 ] -- get nearest mass later
+	--Figure based on the planet.
+	local aSolarMass = solarMasses.objects[ 1 ]
+	--Determine the distance between the ship and planet.
 	local difX = aSolarMass.body:getX() - self.body:getX()
 	local difY = aSolarMass.body:getY() - self.body:getY()
 	local dist = hypotenuse( difX, difY )
 
-	-- Is the ship within range to orbit?  Need to know the max ship width ...
-	-- 15 pixels is approximate for now, for half of max width
+	--Is the ship within range to orbit?  Need to know the max ship width ...
+	--15 pixels is approximate for now, for half of max width
 	if dist > aSolarMass.radius + 15 and dist < aSolarMass.radius * 8 then
 		local dir = math.atan2( difY, difX )
-		-- orbit velocity in pixels / second
+		--Orbit velocity in pixels / second
 		local scaledOrbitVel =
 			( ( ( aSolarMass.body:getMass() ^ 2 ) * gravity /
 				( ( self.body:getMass() + aSolarMass.body:getMass() ) *
 				  dist * distanceScale )
 			  ) ^ ( 1 / 2 )
-			) * timeScale / distanceScale -- required velocity to orbit at current radius
-		local orbitAngle = dir - quarterCircle -- perpendicular to angle to mass
-		if orbitAngle < 0 then -- make it positive
+			) * timeScale / distanceScale --Required velocity to orbit at current radius
+		local orbitAngle = dir - quarterCircle --Perpendicular to angle to mass
+		if orbitAngle < 0 then --Make it positive
 			orbitAngle = maxAngle + orbitAngle
 		end
 		local velX, velY = self.body:getLinearVelocity()
-		local orbVelX = math.cos( orbitAngle ) * scaledOrbitVel -- X component
-		local orbVelY = math.sin( orbitAngle ) * scaledOrbitVel -- Y component
-		local velDifX = orbVelX - velX -- X component of force direction needed
-		local velDifY = orbVelY - velY -- Y component of force direction needed
+		local orbVelX = math.cos( orbitAngle ) * scaledOrbitVel --X component
+		local orbVelY = math.sin( orbitAngle ) * scaledOrbitVel --Y component
+		local velDifX = orbVelX - velX --X component of force direction needed
+		local velDifY = orbVelY - velY --Y component of force direction needed
 		local forceAngle = math.atan2( velDifY, velDifX )
 		lastAngle = scaledOrbitVel
-		local forceVel = hypotenuse( velDifX, velDifY ) -- scalar in force direction
+		local forceVel = hypotenuse( velDifX, velDifY ) --Scalar in force direction
 
-		-- apply 1/2 thrust in forceAngle direction ... use less force if needed
+		--Apply 1/2 thrust in forceAngle direction ... use less force if needed
 		local f = self.baseThrust * forceScale / 4 -- scaled force to apply
-		-- compare velocity
+		--Compare velocity
 		if forceVel < f * timeScale * dt / self.body:getMass() then
 			f = forceVel * timeScale * dt * self.body:getMass()
 		end
@@ -323,22 +371,29 @@ function ship:orbit( dt )
 	end
 end
 
--- Uses world awareness to engage "warpdrive," causing the ship to "wrap" around
+--[[
+--Uses world awareness to engage "warpdrive."
+--Causes the ship to "wrap around" the borders of the world.
+--]]
 function ship:warpDrive()
 	if(self.body:getX() > self.maxX) then
 		self.body:setX(self.minX)
-	end
-	if(self.body:getX() < self.minX) then
+	elseif(self.body:getX() < self.minX) then
 		self.body:setX(self.maxX)
 	end
 	if(self.body:getY() > self.maxY) then
 		self.body:setY(self.minY)
-	end
-	if(self.body:getY() < self.minY) then
+	elseif(self.body:getY() < self.minY) then
 		self.body:setY(self.maxY)
 	end
 end
 
+--[[
+--Ship's automatically respawn at the next available opportunity.
+--This sets the controller to call for a respawn automatically.
+--It also spawns 4 debris at the ship's destruction point.
+--These debris will spawn above the soft cap in the configuration.
+--]]
 function ship:destroy()
 	--self:deactivate()
 	self.data.status = "DEAD"
@@ -350,43 +405,56 @@ function ship:destroy()
 	end
 end
 
--- engage laser, if sufficient laser charge/energy
+--[[
+--Engages the laser, given sufficient charge.
+--The laser fires from the ship to the mouse crosshair.
+--Lasers travel extremely quickly, and inflict 1 damage/millisecond.
+--]]
 function ship:engageLaser( dt, x2, y2, endOfBeam )
-	-- track usage ... return if insufficient charge/energy
+	--Track usage and return if insufficient charge/energy.
 	if self.data.laserCharge >= self.data.minimumLaserCharge then
 		self.data.laserCharge = self.data.laserCharge - self.data.laserUse * timeScale * dt
 	else
 		return
 	end
-	-- create a laser beam "particle"
+	--Create a laser beam "particle," really it's a rectangle.
 	local x1 = self.body:getX()
 	local y1 = self.body:getY()
 --	print( theCamera:getX() + x2, theCamera:getY() + y2 )
+	--Figure the correct angle and velocity on the X and Y directions.
 	local angle = pointAngle( x1, y1, theCamera:getX() + x2 / theCamera.zoom, theCamera:getY() + y2 / theCamera.zoom )
 	local xVel = math.cos( angle ) * lightSpeed
 	local yVel = math.sin( angle ) * lightSpeed
+	--Create the laser, own it with this ship, and add it to the game.
 	local aLaserBeam = lasers:getNew( self.world, x1, y1, angle, self.coordBag, self, xVel, yVel )
 	aLaserBeam:setOwner( self.controller )
 	game:addActive( aLaserBeam )
 end
 
--- launch a missile
+--[[
+--Launch a missile, given sufficient ammunition available.
+--The missile fires from the cone of the ship in a straight line.
+--Missiles slowly accelerate, and inflict a large amount of damage.
+--]]
 function ship:launchMissile( x, y )
 	if self.data.missileBank > 0 then
+		--Launch a missile, figure the correct position, angle, and velocity.
 		local angle = self.body:getAngle()
 		local x = self.body:getX() -- + math.cos( angle ) * 25
 		local y = self.body:getY() -- + math.sin( angle ) * 25
 		local xVel, yVel = self.body:getLinearVelocity()
+		--Generate the missile, assign the owner, and add it to the game.
 		local aMissile = missiles:getNew( self.world, x, y, angle, self.coordBag, self.shipConfig, xVel, yVel )
 		aMissile:setOwner( self.controller )
 		self.data.missiles[ #self.data.missiles + 1 ] = aMissile
-		self.data.newMissiles[ #self.data.newMissiles + 1 ] = aMissile
+--		self.data.newMissiles[ #self.data.newMissiles + 1 ] = aMissile
 		self.data.missileBank = self.data.missileBank - 1
 		game:addActive( aMissile )
 	end
 end
 
--- the player's new missiles
+--[[
+--WARNING: Old function, no longer in use.
 function ship:getNewMissiles()
 	local returnMissiles = {}
 	returnMissiles = self.data.newMissiles
@@ -394,21 +462,31 @@ function ship:getNewMissiles()
 	self.data.newMissiles = {}
 	return returnMissiles
 end
+--]]
 
--- remaining missiles
+--[[
+--Get the number of remaining missiles.
+--]]
 function ship:getMissileBank()
 	return self.data.missileBank
 end
 
--- engage a tractor beam
+--[[
+--Engage a tractor beam.
+--WARNING: Function not currently implemented.
+--]]
 function ship:engageTractor()
 end
 
--- Respawn the ship in a random quadrant within 800 pixels of the borders, pointed in a random angle
+--[[
+--Respawn the ship in a random quadrant within 800 pixels of the borders.
+--The ship will be pointed at a random angle.
+--]]
 function ship:respawn()
 	self.data.status = "ACTIVE"
 	x = math.random(0,800)
 	y = math.random(0,800)
+	--Figure out which side to spawn on.  0 is minimum X/Y, and 1 is maximum.
 	xSide = math.random(0,1)
 	ySide = math.random(0,1)
 	if xSide == 1 then
@@ -421,6 +499,7 @@ function ship:respawn()
 	self.body:setX(x)
 	self.body:setY(y)
 	self.body:setAngle(angle)
+	--Reinitialize position and armor.
 	self.body:setLinearVelocity(0,0)
 	self.body:setAngularVelocity(0)
 	self.data.armor = 2000
@@ -431,42 +510,59 @@ function ship:getBody()
 	return self.body
 end--]]
 
+--[[
+--Get the ship's STEP acceleration.
+--]]
 function ship:getTurnAccel()
 	return self.turnAccel
 end
 
--- Get the body's X position
+--[[
+--Get the ship's X position
+--]]
 function ship:getX()
 	return self.body:getX()
 end
 
--- Get the body's Y position
+--[[
+--Get the ship's Y position
+--]]
 function ship:getY()
 	return self.body:getY()
 end
 
--- Get the points that make up the ship polygon
+--[[
+--Get the points that make up the ship polygon
+--]]
 function ship:getPoints()
 	return self.shipPoly:getPoints()
 end
 
--- Get the ship's current status
+--[[
+--Get the ship's current status
+--]]
 function ship:getStatus()
 	return self.data.status
 end
 
--- Set the ship's current status
+--[[
+--Set the ship's current status
+--]]
 function ship:setStatus(stat)
 	self.data.status = stat
 end
 
--- the type of ship this is
+--[[
+--The type of the ship, which is determined by controller.
+--]]
 function ship:getType()
 	return self.shipType
 end
 
--- Function to check maximum linear velocity.
--- CURRENTLY NOT IN USE!
+--[[
+--Function to check maximum linear velocity.
+--WARNING: Currently not in use!
+--]]
 function checkMaxLinearVelocity(xVelocity,yVelocity)
 	if(xVelocity > maxLinearV) then
 		xVelocity = maxLinearV

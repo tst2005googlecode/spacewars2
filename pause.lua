@@ -31,43 +31,63 @@ require "util/button.lua"
 
 pause = class:new(...)
 
+--[[
+--Both creates and initializes the pause view.
+--]]
 function pause:construct(aGame, aControlBag)
-	love.mouse.setVisible( true ) -- hide the mouse cursor
+	--Reveal the mouse cursor
+	love.mouse.setVisible( true )
+	--Store the game state and configuration
 	self.temp = aGame
 	self.tempControl = aControlBag
+	--Initialize the buttons the user can press.
 	self.buttons = {resume = button:new("Resume", 400, 250),
 					quit = button:new("Quit", 400, 350)}
 end
 
+--[[
+--Updates the menu by highlighting a button the user has hovered over.
+--]]
 function pause:update(dt)
 	for n,b in pairs(self.buttons) do
 		b:update(dt)
 	end
 end
 
+--[[
+--When the mouse is pressed, it checks if a button is under the cursor.
+--If the quit button is pressed, then return to the main menu.
+--Otherwise, resume the game state.
+--]]
 function pause:mousepressed(x, y, button)
 	for n,b in pairs(self.buttons) do
 		if b:mousepressed(x,y,buttons) then
 			if n == "resume" then
-				state = self.temp
 				love.mouse.setVisible( false ) -- hide the mouse cursor
+				state = self.temp --Return to the game
 			elseif n == "quit" then
-				self.temp:destroy()
-				state = menu:new(self.tempControl)
+				self.temp:destroy() --Release the game's storage
+				state = menu:new(self.tempControl) --Return to main menu
 			end
 		end
 	end
 end
 
+--[[
+--Draws the various buttons to the screen.
+--]]
 function pause:draw()
 	for n,b in pairs(self.buttons) do
 		b:draw()
 	end
 end
 
+--[[
+--Checks for the escape key, if it is pressed, then return to the game.
+--]]
 function pause:keypressed(key)
 	if key == "escape" then
-		state = self.temp
-		love.mouse.setVisible( false ) -- hide the mouse cursor
+	love.mouse.setVisible( false ) -- hide the mouse cursor
+	state = self.temp --Return to the game
 	end
 end

@@ -32,7 +32,9 @@ require "subclass/class.lua"
 
 coordBag = class:new(...)
 
---Assign all the dimensions to the coordBag
+--[[
+--Constructs and initializes the bag with all coordinate data.
+--]]
 function coordBag:construct(aMinX,aMaxX,aScreenX,aMinY,aMaxY,aScreenY)
 	self.minX = aMinX
 	self.maxX = aMaxX
@@ -42,37 +44,51 @@ function coordBag:construct(aMinX,aMaxX,aScreenX,aMinY,aMaxY,aScreenY)
 	self.screenY = aScreenY
 end
 
---Get only the minumum X
+--[[
+--Get the world's minimum X position.
+--]]
 function coordBag:getMinX()
 	return self.minX
 end
 
---Get only the maximum X
+--[[
+--Get the world's maximum X position.
+--]]
 function coordBag:getMaxX()
 	return self.maxX
 end
 
---Get only the window width
+--[[
+--Get the screen's width.
+--]]
 function coordBag:getScreenX()
 	return self.screenX
 end
 
---Get only the minimum Y
+--[[
+--Get the world's minimum Y position.
+--]]
 function coordBag:getMinY()
 	return self.minY
 end
 
---Get only the maximum Y
+--[[
+--Get the world's maximum Y position.
+--]]
 function coordBag:getMaxY()
 	return self.maxY
 end
 
---Get only the window height
+--[[
+--Get the screen's height.
+--]]
 function coordBag:getScreenY()
 	return self.screenY
 end
 
---Return ALL the coordinates at once
+--[[
+--Get all six coordinates from one call.
+--]]
 function coordBag:getCoords()
 	return self.minX,self.maxX,self.screenX,self.minY,self.maxY,self.screenY
 end

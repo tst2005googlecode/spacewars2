@@ -21,31 +21,34 @@ THE SOFTWARE.
 
 ai.lua
 
-This class implements an ai controller.  ai chooses a random spawn point and 
-direction.  Then it flies for 600 update cycles before killing ignition.
+This class implements an ai controller.
+ai flies for 1000 update cycles before killing ignition.
 --]]
 
 require "subclass/class.lua"
 
-local state
-local cycles
-
 ai = class:new(...)
 
---Function to instantiate the ship.
+--[[
+--Constructs and initializes the ai controller.
+--]]
 function ai:construct()
-	self.cycles = 1000
-	self.state = { respawn = false }
+	self.cycles = 1000 --Fly for 1000 update cycles
+	self.state = { respawn = false } --New ships don't need to respawn
 end
-
+--[[
+--Poll the ai for control input.
+--Return the input to the ship that asked for it.
+--]]
 function ai:updateControls( shipState, dt )
+	--Create a table to hold the commands
 	local commands = {}
-	-- AIs currently respawn instantaneously
+	--If dead, the AI should respawn instantly with a new ignition timer.
 	if self.state.respawn then
 		commands[ #commands + 1 ] = "respawn"
 		self.state.respawn = false
 		self.cycles = 1000
-	-- if the AI has time left, then it can still thrust
+	--If the AI has time left, then it can still thrust
 	elseif self.cycles > 0 then
 		commands[ #commands + 1 ] = "thrust"
 		self.cycles = self.cycles - dt * timeScale

@@ -36,73 +36,107 @@ gameOver = class:new(...)
 --It requires a configBag to send back to the menu, and a score from the game.
 --]]
 function gameOver:construct(aConfigBag, score)
+	--Unhide the mouse
 	love.mouse.setVisible(true)
+	--Create a few variables.
 	self.configBag = aConfigBag
 	self.newScore = score
 	self.width = sWidth/2
-	self.col1 = 100
-	self.col2 = 175
-	self.col3 = 650
-	self.start = 150
-	self.space = 30
-	self.exit = button:new("Back to Menu", self.width, 550)
+	--Define the buttons.
+	self.continue = button:new("Add High Score", self.width, 500)
+	self.skip = button:new("Skip", self.width, 550)
+	--Define the static strings and their lengths
+	self.scoreString = "Final Score: " .. score .. " points!"
+	self.scoreLength = font["large"]:getWidth(self.scoreString)
+	self.rankString = "RANK: "
+	self.rankLength = font["large"]:getWidth(self.rankString)
+	--This is only used if there is a new high score
+	self.nameEntry = true --Set to true or false depending on score status
+	self.namePrompt = "Enter a name for the high score table!"
+	self.namePromptLength = font["large"]:getWidth(self.namePrompt)
+	self.nameString = ""
 end
 
 --[[
---Write the Game Over text and high scores to the screen.
+--This function draws the gameOver screen.
+--If there is a new high score, then allow name entry.
 --]]
 function gameOver:draw()
 	love.graphics.setColor(unpack(color["text"]))
-	--Write the headers
 	love.graphics.setFont(font["large"])
-	stringWidth = font["large"]:getWidth("GAME OVER")
-	love.graphics.print("GAME OVER", self.width - stringWidth/2, 10)
-	love.graphics.setFont(font["default"])
-	stringWidth = font["default"]:getWidth("High Scores")
-	love.graphics.print("High Scores", self.width - stringWidth/2, 100)
-	--Write the rank, the name, and the score, in "columns".
-	love.graphics.setFont(font["small"])
-	love.graphics.print("Rank", self.col1, self.start)
-	love.graphics.print("Player Name", self.col2, self.start)
-	love.graphics.print("Score", self.col3, self.start)
-	for i = 1,10 do
-		love.graphics.print(i .. ".", self.col1, self.start + i * self.space)
-		love.graphics.print("THE PLAYER NAME GOES RIGHT HERE EVERYONE", self.col2, self.start + i * self.space)
-		love.graphics.print("SCORE",self.col3,self.start + i * self.space)
+	--Write things to the screen
+	love.graphics.print(self.scoreString, self.width - self.scoreLength/2, 150)
+	love.graphics.print(self.rankString, self.width - self.rankLength/2, 225)
+	--The following should only be displayed if there is a new high score
+	if(self.nameEntry == true) then
+		love.graphics.print(self.namePrompt, self.width - self.namePromptLength/2,300)
+		self.nameStringLength = font["large"]:getWidth(self.nameString)
+		love.graphics.print(self.nameString, self.width - self.nameStringLength/2,375)
 	end
-	self.exit:draw()
+	--Draw the buttons.
+	self.continue:draw()
+	self.skip:draw()
 end
 
 --[[
---Capture text input and the escape key.
---]]
-function gameOver:keypressed(key)
-	--Handle high score input
-
-	if key == "escape" then
-		self:back()
-	end
-end
-
---[[
---If the back button is clicked, then return to the menu.
---]]
-function gameOver:mousepressed(x, y, button)
-	if self.exit:mousepressed(x, y, button) then
-		self:back()
-	end
-end
-
---[[
---Highlight the button if it's being hovered over.
+--Updates the buttons on the page, highlighting them if they are hovered over.
 --]]
 function gameOver:update(dt)
-	self.exit:update(dt)
+	self.continue:update(dt)
+	self.skip:update(dt)
+end
+
+--[[
+--Checks if mouse is pressed on a button and execute the appropriate function.
+--]]
+function gameOver:mousepressed(x,y,button)
+	if(self.continue:mousepressed(x,y,button)) then
+		--Submit high score
+		self:highScore()
+	elseif(self.skip:mousepressed(x,y,button)) then
+		self:menu() --Return to main menu
+	end
+end
+
+--[[
+--Supports key entry by the player.
+--Escape will skip to the main menu without submitting a score.
+--Backspace will delete the last character in the nameString.
+--Return will terminate the string and immediately submit it.
+--All other keys that generate one character will be appended to the string.
+--Keys that produce more than one character are IGNORED.
+--]]
+function gameOver:keypressed(key)
+	if(key == "escape") then
+		self:menu() --Return to main menu
+	elseif(self.nameEntry) then
+		if(key == "backspace") then
+			--Delete a character if one is available
+			if(self.nameString:len() > 0) then
+				self.nameString = string.sub(self.nameString,1,self.nameString:len() - 1)
+			end
+		elseif(key == "return") then
+			--Submit the name
+			self.nameEntry = false
+			self:highScore()
+		elseif(key:len() == 1) then
+			--Append a character, if the key is one character long
+			self.nameString = self.nameString .. key
+		end
+	end
 end
 
 --[[
 --Return to the main menu.
 --]]
-function gameOver:back()
+function gameOver:menu()
 	state = menu:new(aConfigBag)
+end
+
+--[[
+--Submit to the high score table
+--]]
+function gameOver:highScore()
+	--Append to the high score table HERE, then load the view.
+	state = highScore:new(aConfigBag)
 end

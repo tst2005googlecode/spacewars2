@@ -32,8 +32,8 @@ require "util/button.lua"
 highScore = class:new(...)
 
 --[[
---This function constructs a new game over screen.
---It requires a configBag to send back to the menu, and a score from the game.
+--This function constructs a new high score screen.
+--It requires a configBag to send back to the menu, and can optionally take a score.
 --]]
 function highScore:construct(aConfigBag)
 	self.configBag = aConfigBag
@@ -47,7 +47,7 @@ function highScore:construct(aConfigBag)
 end
 
 --[[
---Write the Game Over text and high scores to the screen.
+--Write the high scores to the screen.
 --]]
 function highScore:draw()
 	love.graphics.setColor(unpack(color["text"]))
@@ -63,16 +63,18 @@ function highScore:draw()
 	love.graphics.print("Rank", self.col1, self.start)
 	love.graphics.print("Player Name", self.col2, self.start)
 	love.graphics.print("Score", self.col3, self.start)
+	--10 high scores.
 	for i = 1,10 do
 		love.graphics.print(i .. ".", self.col1, self.start + i * self.space)
 		love.graphics.print("THE PLAYER NAME GOES RIGHT HERE EVERYONE", self.col2, self.start + i * self.space)
 		love.graphics.print("SCORE",self.col3,self.start + i * self.space)
 	end
+	--Draw the exit button
 	self.exit:draw()
 end
 
 --[[
---Capture text input and the escape key.
+--Capture the escape key.
 --]]
 function highScore:keypressed(key)
 	if key == "escape" then

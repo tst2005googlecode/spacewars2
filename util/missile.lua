@@ -35,6 +35,7 @@ Missiles have 500 armor that must be depleted by lasers before destruction.
 
 require "subclass/class.lua"
 require "util/bodyObject.lua"
+require "util/functions.lua"
 
 local color
 local mass = 10
@@ -78,8 +79,8 @@ function missile:init(aWorld, x, y, startAngle, aCoordBag, shipConfig, xVel, yVe
 
 	--Set the thrust and torque of the missile based on mass.
 	self.baseThrust = self.mass * 1000
-	self.baseTorque = self.mass ^ 3 * 10000
-	self.easyTurn = 0.005 / timeScale
+--	self.baseTorque = self.mass ^ 3 * 10000
+	self.easyTurn = 0.001 / timeScale
 
 	--Set the color of the missile, and reset its fuel, killswitch, and target.
 	--WARNING: Target is currently not in use, as "smart" missiles don't exist.
@@ -102,8 +103,8 @@ end
 --The missile should try to home in on the target while fuel is available.
 --WARNING: This function is currently unimplemented.
 --]]
-function missile:target(aBody)
-
+function missile:setTarget(aBody)
+	self.target = aBody
 end
 
 --[[
@@ -138,6 +139,7 @@ function missile:update(dt)
 	--Missile has fuel to thrust.
 	elseif(self.fuel > 0) then
 		self:thrust()
+		self:turn()
 		self.fuel = self.fuel - ( dt * timeScale )
 	--Missile drifts until killswitch time elapses.
 	elseif(self.killswitch > 0) then
@@ -176,6 +178,25 @@ function missile:thrust()
 	local xThrust = math.cos( angle ) * scaledThrust
 	local yThrust = math.sin( angle ) * scaledThrust
 	self.body:applyForce( xThrust, yThrust )
+end
+
+--[[
+--Missiles that have a valid target should steer toward it.
+--For simplicity's sake the missile is forced to always point at the ship.
+--]]
+function missile:turn()
+	if (self.target ~= {}) then
+		angle = pointAngle(self.body:getX(),self.body:getY(),self.target.body:getX(),self.target.body:getY())
+		self.body:setAngle(angle)
+--[[
+	--Optional gradual turn behavior, however, it seems to work better with locked turning
+		if(angle > 0) then
+			self.body:setAngle( self.body:getAngle() + self.easyTurn * timeScale )
+		elseif(angle < 0) then
+			self.body:setAngle( self.body:getAngle() - self.easyTurn * timeScale )
+		end
+--]]
+	end
 end
 
 --[[

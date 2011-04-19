@@ -436,8 +436,17 @@ function ship:engageLaser( dt, x2, y2, endOfBeam )
 end
 
 --[[
+--Add the list of enemy ships to the current ship.
+--Used in launchMissile for targeting purposes.
+--]]
+function ship:addTargets(shipList)
+	self.targets = {}
+	self.targets = shipList
+end
+
+--[[
 --Launch a missile, given sufficient ammunition available.
---The missile fires from the cone of the ship in a straight line.
+--The missile fires from the ship and travels towards its target.
 --Missiles slowly accelerate, and inflict a large amount of damage.
 --]]
 function ship:launchMissile( x, y )
@@ -450,6 +459,20 @@ function ship:launchMissile( x, y )
 		--Generate the missile, assign the owner, and add it to the game.
 		local aMissile = missiles:getNew( self.world, x, y, angle, self.coordBag, self.shipConfig, xVel, yVel )
 		aMissile:setOwner( self.controller )
+		--Find the closest valid target
+		local curDist = 9999999
+		local target = nil
+		for i, v in pairs(self.targets) do
+			dist = pointDistance(self.body:getX(),self.body:getY(),v.body:getX(),v.body:getY())
+			if(dist < curDist) then
+				curDist = dist
+				target = v
+			end
+		end
+		--If there's a target, then point the missile at it
+		if(target ~= nil) then
+			aMissile:setTarget(target)
+		end
 		self.data.missiles[ #self.data.missiles + 1 ] = aMissile
 --		self.data.newMissiles[ #self.data.newMissiles + 1 ] = aMissile
 		self.data.missileBank = self.data.missileBank - 1

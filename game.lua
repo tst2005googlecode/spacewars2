@@ -108,6 +108,9 @@ local maxDebris
 activeDebris = 0
 --Used to block the game when the player needs a respawn.
 local needRespawn
+--Used for missile guidance systems, send to created ships.
+local playerShips = {}
+local aiShips = {}
 
 game = class:new(...)
 
@@ -179,6 +182,7 @@ function game:construct( aConfigBag, coord )
 	thePlayer = player:new( theCoordBag, theConfigBag )
 	local aShip = ships:getNew( theWorld, thePlayer, theCoordBag, theConfigBag )
 	game:addActive( aShip )
+	playerShips[1] = aShip
 
 	--Setup the camera and HUD elements to focus on player's ship.
 	theCamera = camera:new( theCoordBag, aShip.body, theConfigBag )
@@ -199,8 +203,13 @@ function game:construct( aConfigBag, coord )
 		theConfigBag["shipType"] = "aiShip"
 		anAI = ai:new( theCoordBag, theConfigBag )
 		aShip = ships:getNew( theWorld, anAI, theCoordBag, theConfigBag )
+		aShip:addTargets(playerShips)
 		game:addActive( aShip )
+		aiShips[i] = aShip
 	end
+
+	--Engage player targeting system
+	playerShips[1]:addTargets(aiShips)
 
 	--The player doesn't need to respawn when the game starts.
 	needRespawn = false

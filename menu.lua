@@ -27,6 +27,7 @@ In the future, it might also contain a "How to Play" button.
 --]]
 
 require "game.lua"
+require "highScore.lua"
 require "options.lua"
 require "subclass/class.lua"
 require "util/button.lua"
@@ -43,9 +44,11 @@ function menu:construct(aControlBag)
 	--Initialize the buttons the user can click.
 	self.buttons =
 	{
-		new     = button:new("New Game", 400, 250),
-		options = button:new("Options",  400, 350),
-		exit    = button:new("Exit",     400, 550)
+		new     = button:new("New Game",    400, 200),
+		options = button:new("Options",     400, 275),
+		score   = button:new("High Scores", 400, 350),
+		help    = button:new("Help",        400, 425),
+		exit    = button:new("Exit",        400, 500)
 	}
 end
 
@@ -70,6 +73,10 @@ function menu:mousepressed(x, y, button)
 				state = game:new(self.controlBag) --New Game
 			elseif n == "options" then
 				state = options:new(self.controlBag) --Open options
+			elseif n == "score" then
+				state = highScore:new(self.controlBag) --View high scores
+			elseif n == "help" then
+				--state = gameHelp:new(self.controlBag) --View game help
 			elseif n == "exit" then
 				love.event.push("q") --Quit the program
 			end

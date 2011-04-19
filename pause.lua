@@ -28,21 +28,26 @@ If resume is selected, or ESC is pressed again, it restores the game state.
 
 require "subclass/class.lua"
 require "util/button.lua"
+require "gameOver.lua"
 
 pause = class:new(...)
 
 --[[
 --Both creates and initializes the pause view.
 --]]
-function pause:construct(aGame, aControlBag)
+function pause:construct(aGame, aWidth, aControlBag, aScore)
 	--Reveal the mouse cursor
 	love.mouse.setVisible( true )
 	--Store the game state and configuration
 	self.temp = aGame
 	self.tempControl = aControlBag
+	self.score = aScore
+	self.width = aWidth
 	--Initialize the buttons the user can press.
-	self.buttons = {resume = button:new("Resume", 400, 250),
-					quit = button:new("Quit", 400, 350)}
+	--Easier to write the score down as a button!
+	self.buttons = {score = button:new("Score: " .. self.score, self.width/2, 100),
+					resume = button:new("Resume", self.width/2, 250),
+					quit = button:new("Quit", self.width/2, 350)}
 end
 
 --[[
@@ -67,7 +72,7 @@ function pause:mousepressed(x, y, button)
 				state = self.temp --Return to the game
 			elseif n == "quit" then
 				self.temp:destroy() --Release the game's storage
-				state = menu:new(self.tempControl) --Return to main menu
+				state = gameOver:new(self.tempControl, self.score) --Return to main menu
 			end
 		end
 	end
@@ -87,7 +92,7 @@ end
 --]]
 function pause:keypressed(key)
 	if key == "escape" then
-	love.mouse.setVisible( false ) -- hide the mouse cursor
-	state = self.temp --Return to the game
+		love.mouse.setVisible( false ) -- hide the mouse cursor
+		state = self.temp --Return to the game
 	end
 end

@@ -35,6 +35,7 @@ ai = class:new(...)
 function ai:construct()
 	self.cycles = 1000 --Fly for 1000 update cycles
 	self.state = { respawn = false } --New ships don't need to respawn
+	self.control = "A"
 end
 --[[
 --Poll the ai for control input.
@@ -55,4 +56,9 @@ function ai:updateControls( shipState, dt )
 	end
 
 	return commands
+end
+
+
+function ai:getControl()
+	return self.control
 end

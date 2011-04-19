@@ -111,6 +111,11 @@ local needRespawn
 --Used for missile guidance systems, send to created ships.
 local playerShips = {}
 local aiShips = {}
+--Scoring and lives
+local score = 0
+local kills = 0
+local currentLife = 0
+local maxLives = 0
 
 game = class:new(...)
 
@@ -140,12 +145,12 @@ function game:construct( aConfigBag, coord )
 	gravity = 0.0000000000667428
 	worldScale = 100       --100 pixels = 1 meter
 	distanceScale = 100000 --Meters per pixel (100 comes from world scale; see below)
-	timeScale = 200        --Elapsed seconds, per second
+	timeScale = theConfigBag:getSpeed()        --Elapsed seconds, per second
 	forceScale = timeScale ^ 2 / distanceScale / worldScale --Proportional to square of time scale
 	lightSpeed = 299792458 * timeScale / distanceScale --Pixels per second
 
 	--Font for basic number output only
-	digits = love.graphics.newImageFont( "images/digits.png", "1234567890.-ALM: " )
+	digits = love.graphics.newImageFont( "images/digits.png", "1234567890.-AEFLMS: " )
 
 	--Set up object framework
 	solarMasses = objectBag:new( solarMass )
@@ -172,8 +177,14 @@ function game:construct( aConfigBag, coord )
 	--Set a new random seed
 	math.randomseed( os.time() )
 
+	totalMoon = 0
+	if(theConfigBag:getRandomMoon() == "yes") then
+		totalMoon = math.random(0,theConfigBag:getMoonNum())
+	else
+		totalMoon = theConfigBag:getMoonNum()
+	end
 	--Generate planet and moons
-	game:generateMasses( math.random( 1, 4 ) + math.random( 1, 4 ) )
+	game:generateMasses( totalMoon )
 
 	--Configure the player's ship.
 	theConfigBag["color"] = color["ship"]
@@ -195,8 +206,13 @@ function game:construct( aConfigBag, coord )
 		game:generateDebris("",0,0)
 	end
 
+	if(theConfigBag:getRandomAi() == "yes") then
+		totalAi = math.random(1,theConfigBag:getAiNum())
+	else
+		totalAi = theConfigBag:getAiNum()
+	end
 	--Create enemy ships up to the cap.
-	for i = 1, theConfigBag:getAiNum() do
+	for i = 1, totalAi do
 		theConfigBag = copyTable( theConfigBag )
 		theConfigBag:setStartPosition( game:randomeStartLocation() )
 		theConfigBag["color"] = color["ai"]
@@ -213,6 +229,8 @@ function game:construct( aConfigBag, coord )
 
 	--The player doesn't need to respawn when the game starts.
 	needRespawn = false
+	currentLife = 1
+	maxLives = theConfigBag:getLives() + 0 --Must add zero to coerce to int
 end
 
 --[[
@@ -367,12 +385,14 @@ function game:draw()
 	theRadar:draw( activeObjects )
 	love.graphics.setFont( digits )
 	love.graphics.setColor(255,255,255)
-	love.graphics.print( fps, 5, 5 )
 	--Draw ammo and armor to the right of the radar
-	love.graphics.rectangle("line",130,0,45,35)
-	love.graphics.print( "M: " .. thePlayer.shipState.missileBank, 135, 5 )
-	love.graphics.print( "L: " .. string.format("%.3f", thePlayer.shipState.laserCharge), 135, 15)
-	love.graphics.print( "A: " .. thePlayer.shipState.armor, 135, 25 )
+	love.graphics.rectangle("line",130,0,45,70)
+	love.graphics.print( "F: " .. fps, 135, 5)
+	love.graphics.print( "S: " .. string.format("%.1f", score), 135, 15)
+	love.graphics.print( "L: " .. maxLives - currentLife, 135, 30)
+	love.graphics.print( "A: " .. thePlayer.shipState.armor, 135, 40 )
+	love.graphics.print( "M: " .. thePlayer.shipState.missileBank, 135, 50 )
+	love.graphics.print( "E: " .. string.format("%.3f", thePlayer.shipState.laserCharge), 135, 60)
 	--Draw the game cursor on top of everything.
 	game:drawCursor()
 --	love.graphics.print(debug,5,500)
@@ -380,7 +400,12 @@ function game:draw()
 
 	--If the player ship has crashed, then tell the user what to do.
 	if(needRespawn == true) then
-		local text = "Your ship is destroyed, please press Enter to respawn!"
+		local text = ""
+		if(currentLife > maxLives) then
+			text = "You have run out of ships.  Press enter to continue!"
+		else
+			text = "Your ship is destroyed, please press Enter to respawn!"
+		end
 		love.graphics.setFont(font["default"])
 		local textWidth = font["default"]:getWidth(text)
 		local xPos = (screenX - textWidth)/2
@@ -505,13 +530,20 @@ function game:keypressed( key, code )
 	--Ship has crashed, so wait for input to respawn.
 	if needRespawn == true then
 		if key == "return" then
-			needRespawn = false
-			thePlayer.state.respawn = true
+			if(currentLife > maxLives) then
+				--End game, return keeps next if block from executing
+				self:destroy()
+				state = gameOver:new(theConfigBag,score)
+				return
+			else
+				needRespawn = false
+				thePlayer.state.respawn = true
+			end
 		end
 	end
 	--Escape key opens the pause menu.
 	if key == "escape" then
-		state = pause:new( game, theConfigBag )
+		state = pause:new( game, screenX, theConfigBag, score )
 	else
 		--Handle camera adjustments.
 		theCamera:keypressed(key)
@@ -540,6 +572,23 @@ end
 --]]
 function game:focus()
 	state = pause:new( game, theConfigBag )
+end
+
+--[[
+--This function handles what to do when the player dies.
+--]]
+function playerDeath()
+	needRespawn = true
+	currentLife = currentLife + 1
+	score = kills/currentLife
+end
+
+--[[
+--This function handles what to do when a player kills an ai.
+--]]
+function aiKill()
+	kills = kills + 1
+	score = kills/currentLife
 end
 
 --[[
@@ -601,16 +650,18 @@ function shipCollide( a, b, coll )
 		--Solar masses destroy ships instantly.
 		a:destroy()
 		if a.controller == thePlayer then
-			needRespawn = true
+			playerDeath()
 		end
 	elseif b.objectType == types.ship then
 		--Colliding ships destroy each other.
 		a:destroy()
 		b:destroy()
 		if (a.controller == thePlayer) then
-			needRespawn = true
+			aiKill()
+			playerDeath()
 		elseif (b.controller == thePlayer) then
-			needRespawn = true
+			aiKill()
+			playerDeath()
 		end
 	elseif b.objectType == types.debris then
 		--Debris are destroyed and inflict damage on the ship.
@@ -620,7 +671,7 @@ function shipCollide( a, b, coll )
 		if(a.data.armor <= 0) then
 			a:destroy()
 			if(a.controller == thePlayer) then
-				needRespawn = true
+				playerDeath()
 			end
 		end
 	elseif b.objectType == types.laser then
@@ -630,7 +681,9 @@ function shipCollide( a, b, coll )
 			if(a.data.armor <= 0) then
 				a:destroy()
 				if(a.controller == thePlayer) then
-					needRespawn = true
+					playerDeath()
+				else
+					aiKill()
 				end
 			end
 			b:destroy()
@@ -643,7 +696,9 @@ function shipCollide( a, b, coll )
 			if(a.data.armor <= 0) then
 				a:destroy()
 				if(a.controller == thePlayer) then
-					needRespawn = true
+					playerDeath()
+				else
+					aiKill()
 				end
 			end
 			b:destroy()

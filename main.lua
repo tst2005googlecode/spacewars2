@@ -35,7 +35,7 @@ config = {}
 --Polymorphic variable holding the current view.
 state = {}
 --Master bag that holds the default system configuration.
-local theControlBag = controlBag:new("w","a","s","d","q","e","r","1","2","EASY",800,600,"yes",9,4,100,100000)
+local theControlBag = controlBag:new("w","a","s","d","q","e","r","1","2","EASY",800,600,"yes","*.png",200,9,"no",4,"no",100,1,100000)
 
 --[[
 --Initializing function that loads the LOVE2D framework.
@@ -54,7 +54,7 @@ function love.load()
 	font = {	default = love.graphics.newFont(24),
 				large = love.graphics.newFont(32),
 				huge = love.graphics.newFont(72),
-				small = love.graphics.newFont(22) }
+				small = love.graphics.newFont(16) }
 	sound =	{	click = love.audio.newSource("media/click.ogg", "static"),}
 
 	-- Variables

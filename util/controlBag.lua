@@ -20,7 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
 controlBag.lua
-
+f
 This class is a data structure for holding the game's configuration
 	Keyboard controls.
 	Game configuration.
@@ -39,8 +39,8 @@ controlBag = class:new(...)
 --WARNING: Lua permits sending nil parameters.
 --For proper functionality, ALL properties must be sent to this function!
 --]]
---This call can be complicated.  The proper call is: key,key,key,key,key,key,key,key,key,string,double,double,boolean,double,double,double,double
-function controlBag:construct(thrustKey,leftKey,reverseKey,rightKey,stopTurnKey,stopThrustKey, orbitKey, zoomInKey, zoomOutKey, turnType, width, height, screen, ai, moons, debris, pMass)
+--This call can be complicated.  The proper call is: key,key,key,key,key,key,key,key,key,string,double,double,yes/no,file,double,double,yes/no,double,yes/no,double,double,double
+function controlBag:construct(thrustKey,leftKey,reverseKey,rightKey,stopTurnKey,stopThrustKey, orbitKey, zoomInKey, zoomOutKey, turnType, width, height, screen, background, gameSpeed, ai, randomAi, moons, randomMoon, debris, lives, pMass)
 	self.thrust = thrustKey
 	self.left = leftKey
 	self.reverse = reverseKey
@@ -54,9 +54,14 @@ function controlBag:construct(thrustKey,leftKey,reverseKey,rightKey,stopTurnKey,
 	self.resWidth = width
 	self.resHeight = height
 	self.fullscreen = screen
+	self.background = background
+	self.speed = gameSpeed
 	self.aiNum = ai
+	self.randomAi = randomAi
 	self.moonNum = moons
+	self.randomMoon = randomMoon
 	self.debrisNum = debris
+	self.lives = lives
 	self.mass = pMass
 end
 
@@ -229,6 +234,7 @@ end
 
 --[[
 --Gets the fullscreen status of the screen.
+--Uses a yes/no string because booleans cannot be written to files.
 --]]
 function controlBag:isFullscreen()
 	return self.fullscreen
@@ -236,9 +242,38 @@ end
 
 --[[
 --Sets the fullscreen status of the screen.
+--Uses a yes/no string because booleans cannot be written to files.
 --]]
 function controlBag:setFullScreen( screen )
 	self.fullscreen = screen
+end
+
+--[[
+--Gets the file string for the current background.
+--]]
+function controlBag:getBackground()
+	return self.background
+end
+
+--[[
+--Sets the background image to the specified file string.
+--]]
+function controlBag:setBackground( bg )
+	self.background = bg
+end
+
+--[[
+--Gets the speed scalar for the game.
+--]]
+function controlBag:getSpeed()
+	return self.speed
+end
+
+--[[
+--Sets the speed scalar for the game.
+--]]
+function controlBag:setSpeed( sp )
+	self.speed = sp
 end
 
 --[[
@@ -256,6 +291,22 @@ function controlBag:setAiNum( ai )
 end
 
 --[[
+--Gets the random setting for the AI.
+--Uses a yes/no string because booleans cannot be written to file.
+--]]
+function controlBag:getRandomAi()
+	return self.randomAi
+end
+
+--[[
+--Sets the random setting for the AI.
+--Uses a yes/no string because booleans cannot be written to file.
+--]]
+function controlBag:setRandomAi( rand )
+	self.randomAi = rand
+end
+
+--[[
 --Gets the number of moons to create.
 --]]
 function controlBag:getMoonNum()
@@ -267,6 +318,22 @@ end
 --]]
 function controlBag:setMoonNum( moons )
 	self.moonNum = moons
+end
+
+--[[
+--Gets the random setting for the moons.
+--Uses a yes/no string because booleans cannot be written to file.
+--]]
+function controlBag:getRandomMoon()
+	return self.randomMoon
+end
+
+--[[
+--Sets the random setting for the moons.
+--Uses a yes/no string because booleans cannot be written to file.
+--]]
+function controlBag:setRandomMoon( rand )
+	self.randomMoon = rand
 end
 
 --[[
@@ -283,6 +350,20 @@ end
 --]]
 function controlBag:setDebrisNum( debris )
 	self.debrisNum = debris
+end
+
+--[[
+--Gets the number of player lives.
+--]]
+function controlBag:getLives()
+	return self.lives
+end
+
+--[[
+--Sets the number of player lives.
+--]]
+function controlBag:setLives( life )
+	self.lives = life
 end
 
 --Aggregate methods
@@ -311,35 +392,40 @@ function controlBag:setAllControls(thrustKey,leftKey,reverseKey,rightKey,stopTur
 end
 
 --[[
---Get all the resolution parameters in one call.
+--Get all the graphic parameters in one call.
 --]]
-function controlBag:getAllResolution()
-	return self.resWidth,self.resHeight,self.fullscreen
+function controlBag:getAllGraphics()
+	return self.resWidth,self.resHeight,self.fullscreen,self.background
 end
 
 --[[
 --Set all the resolution parameters in one call.
 --]]
-function controlBag:setAllResolution(width,height,screen)
+function controlBag:setAllResolution(width,height,screen,bg)
 	self.resWidth = width
 	self.resHeight = height
 	self.fullscreen = screen
+	self.background = bg
 end
 
 --[[
 --Get all the configuration parameters in one call.
 --]]
 function controlBag:getAllOptions()
-	return self.aiNum,self.moonNum,self.debrisNum
+	return self.speed,self.aiNum,self.randomAi,self.moonNum,self.randomMoon,self.debrisNum,self.lives
 end
 
 --[[
 --Set all the configuration parameters in one call.
 --]]
-function controlBag:setAllOptions(ai,moons,debris)
+function controlBag:setAllOptions(sp,ai,randAi,moons,randMoon,debris,life)
+	self.speed = sp
 	self.aiNum = ai
+	self.randomAi = randAi
 	self.moonNum = moons
+	self.randomMoon = randMoon
 	self.debrisNum = debris
+	self.lives = life
 end
 
 

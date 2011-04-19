@@ -40,6 +40,7 @@ function player:construct( aCoordBag, shipConfig )
 	self.thrustKey,self.leftKey,self.reverseKey,self.rightKey,self.stopTurnKey,self.stopThrustKey,self.orbitKey,dummy1,dummy2,self.turnMode = shipConfig:getAllControls()
 	--Initialize the state to all false.
 	self.state = { stepLeft = false, stepRight = false, launchMissile = false, engageLaser = false, disengageLaser = false, respawn = false }
+	self.control = "P"
 end
 
 --[[
@@ -168,6 +169,10 @@ function player:updateControls( theShipState )
 	end
 
 	return commands
+end
+
+function player:getControl()
+	return self.control
 end
 
 

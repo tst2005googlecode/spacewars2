@@ -34,13 +34,14 @@ radar = class:new(...)
 local size = 120
 
 --Colors used to build the radar
-local frameColor = {255,255,255}
+local frameColor = {255,255,255,255}
 local bgColor = {0,0,0,128}
-local playerColor = {255,255,255}
-local aiColor = {255,0,0}
-local missileColor = {255,165,0}
-local solarColor = {34,139,34}
-local debrisColor = {205,133,63,255}
+local playerColor = {255,255,255,255}
+local aiColor = {255,0,0,255}
+local playerMissileColor = {255,255,0,255}
+local aiMissileColor = {255,140,0,255}
+local solarColor = {34,139,34,255}
+local debrisColor = {0,191,255,255}
 
 --[[
 --Constructs and initializes a radar.
@@ -84,7 +85,11 @@ function radar:draw(obj_table)
 				self:drawGeneric(obj)
 			elseif(theType == "missile") then
 				--Draw a missile
-				love.graphics.setColor(missileColor)
+				if(obj:getOwner():getControl() == "P") then
+					love.graphics.setColor(playerMissileColor)
+				else
+					love.graphics.setColor(aiMissileColor)
+				end
 				self:drawGeneric(obj)
 			elseif(theType == "debris") then
 				--Draw a debris

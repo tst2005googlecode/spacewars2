@@ -81,7 +81,7 @@ function laser:init( aWorld, x, y, startAngle, aCoordBag, aSource, velX, velY )
 	self.body:setLinearVelocity( velX, velY )
 	--Set the owner of the laser and its color.
 	self.source = aSource
-	self.color = aSource.color
+--	self.color = aSource.color
 	--Set an "average" damage number in case of instant collision.
 	self.data.damage = 20
 end
@@ -169,6 +169,11 @@ end
 --]]
 function laser:setOwner( own )
 	self.data.owner = own
+	if(own:getControl() == "P") then
+		self.color = {0,191,255,255}
+	else
+		self.color = {34,139,34,255}
+	end
 end
 
 --[[

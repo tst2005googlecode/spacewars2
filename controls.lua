@@ -34,6 +34,8 @@ controls = class:new()
 
 --[[
 --Both creates and initializes the controls menu based on current settings.
+--
+--Requirement 1.2.1
 --]]
 function controls:construct(aControlBag)
 	--Store the configuration
@@ -111,6 +113,8 @@ end
 --If the escape key is pressed, then return to a higher menu.
 --Otherwise, if the state supports input, then assign key to the control.
 --In addition, update the related button.
+--
+--Requirement 1.2.1
 --]]
 function controls:keypressed(key)
 	if key == "escape" then
@@ -125,6 +129,8 @@ end
 --[[
 --Assigns new properties to the configuration.
 --Then, return to a higher menu with the configuration in tow.
+--
+--Requirement 1.2.1
 --]]
 function controls:back()
 	--Assign each key individually

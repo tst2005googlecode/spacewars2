@@ -27,6 +27,7 @@ Debris have three spawning methods, depending on desired start position.
 Debris are aware of the borders of the world.
 	They warp after exceeding the edge of the world.
 Debris have 250 armor that must be depleted before destruction.
+WARNING: Uses global junk table from game.lua.
 --]]
 
 require "subclass/class.lua"
@@ -39,8 +40,10 @@ local color = {205,133,63,255} --Brown
 --Construct a debris if a recycled instance does not exist.
 --Sets border awareness, constructs a generic body/shape, and sets object data.
 --Ends by calling the init function.
+--
+--Requirement 10
 --]]
-function debris:construct(aWorld, aCoordBag, location, x, y)
+function debris:construct(aWorld, aCoordBag, location, x, y, mass)
 	self.minX,self.maxX,self.screenX,self.minY,self.maxY,self.screenY = aCoordBag:getCoords()
 	self:constructBody( aWorld, 0, 0, 1, 1 )
 	self.shape = love.physics.newRectangleShape( self.body, 0, 0, 12, 12, math.random() * maxAngle)
@@ -48,22 +51,24 @@ function debris:construct(aWorld, aCoordBag, location, x, y)
 	self.shape:setData( self )
 	self.objectType = types.debris
 
-	self:init( aWorld, aCoordBag, location, x, y )
+	self:init( aWorld, aCoordBag, location, x, y, mass )
 end
 
 --[[
 --Initialize a newly constructed or recycled debris.
 --Sets the debris' mass and a spawn location.
 --Restores armor and sets the debris up for use in the game engine.
+--
+--Requirement 10
 --]]
-function debris:init(aWorld, aCoordBag, location, x, y)
+function debris:init(aWorld, aCoordBag, location, x, y, mass)
 	if self.body:isFrozen() then
 		--Get a new body, the old one can no longer be used!!  :(
 		self.body:destroy()
 		self:constructBody( aWorld, 0, 0, 1, 1 )
 	end
 	--Initialize mass.
-	self.mass = math.random(100000,100000000)
+	self.mass = math.random(100,100000)
 	self.body:setMass( 0, 0, self.mass, self.mass * ( 100000 ^ 2 ) / 6 )
 	--Setup the mass for simulation in the world.
 	self.body:wakeUp()
@@ -73,7 +78,7 @@ function debris:init(aWorld, aCoordBag, location, x, y)
 	if(location == "border") then
 		self:respawnBorder()
 	elseif(location == "ship") then
-		self:respawnShip(x,y)
+		self:respawnShip(x,y,mass)
 	else
 		self:respawnRandom()
 	end
@@ -81,6 +86,7 @@ function debris:init(aWorld, aCoordBag, location, x, y)
 	self.warpTimer = 0
 	self.data.armor = 250
 	self.data.damage = 250
+	self.data.ore = math.random()
 end
 
 --[[
@@ -112,6 +118,8 @@ end
 --Specified by setting location to "border" when calling construct/init.
 --It chooses a border, then any position on the non-static axis.
 --Finally, it sets velocity such that it always moves inward from spawn.
+--
+--Requirement 10.1
 --]]
 function debris:respawnBorder()
 	local border = math.random(1,4)
@@ -146,13 +154,17 @@ end
 --Allows a debris to spawn where a ship has been destroyed.
 --Specified by setting location to "ship" when calling construct/init.
 --It spawns at the position with a random X/Y velocity.
+--
+--Requirement 10.2
 --]]
-function debris:respawnShip(x,y)
+function debris:respawnShip(x,y,mass)
 	self.body:setX(x)
 	self.body:setY(y)
 	local xVel = math.random(-80,80)
 	local yVel = math.random(-80,80)
 	self.body:setLinearVelocity(xVel,yVel)
+	self.mass = mass
+	self.body:setMass( 0, 0, self.mass, self.mass * ( 100000 ^ 2 ) / 6 )
 end
 
 --[[
@@ -162,6 +174,8 @@ end
 --The debris spawns within 9600 pixels of the X/Y borders.
 --It spawns with a random X/Y velocity.
 --This keeps a cross shaped area clear for a short time on game start.
+--
+--Requirement 10.1
 --]]
 function debris:respawnRandom()
 	local x = math.random(0,9600)
@@ -187,6 +201,9 @@ end
 --When a debris is destroyed, it needs to be cleaned up.
 --This function disables simulation in the game world.
 --Finally, it adds the debris to the recycle bag for use later.
+--WARNING: Uses global junk table.
+--
+--Requirement 10.1
 --]]
 function debris:destroy()
 	--Set the debris to stop being simulated by the world.

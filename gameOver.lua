@@ -34,6 +34,8 @@ gameOver = class:new(...)
 --[[
 --This function constructs a new game over screen.
 --It requires a configBag to send back to the menu, and a score from the game.
+--
+--Requirement 1.2.4, 12
 --]]
 function gameOver:construct(aConfigBag, score)
 	--Unhide the mouse
@@ -105,6 +107,8 @@ end
 --Return will terminate the string and immediately submit it.
 --All other keys that generate one character will be appended to the string.
 --Keys that produce more than one character are IGNORED.
+--
+--Requirement 12
 --]]
 function gameOver:keypressed(key)
 	if(key == "escape") then
@@ -134,7 +138,9 @@ function gameOver:menu()
 end
 
 --[[
---Submit to the high score table
+--Change to the high score table.
+--
+--Requirement 12
 --]]
 function gameOver:highScore()
 	--Append to the high score table HERE, then load the view.

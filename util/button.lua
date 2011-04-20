@@ -24,6 +24,9 @@ button.lua
 This class implements a simple textual button.
 The button consists of text and position.
 Buttons highlight when the cursor is over them.
+
+This class does not directly fulfill any requirements.
+Instead, it assists with fulfilling all menu requirements.
 --]]
 
 require "subclass/class"

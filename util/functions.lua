@@ -23,6 +23,9 @@ functions.lua
 
 This static class contains common functions (no state or side effects).
 This includes distance functions, angle functions, and the ability to copy a table.
+
+These functions do not directly fulfill requirements.
+They aid in various calculations and adjustments throughout the program.
 --]]
 
 --[[

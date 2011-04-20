@@ -37,6 +37,8 @@ menu = class:new(...)
 
 --[[
 --Both creates and initializes the main menu view.
+--
+--Requirement 1.1
 --]]
 function menu:construct(aControlBag)
 	--Store the configuration for passing to other views.
@@ -65,18 +67,20 @@ end
 --When the mouse is pressed, it checks if a button is under the cursor.
 --If it's the Exit button, then close the program.
 --Other buttons cause the appropriate view to be drawn.
+--
+--Requremenents 1.1.1 to 1.1.5
 --]]
 function menu:mousepressed(x, y, button)
 	for n,b in pairs(self.buttons) do
 		if b:mousepressed(x,y,buttons) then
 			if n == "new" then
-				state = game:new(self.controlBag) --New Game
+				state = game:new(self.controlBag)
 			elseif n == "options" then
-				state = options:new(self.controlBag) --Open options
+				state = options:new(self.controlBag)
 			elseif n == "score" then
-				state = highScore:new(self.controlBag) --View high scores
+				state = highScore:new(self.controlBag)
 			elseif n == "help" then
-				--state = gameHelp:new(self.controlBag) --View game help
+				--state = gameHelp:new(self.controlBag)
 			elseif n == "exit" then
 				love.event.push("q") --Quit the program
 			end

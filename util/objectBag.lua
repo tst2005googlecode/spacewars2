@@ -27,6 +27,9 @@ Inactive or destroyed objects are added to the recycled list by id.
 When a new object is requested, the recycled list is checked.
 	If an instance exists, the last instance in the recycled list is returned.
 	Otherwise a new object is created and added to the objects table.
+
+This class does not directly fulfill any requirements.
+Instead, it aids in limiting resource usage to a certain extent.
 --]]
 
 require "subclass/class.lua"

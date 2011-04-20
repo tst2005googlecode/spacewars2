@@ -26,6 +26,7 @@ It contains a number of ships, solar bodies, missiles, lasers, and debris.
 It contains a camera that follows the player.
 It contains a radar that shows the player's surroundings.
 The game handles all collision tasks, using data provided by each object.
+WARNING: Uses global sWidth and sHeight variables in main.lua
 --]]
 
 require "subclass/class.lua"
@@ -120,6 +121,11 @@ local maxLives = 0
 
 game = class:new(...)
 
+--[[
+--Constructs the game, initializing all settings to configuration.
+--
+--Requirement 2.1-2.6
+--]]
 function game:construct( aConfigBag, coord )
 	--Initialize some counter variables to 0
 	activeDebris = 0
@@ -142,6 +148,7 @@ function game:construct( aConfigBag, coord )
 	screenX = love.graphics.getWidth()
 	screenY = love.graphics.getHeight()
 	theCoordBag = coordBag:new(minX,maxX,screenX,minY,maxY,screenY)
+
 	--local modes = love.graphics.getModes()
 	--love.graphics.setMode( modes[#modes].width, modes[#modes].height, true, false, 0 )
 	--love.graphics.setMode( 1440, 900, true, false, 0 )
@@ -187,16 +194,16 @@ function game:construct( aConfigBag, coord )
 	--Set a new random seed
 	math.randomseed( os.time() )
 
+	--Generate the solar masses (planets and moons)
 	totalMoon = 0
 	if(theConfigBag:getRandomMoon() == "yes") then
 		totalMoon = math.random(0,theConfigBag:getMoonNum())
 	else
 		totalMoon = theConfigBag:getMoonNum()
 	end
-	--Generate planet and moons
 	game:generateMasses( totalMoon )
 
-	--Configure the player's ship.
+	--Configure and create the player's ship.
 	theConfigBag["color"] = color["ship"]
 	theConfigBag["shipType"] = "playerShip"
 	theConfigBag:setStartPosition( game:randomeStartLocation() )
@@ -245,6 +252,8 @@ end
 
 --[[
 --Generate a random start location within the game area.
+--
+--Requirement 2.3
 --]]
 function game:randomeStartLocation()
 	--Simple location which may collide with other objects.
@@ -259,6 +268,8 @@ end
 --solarMass 0 is the planet, so it uses basic generation.
 --solarMasses above 0 are moons, which have additional properties added to the object.
 --These properties are used to enforce a static orbit.
+--
+--Requirement 2.4
 --]]
 function game:generateMasses( pNumberOfMoons )
 	-- for now, always generate a planet
@@ -279,6 +290,8 @@ end
 --[[
 --Adds an object to the update table.
 --Only objects in this table will be updated and drawn to the screen.
+--
+--Requirement 2.7
 --]]
 function game:addActive( anObject )
 	activeObjects[ #activeObjects + 1 ] = anObject
@@ -286,6 +299,8 @@ end
 
 --[[
 --Removes an object from the update table.
+--
+--Requirement 2.7
 --]]
 function game:removeActive( index )
 	table.remove( activeObjects, index )
@@ -296,8 +311,11 @@ end
 --solarMass 0 is the planet, so it uses basic generation.
 --solarMasses above 0 are moons, which have additional properties added to the object.
 --These properties are used to enforce a static orbit.
+--
+--Requirement 2.4
 --]]
 function game:newMass( index )
+--[[
 --	Notes about planets/moons ...
 --	earth is ~6400 km radius and 5.9736 x 10^24 kg
 --	planet like saturn is 60000 km radius and 5.6846 x 10^26 kg (600 pixels? 100 km per pixel)
@@ -307,6 +325,7 @@ function game:newMass( index )
 --	400K km orbit to 2000k km orbits
 --	small moons are irregular, and much less mass
 --	120K km (2x planet) orbits out to far ranges
+--]]
 
 	local proto = {}
 	if index == 0 then  --0 indicates generate the planet
@@ -353,6 +372,8 @@ end
 
 --[[
 --Generate a new, random color.
+--
+--Requirement 2.4
 --]]
 function game:newColor()
 	local color = {}
@@ -370,6 +391,8 @@ end
 --solarMass is drawn separately because they aren't in the update table.
 --The radar and HUD is drawn near the end, to ensure it's on top of all objects.
 --The last thing drawn is the respawn message, if the playerShip is destroyed.
+--
+--Requirement 2.1-2.2, 2.6, 2.8
 --]]
 function game:draw()
 	love.graphics.push() -- Allow quick return to default settings
@@ -443,6 +466,8 @@ end
 --Update all objects in the active object table.
 --solarMass is updated separately because it is not in the table.
 --If the player has been destroyed, then the function blocks until respawn.
+--
+--Requirement 2.7
 --]]
 function game:update( dt )
 	--If the player needs to respawn, then freeze the game.
@@ -457,10 +482,12 @@ function game:update( dt )
 		fps = frames
 		frames = 0
 		seconds = seconds - 1
---[[lowDt = 1
+--[[
+lowDt = 1
 highDt = 0
 lowA = 10000000000000000000000000000
-highA = -10000000000000000000000000000--]]
+highA = -10000000000000000000000000000
+--]]
 	end
 --[[
 if dt < lowDt then lowDt = dt end
@@ -499,6 +526,8 @@ end
 --[[
 --This function applies a solarMass's gravity to an updatable object.
 --Other solarMass are excluded from ever being used in this function.
+--
+--Requirement 2.4
 --]]
 function applyGravity( aSolarMass, anObject, dt )
 	--Determine the distance from the solarMass, as well as angle.
@@ -524,6 +553,8 @@ end
 --[[
 --Generates a debris in the game world, with the given properties.
 --X and Y should be 0, unless location = "ship", when it should be a ship's location.
+--
+--Requirement 2.5
 --]]
 function game:generateDebris( location, x, y )
 	local aDebris = junk:getNew( theWorld, theCoordBag, location, x, y )
@@ -587,6 +618,9 @@ end
 
 --[[
 --This function handles what to do when the player dies.
+--Could pass a parameter here for ship explosions?
+--
+--Requirement 11, 12
 --]]
 function playerDeath()
 	needRespawn = true
@@ -596,6 +630,9 @@ end
 
 --[[
 --This function handles what to do when a player kills an ai.
+--Could pass a parameter here for ship explosions?
+--
+--Requirement 11, 12
 --]]
 function aiKill()
 	kills = kills + 1
@@ -604,6 +641,7 @@ end
 
 --[[
 --When the game ends, this clears out all objects and resets the graphic settings.
+--WARNING: Uses global sWidth and sHeight variables in main.lua
 --]]
 function game:destroy()
 	thePlayer = {}
@@ -631,6 +669,8 @@ end
 --coll represents the collision generated, and is unused.
 --WARNING: This comparrison order DOES matter, because collision functions are optimized.
 --	Functions only check for collisions not handled in calls above it in the list!
+--
+--Requirement 2.7, 8.2, 9.2, 10, 11, 12
 --]]
 function add( a, b, coll )
 	if a.objectType == types.ship then
@@ -655,6 +695,8 @@ end
 --[[
 --Handles player and ai collisions.
 --Set needRespawn = true whenever player ship is destroyed.
+--
+--Requirement 2.7, 8.2, 9.2, 10, 11, 12
 --]]
 function shipCollide( a, b, coll )
 	if b.objectType == types.solarMass then
@@ -723,6 +765,8 @@ end
 --[[
 --Missile collisions with other objects.
 --Missiles can be destroyed by depleting their armor.
+--
+--Requirement 2.7, 8.2, 9.2, 10, 11
 --]]
 function missileCollide( a, b, coll )
 	if b.objectType == types.solarMass then
@@ -758,6 +802,8 @@ end
 --[[
 --Laser collisions with other objects.
 --Lasers deplete armor, and are destroyed in almost all collisions.
+--
+--Requirement 2.7, 8.2, 10, 11
 --]]
 function laserCollide( a, b, coll )
 	if b.objectType == types.solarMass then
@@ -781,6 +827,8 @@ end
 --[[
 --Debris collisions with other objects.
 --Debis can cause damage, and are destroyed when armor is depleted.
+--
+--Requirement 2.7, 10, 11
 --]]
 function debrisCollide(a,b)
 	if b.objectType == types.solarMass then

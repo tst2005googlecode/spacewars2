@@ -23,14 +23,17 @@ missile.lua
 
 This class implements a missile object.
 Missiles are somewhat oblong in shape.
-Missiles spawn at the nose of the ship, and travel in a straight line forward.
-	A later revision might support "smart" missiles that turn.
+Missiles spawn at the center of the ship.
+	Missiles immediately turn and pursue their chosen target.
 	Missiles thrust until they run out of fuel.
 	Upon fuel exhaustion, missiles coast until the killswitch exhausts.
 	Finally, the missile self-destructs.
 Missiles are aware of the borders of the world.
 	Upon reaching a border, the missile self-destructs.
 Missiles have 500 armor that must be depleted by lasers before destruction.
+
+WARNING: Uses global timeScale variable from game.lua
+WARNING: Uses global missile table from game.lua
 --]]
 
 require "subclass/class.lua"
@@ -47,6 +50,8 @@ missile = bodyObject:new(...)
 --Construct a missile if a recycled instance does not exist.
 --Sets border awareness, constructs a body/shape, and sets object data.
 --Ends by calling the init function.
+--
+--Requirement 9.1
 --]]
 function missile:construct(aWorld, x, y, startAngle, aCoordBag, shipConfig, xVel, yVel)
 	--Construct a missile body.
@@ -67,6 +72,9 @@ end
 --Initializes a newly constructed or recycles instance of missile.
 --Sets the velocity, angle, and spawn position of the missile.
 --Sets the missile up for use in the game engine.
+--WARNING: Uses global timeScale variable.
+--
+--Requirement 9.1
 --]]
 function missile:init(aWorld, x, y, startAngle, aCoordBag, shipConfig, xVel, yVel)
 	--Sets the missile's position and velocity.
@@ -100,7 +108,8 @@ end
 --[[
 --This sets the target of the missile to the specified body.
 --The missile should try to home in on the target while fuel is available.
---WARNING: This function is currently unimplemented.
+--
+--Requirement 9.1
 --]]
 function missile:setTarget(aBody)
 	self.target = aBody
@@ -121,6 +130,8 @@ end
 --Missiles will exhaust dt milliseconds of fuel on every update.
 --Once fuel is exhausted, it exhausts the killswitch instead.
 --Upon total killswitch exhaustion or exceeding a boundary, it self-destructs.
+--
+--Requirement 9.1
 --]]
 function missile:update(dt)
 	--[[if(self.data.status == "DEAD") then
@@ -152,6 +163,9 @@ end
 --When a missile is destroyed, it needs to be cleaned up.
 --This function disables simulation in the game world.
 --Finally, it adds the missile to the recycle bag for use later.
+--WARNING: Uses global missile table.
+--
+--Requirement 9.2
 --]]
 function missile:destroy()
 	--Set the missile to stop simulation in the world.
@@ -169,6 +183,8 @@ end
 --[[
 --Executed on an update cycle if fuel still exists.
 --Causes the missile to accelerate in the direction it's pointed by applying force.
+--
+--Requirement 9.1
 --]]
 function missile:thrust()
 	local scaledThrust = self.baseThrust * forceScale
@@ -182,6 +198,8 @@ end
 --[[
 --Missiles that have a valid target should steer toward it.
 --For simplicity's sake the missile is forced to always point at the ship.
+--
+--Requirement 9.1
 --]]
 function missile:turn()
 	if (self.target ~= {}) then
@@ -202,6 +220,8 @@ end
 --Checks to see if the missile has exceeded a world boundary.
 --If so, then it returns true, so the update method destroys the missile.
 --Otherwise, it returns false, which will cause nothing to happen.
+--
+--Requirement 9.1
 --]]
 function missile:offedge()
 	if(self.body:getX() > self.maxX) then

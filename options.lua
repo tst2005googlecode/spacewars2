@@ -33,6 +33,8 @@ options = class:new()
 
 --[[
 --Both creates and initializes the main options view.
+--
+--Requirement 1.1.2, 1.2
 --]]
 function options:construct(aControlBag)
 	--Initialize the buttons the user can press
@@ -64,6 +66,8 @@ end
 --When the mouse is pressed, it checks if a button is under the cursor.
 --If it's the Exit button, then close the program.
 --Other buttons cause the appropriate view to be drawn.
+--
+--Requirements 1.2.1 to 1.2.3
 --]]
 function options:mousepressed(x,y,button)
 	for n,b in pairs(self.buttons) do

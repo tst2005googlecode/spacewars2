@@ -33,6 +33,8 @@ camera = class:new(...)
 --[[
 --Creates and initializes a camera for the game.
 --Assigns boundaries, the focus object, and camera controls.
+--
+--Requirement 2.1
 --]]
 function camera:construct(aCoordBag, aBody, aConfigBag)
 	--Hold the boundaries of the world and window for movement.
@@ -55,6 +57,8 @@ end
 --[[
 --Checks the key to see if it is a valid control.
 --Allows the camera to support zoom in and zoom out functions.
+--
+--Requirement 2.8
 --]]
 function camera:keypressed(key)
 	if key == self.zoomIn then
@@ -76,6 +80,8 @@ end
 --
 --This verision of camera:adjust() assumes scaling occurs before tranlating
 --Since love.graphics.print ASSUMES scale occurs before translating, this IS text-safe.
+--
+--Requirement 2.1, 2.8
 --]]
 function camera:adjust()
 	local currentX = ((self.maxX - self.screenX/self.zoom) / 2) + (self.myBody:getX() - (self.maxX / 2))

@@ -24,10 +24,13 @@ f
 This class is a data structure for holding the game's configuration
 	Keyboard controls.
 	Game configuration.
-	Window resolution.
+	Graphics settings.
 Also used to set a mass and a start position for various bodies.
 Values can be changed and retrieved individually, or in bulk.
 An reference to this is passed to most construct/init functions.
+
+For brevity's sake, this class fulfills all configuration requirements.
+Requirements 1.2.1 to 1.2.3
 --]]
 
 require "subclass/class.lua"

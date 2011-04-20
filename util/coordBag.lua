@@ -34,6 +34,8 @@ coordBag = class:new(...)
 
 --[[
 --Constructs and initializes the bag with all coordinate data.
+--
+--Requirement 2.1
 --]]
 function coordBag:construct(aMinX,aMaxX,aScreenX,aMinY,aMaxY,aScreenY)
 	self.minX = aMinX

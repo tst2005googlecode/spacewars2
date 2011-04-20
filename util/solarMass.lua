@@ -43,6 +43,8 @@ solarMass = class:new(...)
 --Constructs and initializes a solarMass.
 --Sets the size and mass, which are basic parameters.
 --The advanced moon parameters for orbit are set in the game.
+--
+--Requirement 6.1 to 6.2
 --]]
 function solarMass:construct( pWorld, pX, pY, pMass, pRadius, pOrbit, pColor )
 	self.color = pColor
@@ -69,6 +71,8 @@ end
 --Updates the solarMass's position in the game world.
 --The planet does not move, and is represented by orbit = 0.
 --Moons move on a set orbit determined by its distance from the planet.
+--
+--Requirement 6.2
 --]]
 function solarMass:update( dt )
 	if self.orbit > 0 then
@@ -85,6 +89,7 @@ end
 
 --[[
 --Applys a force to an object based on the solarMass's mass and distance.
+--Not currently in use in favor of utilizing the funciton in game.lua
 --]]
 function solarMass:applyGravity( object, dt )
 	local theBody = object:getBody()

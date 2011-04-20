@@ -31,6 +31,8 @@ ai = class:new(...)
 
 --[[
 --Constructs and initializes the ai controller.
+--
+--Requirement 14
 --]]
 function ai:construct()
 	self.cycles = 1000 --Fly for 1000 update cycles
@@ -40,6 +42,8 @@ end
 --[[
 --Poll the ai for control input.
 --Return the input to the ship that asked for it.
+--
+--Requirement 14
 --]]
 function ai:updateControls( shipState, dt )
 	--Create a table to hold the commands
@@ -58,7 +62,9 @@ function ai:updateControls( shipState, dt )
 	return commands
 end
 
-
+--[[
+--This function returns the controller of the ai
+--]]
 function ai:getControl()
 	return self.control
 end

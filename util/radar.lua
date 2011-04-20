@@ -45,6 +45,8 @@ local debrisColor = {0,191,255,255}
 
 --[[
 --Constructs and initializes a radar.
+--
+--Requirement 2.6, 7.2
 --]]
 function radar:construct(theRadius,theBody)
 	self.offX = 0
@@ -56,6 +58,8 @@ end
 
 --[[
 --Draws the radar using the current list of active objects.
+--
+--Requirement 2.6, 7.2
 --]]
 function radar:draw(obj_table)
 	--Draw the frame.
@@ -103,6 +107,8 @@ end
 --[[
 --This is a function to draw generic objects.
 --All non-solarMasses are very small, and so are drawn as a circle of radius 1.
+--
+--Requirement 7.2
 --]]
 function radar:drawGeneric(obj)
 	local theRad = 1
@@ -114,6 +120,8 @@ end
 --[[
 --This is a function to draw solarMass objects.
 --A solarMass is drawn on the radar to scale.
+--
+--Requirement 7.2
 --]]
 function radar:drawSolar(obj)
 	local theRad = obj:getRadius()
@@ -128,6 +136,8 @@ end
 --Check if an object is within the boundaries of the radar's scan radius.
 --If it is, return true, and the radar will draw it.
 --Otherwise, it returns false, and the object is skipped this cycle.
+--
+--Requirement 7.2
 --]]
 function radar:checkBounds(x,y)
 	if(x >= (self.body:getX() - self.radius)) then

@@ -34,6 +34,8 @@ pause = class:new(...)
 
 --[[
 --Both creates and initializes the pause view.
+--
+--Requirement 1.2.4
 --]]
 function pause:construct(aGame, aWidth, aControlBag, aScore)
 	--Reveal the mouse cursor
@@ -63,6 +65,8 @@ end
 --When the mouse is pressed, it checks if a button is under the cursor.
 --If the quit button is pressed, then return to the main menu.
 --Otherwise, resume the game state.
+--
+--Requirement 12
 --]]
 function pause:mousepressed(x, y, button)
 	for n,b in pairs(self.buttons) do

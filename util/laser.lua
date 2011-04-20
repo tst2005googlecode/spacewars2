@@ -30,6 +30,9 @@ Lasers are aware of the borders of the world.
 	They self-destruct upon exceeding a world border.
 The laser currently does 1 damage/millisecond of application.
 	This damage is dynamically calculated on every update.
+
+WARNING: Uses global timeScale variable from game.lua
+WARNING: Uses global laser table from game.lua
 --]]
 
 require "subclass/class.lua"
@@ -44,6 +47,9 @@ laser = bodyObject:new(...)
 --Construct a laser if a recycled instance does not exist.
 --Sets border awareness, constructs the body/shape, and sets it as a bullet.
 --Ends by calling the init function.
+--WARNING: Uses global timeScale variable.
+--
+--Requirement 8.1
 --]]
 function laser:construct( aWorld, x, y, startAngle, aCoordBag, aSource, velX, velY )
 	--Light shouldn't have mass, but a mass of 0 is forced to be stationary.
@@ -56,6 +62,8 @@ function laser:construct( aWorld, x, y, startAngle, aCoordBag, aSource, velX, ve
 	self.minX,self.maxX,self.screenX,self.minY,self.maxY,self.screenY = aCoordBag:getCoords()
 	self.laserShape:setData(self)
 	self.objectType = types.laser
+	--baseDamage is the amount of damage a laser can cause per second
+	self.baseDamage = 1 * timeScale
 
 	self:init( aWorld, x, y, startAngle, aCoordBag, aSource, velX, velY )
 end
@@ -64,6 +72,8 @@ end
 --Initialize a newly created or recycled instance of laser.
 --Sets the laser's spawn location, velocity, and angle of movement.
 --Sets the laser up for use in the game engine.
+--
+--Requirement 8.1
 --]]
 function laser:init( aWorld, x, y, startAngle, aCoordBag, aSource, velX, velY )
 	if self.body:isFrozen() then
@@ -107,7 +117,8 @@ end
 --When a laser goes off the edge, it is immediately destroyed.
 --]]
 function laser:update(dt)
-	self.data.damage = dt*1000
+	--Deal damage based on the amount of time passing
+	self.data.damage = self.baseDamage * dt
 	if self:offedge() == true then
 		self:destroy()
 	end
@@ -117,6 +128,9 @@ end
 --When a laser is destroyed, it needs to be cleaned up.
 --This function disables simulation in the game world.
 --Finally, it adds the laser to the recycle bag for use later.
+--WARNING: Uses global laser table.
+--
+--Requirement 8.2
 --]]
 function laser:destroy()
 	if self.isActive == false then

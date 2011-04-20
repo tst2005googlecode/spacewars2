@@ -34,6 +34,8 @@ highScore = class:new(...)
 --[[
 --This function constructs a new high score screen.
 --It requires a configBag to send back to the menu, and can optionally take a score.
+--
+--Requirement 1.1.3, 1.2.4, 12
 --]]
 function highScore:construct(aConfigBag)
 	self.configBag = aConfigBag
@@ -48,6 +50,8 @@ end
 
 --[[
 --Write the high scores to the screen.
+--
+--Requirement 12
 --]]
 function highScore:draw()
 	love.graphics.setColor(unpack(color["text"]))

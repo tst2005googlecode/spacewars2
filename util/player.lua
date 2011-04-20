@@ -45,7 +45,9 @@ end
 
 --[[
 --Checks the keyboard for input.
---Only used for the "STEP" style of turning.
+--Only used for the "STEP" style of turning (deimplemented?)
+--
+--Requirement 4.1
 --]]
 function player:keypressed( key )
 	if self.turnMode == "STEP" then
@@ -61,6 +63,8 @@ end
 --Checks the mouse for input.
 --Left-click asks for the laser to start firing.
 --Right-click asks for a missile to launch.
+--
+--Requirement 4.1
 --]]
 function player:mousepressed( x, y, button )
 	if ( button == "r" ) then
@@ -76,6 +80,8 @@ end
 --[[
 --Checks the mouse for input.
 --Left-release asks for the laser to sto firing.
+--
+--Requirement 4.1
 --]]
 function player:mousereleased( x, y, button )
 	if ( button == "l" ) then
@@ -87,6 +93,8 @@ end
 --[[
 --Checks for player input for thrust controls.
 --This function is polled every cycle by the attached ship.
+--
+--Requirement 4.1
 --]]
 function player:updateControls( theShipState )
 	self.shipState = theShipState
@@ -171,6 +179,9 @@ function player:updateControls( theShipState )
 	return commands
 end
 
+--[[
+--This function returns the control string "P"
+--]]
 function player:getControl()
 	return self.control
 end

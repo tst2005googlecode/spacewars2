@@ -54,6 +54,8 @@ end
 
 --[[
 --Activates a body to supply it for drawing and updating.
+--
+--Requirement 2.7
 --]]
 function bodyObject:activate()
 	self.isActive = true
@@ -61,6 +63,8 @@ end
 
 --[[
 --Deactivates a body to remove it from drawing and updating.
+--
+--Requirement 2.7
 --]]
 function bodyObject:deactivate()
 	self.isActive = false

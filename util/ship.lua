@@ -27,6 +27,11 @@ This ship canNOT move by itself!
 	It requires a controller (player or AI) object to command its functions.
 This ship is aware of the edges of the world.
 	The ship:warpDrive() function will warp it from one edge to the other.
+
+WARNING: Uses global solarMasses table from game.lua
+WARNING: Uses global timeScale variable from game.lua
+WARNING: Uses global activeDebris variable from game.lua
+WARNING: Uses global missile, laser, and junk tables from game.lua
 --]]
 
 require "util/bodyObject.lua"
@@ -56,6 +61,9 @@ ship = bodyObject:new(...)
 --Constructs and initializes a ship object.
 --Initializes the body, shape, angle, and border awareness.
 --Also initializes control constants, armor, and weapon capacity.
+--WARNING: Uses global timeScale variable!
+--
+--Requirement 3.1 to 3.4
 --]]
 function ship:construct( theWorld, controlledBy, aCoordBag, shipConfig )
 	--Set the controller, and construct the ship.
@@ -71,13 +79,15 @@ function ship:construct( theWorld, controlledBy, aCoordBag, shipConfig )
 	self.coordBag = aCoordBag
 	self.minX,self.maxX,self.screenX,self.minY,self.maxY,self.screenY = aCoordBag:getCoords()
 	self.shipConfig = shipConfig
+	self.mass = shipConfig.mass
 
 	--Initialize propulsion constants.
 	self.maxLinearV = 30 --NOT CURRENTLY IN USE!
 	self.maxAngleV = 0.1 * timeScale --NOT CURRENTLY IN USE!
 	self.baseThrust = shipConfig.mass * 500
 	self.baseTorque = shipConfig.mass ^ 3 * 50000
-	self.easyTurn = 0.0000005 * timeScale
+--	self.easyTurn = 0.0000005 * timeScale
+	self.easyTurn = 0.0001 * timeScale
 
 	--State controls for step turning
 	self.turnStep = 0
@@ -101,22 +111,24 @@ function ship:construct( theWorld, controlledBy, aCoordBag, shipConfig )
 --	self.data.newMissiles = {}
 	self.data.missileBank = maxMissile
 	self.data.laserEngaged = false
-	self.data.minimumLaserCharge = 1
-	self.data.laserCharge = 1
+	--laserCharge is modified by the timeScale.  IE: 500/200 = 2.5 seconds.
+	self.data.laserCharge = 500 / timeScale
 	self.data.laserUse = 1
 
 	--Figure constants for the given timeScale
 	self.reloadMissile = 600 / timeScale
 	self.armMissile = 40 / timeScale
+	self.maxLaser = 500 / timeScale
 
 	--Timers to measure against constants
 	self.missileTimer = 0
 	self.rearmMissile = 40
-	self.laserTimer = 0
 end
 
 --[[
 --Draws the ship on the screen with the stored color.
+--
+--Requirement 3.4
 --]]
 function ship:draw()
 	--If a ship is destroyed, then it shouldn't be drawn.
@@ -131,6 +143,8 @@ end
 --Updates the ship every dt seconds.
 --Polls the controller on every iteration for commands.
 --If possible, executes the commands requested by the controller.
+--
+--Requirement 3.2
 --]]
 -- checks every dt seconds for commands, and execute the appropriate function
 function ship:update( dt )
@@ -154,16 +168,13 @@ function ship:update( dt )
 	if(self.rearmMissile < self.armMissile) then
 		self.rearmMissile = self.rearmMissile + dt
 	end
-	self.data.laserCharge = 1
---[[
-	--Checking for dead missiles to replenish reserves.
-	for i, aMissile in ipairs( self.data.missiles ) do
-		if not aMissile.isActive then
-			table.remove( self.data.missiles, i )
-			self.data.missileBank = self.data.missileBank + 1
+	if(self.data.laserCharge < self.maxLaser) then
+		self.data.laserCharge = self.data.laserCharge + (dt / 4)
+		if(self.data.laserCharge > self.maxLaser) then
+			self.data.laserCharge = self.maxLaser
 		end
 	end
---]]
+
 	--Execute all commands from controller
 	for i, command in ipairs( commands ) do
 		if command == "stop" then
@@ -213,13 +224,17 @@ end
 
 --[[
 --A simple, constant turn to the left.
+--
+--Requirement 4.5
 --]]
 function ship:easyLeft()
-	self.body:setAngle( self.body:getAngle() - self.easyTurn * timeScale )
+	self.body:setAngle( self.body:getAngle() - self.easyTurn)
 end
 
 --[[
 --An advanced, torque accelerated turn to the left.
+--
+--Requirement 4.6
 --]]
 function ship:normalLeft()
 	self.body:applyTorque( -self.baseTorque * forceScale )
@@ -230,6 +245,7 @@ end
 
 --[[
 --An advanced turn to the left that causes the ship to continue rotating at a certain speed.
+--NO LONGER IN USE
 --]]
 function ship:stepLeft()
 	self.turnAccel = true
@@ -238,13 +254,17 @@ end
 
 --[[
 --A simple, constant turn to the right.
+--
+--Requirement 4.5
 --]]
 function ship:easyRight()
-	self.body:setAngle( self.body:getAngle() + self.easyTurn * timeScale )
+	self.body:setAngle( self.body:getAngle() + self.easyTurn)
 end
 
 --[[
 --An advanced, torque accelerated turn to the right.
+--
+--Requirement 4.6
 --]]
 function ship:normalRight()
 	self.body:applyTorque( self.baseTorque * forceScale )
@@ -255,6 +275,7 @@ end
 
 --[[
 --An advanced turn to the right that causes the ship to continue rotating at a certain speed.
+--NO LONGER IN USE
 --]]
 function ship:stepRight()
 	self.turnAccel = true
@@ -263,6 +284,7 @@ end
 
 --[[
 --Used in STEP mode to accelerate the constant turn rate.
+--NO LONGER IN USE
 --]]
 function ship:accelTurn()
 	--Find difference in current angular velocity and target angular velocity
@@ -287,6 +309,8 @@ end
 --[[
 --Applies torque counter to current angular velocity to stop rotation
 --If torque overcompensates, set angular velocity to 0.
+--
+--Requirement 4.7
 --]]
 function ship:stopTurn()
 	if self.body:getAngularVelocity() > 0 then
@@ -306,6 +330,8 @@ end
 
 --[[
 --Applies thrust to the ship, pointed in the direction the cone is facing
+--
+--Requirement 4.2
 --]]
 function ship:thrust()
 	local scaledThrust = self.baseThrust * forceScale
@@ -319,6 +345,8 @@ end
 --[[
 --Applies thrust to the ship, pointed in the opposite direction of the cone
 --Reversing occurs at 1/2 normal thrust.
+--
+--Requirement 4.3
 --]]
 function ship:reverse()
 	local halfThrustScaled = self.baseThrust * forceScale / 2
@@ -332,6 +360,8 @@ end
 --[[
 --Applies thrust to the ship, pointed in the opposite direction of MOVEMENT
 --All stop occurs at 1/2 normal thrust.
+--
+--Requirement 4.4
 --]]
 function ship:stopThrust( dt )
 	local xVel, yVel = self.body:getLinearVelocity()
@@ -358,6 +388,9 @@ end
 --[[
 --Applies thrust to the ship to orbit the nearest planet
 --WARNING: Uses the global solarMasses table.
+--WARNING: Uses global timeScale variable.
+--
+--Requirement 4.9
 --]]
 function ship:orbit( dt )
 	--Figure based on the planet.
@@ -421,15 +454,28 @@ end
 --[[
 --Ship's automatically respawn at the next available opportunity.
 --This sets the controller to call for a respawn automatically.
---It also spawns 4 debris at the ship's destruction point.
+--It also spawns 1-4 debris at the ship's destruction point.
 --These debris will spawn above the soft cap in the configuration.
+--WARNING: Uses global activeDebris variable.
+--WARNING: Uses global junk table.
+--
+--Requirement 10.2
 --]]
 function ship:destroy()
 	--self:deactivate()
 	self.data.status = "DEAD"
 	self.controller.state.respawn = true
-	for i = 1,4 do
-		local aDebris = junk:getNew( self.world, self.coordBag, "ship", self.body:getX(), self.body:getY() )
+	local tempMass = math.random(50,75)/100 * self.mass
+	local numSpawn = math.random(1,4)
+	for i = 1,numSpawn do
+		local aDebris = {}
+		if(i == numSpawn) then
+			aDebris = junk:getNew( self.world, self.coordBag, "ship", self.body:getX(), self.body:getY(), tempMass )
+		else
+			tempMass2 = math.random(10,15)/100 * tempMass
+			tempMass = tempMass - tempMass2
+			aDebris = junk:getNew( self.world, self.coordBag, "ship", self.body:getX(), self.body:getY(), tempMass2 )
+		end
 		game:addActive( aDebris )
 		activeDebris = activeDebris + 1
 	end
@@ -439,11 +485,14 @@ end
 --Engages the laser, given sufficient charge.
 --The laser fires from the ship to the mouse crosshair.
 --Lasers travel extremely quickly, and inflict 1 damage/millisecond.
+--WARNING: Uses global laser table.
+--
+--Requirement 8.1
 --]]
 function ship:engageLaser( dt, x2, y2, endOfBeam )
 	--Track usage and return if insufficient charge/energy.
-	if self.data.laserCharge >= self.data.minimumLaserCharge then
-		self.data.laserCharge = self.data.laserCharge - self.data.laserUse * timeScale * dt
+	if self.data.laserCharge >= dt then
+		self.data.laserCharge = self.data.laserCharge - dt
 	else
 		return
 	end
@@ -464,6 +513,8 @@ end
 --[[
 --Add the list of enemy ships to the current ship.
 --Used in launchMissile for targeting purposes.
+--
+--Requirement 9.1
 --]]
 function ship:addTargets(shipList)
 	self.targets = {}
@@ -474,6 +525,9 @@ end
 --Launch a missile, given sufficient ammunition available.
 --The missile fires from the ship and travels towards its target.
 --Missiles slowly accelerate, and inflict a large amount of damage.
+--WARNING: Uses global missile table.
+--
+--Requirement 9.1
 --]]
 function ship:launchMissile( x, y )
 	if self.data.missileBank > 0 then
@@ -519,6 +573,8 @@ end
 
 --[[
 --Get the number of remaining missiles.
+--
+--Requirement 7.2
 --]]
 function ship:getMissileBank()
 	return self.data.missileBank

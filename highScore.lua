@@ -102,5 +102,5 @@ end
 --Return to the main menu.
 --]]
 function highScore:back()
-	state = menu:new(aConfigBag)
+	state = menu:new(self.configBag)
 end

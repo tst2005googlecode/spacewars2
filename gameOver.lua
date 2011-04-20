@@ -130,7 +130,7 @@ end
 --Return to the main menu.
 --]]
 function gameOver:menu()
-	state = menu:new(aConfigBag)
+	state = menu:new(self.configBag)
 end
 
 --[[
@@ -138,5 +138,5 @@ end
 --]]
 function gameOver:highScore()
 	--Append to the high score table HERE, then load the view.
-	state = highScore:new(aConfigBag)
+	state = highScore:new(self.configBag)
 end

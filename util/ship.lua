@@ -42,6 +42,8 @@ local easyTurn
 local turnStep
 local turnAccel
 
+local maxMissile = 25
+
 -- ship attributes
 local shipType
 local color
@@ -96,12 +98,21 @@ function ship:construct( theWorld, controlledBy, aCoordBag, shipConfig )
 
 	self.data.armor = 2000
 	self.data.missiles = {}
-	self.data.newMissiles = {}
-	self.data.missileBank = 10
+--	self.data.newMissiles = {}
+	self.data.missileBank = maxMissile
 	self.data.laserEngaged = false
 	self.data.minimumLaserCharge = 1
 	self.data.laserCharge = 1
 	self.data.laserUse = 1
+
+	--Figure constants for the given timeScale
+	self.reloadMissile = 600 / timeScale
+	self.armMissile = 40 / timeScale
+
+	--Timers to measure against constants
+	self.missileTimer = 0
+	self.rearmMissile = 40
+	self.laserTimer = 0
 end
 
 --[[
@@ -132,8 +143,19 @@ function ship:update( dt )
 		end
 		return
 	end
-	--Charge laser
+	--Charge laser and reload missiles
+	if(self.data.missileBank < maxMissile) then
+		self.missileTimer = self.missileTimer + dt
+		if(self.missileTimer > self.reloadMissile) then
+			self.data.missileBank = self.data.missileBank + 1
+			self.missileTimer = 0
+		end
+	end
+	if(self.rearmMissile < self.armMissile) then
+		self.rearmMissile = self.rearmMissile + dt
+	end
 	self.data.laserCharge = 1
+--[[
 	--Checking for dead missiles to replenish reserves.
 	for i, aMissile in ipairs( self.data.missiles ) do
 		if not aMissile.isActive then
@@ -141,6 +163,7 @@ function ship:update( dt )
 			self.data.missileBank = self.data.missileBank + 1
 		end
 	end
+--]]
 	--Execute all commands from controller
 	for i, command in ipairs( commands ) do
 		if command == "stop" then
@@ -166,7 +189,10 @@ function ship:update( dt )
 		elseif command == "orbit" then
 			self:orbit( dt )
 		elseif command == "launchMissile" then
-			self:launchMissile( love.mouse.getX(), love.mouse.getY() )
+			if (self.rearmMissile >= self.armMissile) then
+				self:launchMissile( love.mouse.getX(), love.mouse.getY() )
+				self.rearmMissile = 0
+			end
 		elseif command == "engageLaser" then
 			self.data.laserEngaged = true
 		elseif command == "disengageLaser" then

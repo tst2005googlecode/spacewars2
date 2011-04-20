@@ -83,10 +83,9 @@ function missile:init(aWorld, x, y, startAngle, aCoordBag, shipConfig, xVel, yVe
 	self.easyTurn = 0.001 / timeScale
 
 	--Set the color of the missile, and reset its fuel, killswitch, and target.
-	--WARNING: Target is currently not in use, as "smart" missiles don't exist.
 	self.color = shipConfig.color
-	self.fuel = 50000
-	self.killswitch = 25000
+	self.fuel = 6000/timeScale
+	self.killswitch = 6000/timeScale
 	self.target = {}
 
 	--Set the owner of the missile for collision detection.
@@ -140,10 +139,10 @@ function missile:update(dt)
 	elseif(self.fuel > 0) then
 		self:thrust()
 		self:turn()
-		self.fuel = self.fuel - ( dt * timeScale )
+		self.fuel = self.fuel - dt
 	--Missile drifts until killswitch time elapses.
 	elseif(self.killswitch > 0) then
-		self.killswitch = self.killswitch - ( dt * timeScale )
+		self.killswitch = self.killswitch - dt
 	else --Killswitch exhaustion means the missile self-destructs.
 		self:destroy()
 	end

@@ -72,8 +72,9 @@ local minY = 0
 local maxX = 32768
 local maxY = 32768
 --Coordinate variables holding max x,y Screen coordinates
-local screenX = love.graphics.getWidth()
-local screenY = love.graphics.getHeight()
+--WARNING: These cannot be set until the screen mode has been set!
+local screenX = 0
+local screenY = 0
 --Bag variables
 local theCoordBag
 local theConfigBag = {}
@@ -120,9 +121,14 @@ local maxLives = 0
 game = class:new(...)
 
 function game:construct( aConfigBag, coord )
-	--Set the bags up.
+	--Initialize some counter variables to 0
+	activeDebris = 0
+	score = 0
+	kills = 0
+	currentLife = 0
+	maxLives = 0
+	--Store theConfigBag
 	theConfigBag = aConfigBag
-	theCoordBag = coordBag:new(minX,maxX,screenX,minY,maxY,screenY)
 	--Set selected screen resolution.
 	local fullscreen
 	--Fullscreen uses a string to determine, because booleans can't be written.
@@ -131,7 +137,11 @@ function game:construct( aConfigBag, coord )
 	else
 		fullscreen = false
 	end
+	--Set the graphics mode and create the coordinate bag
 	love.graphics.setMode(theConfigBag:getResWidth(),theConfigBag:getResHeight(),fullscreen,false,0)
+	screenX = love.graphics.getWidth()
+	screenY = love.graphics.getHeight()
+	theCoordBag = coordBag:new(minX,maxX,screenX,minY,maxY,screenY)
 	--local modes = love.graphics.getModes()
 	--love.graphics.setMode( modes[#modes].width, modes[#modes].height, true, false, 0 )
 	--love.graphics.setMode( 1440, 900, true, false, 0 )
@@ -150,7 +160,7 @@ function game:construct( aConfigBag, coord )
 	lightSpeed = 299792458 * timeScale / distanceScale --Pixels per second
 
 	--Font for basic number output only
-	digits = love.graphics.newImageFont( "images/digits.png", "1234567890.-AEFLMS: " )
+	digits = love.graphics.newImageFont( "images/digits.png", "1234567890.-AEFKLMS: " )
 
 	--Set up object framework
 	solarMasses = objectBag:new( solarMass )
@@ -386,13 +396,14 @@ function game:draw()
 	love.graphics.setFont( digits )
 	love.graphics.setColor(255,255,255)
 	--Draw ammo and armor to the right of the radar
-	love.graphics.rectangle("line",130,0,45,70)
+	love.graphics.rectangle("line",130,0,45,80)
 	love.graphics.print( "F: " .. fps, 135, 5)
-	love.graphics.print( "S: " .. string.format("%.1f", score), 135, 15)
-	love.graphics.print( "L: " .. maxLives - currentLife, 135, 30)
-	love.graphics.print( "A: " .. thePlayer.shipState.armor, 135, 40 )
-	love.graphics.print( "M: " .. thePlayer.shipState.missileBank, 135, 50 )
-	love.graphics.print( "E: " .. string.format("%.3f", thePlayer.shipState.laserCharge), 135, 60)
+	love.graphics.print( "K: " .. kills, 135, 15)
+	love.graphics.print( "S: " .. string.format("%.1f", score), 135, 25)
+	love.graphics.print( "L: " .. maxLives - currentLife, 135, 40)
+	love.graphics.print( "A: " .. thePlayer.shipState.armor, 135, 50 )
+	love.graphics.print( "M: " .. thePlayer.shipState.missileBank, 135, 60 )
+	love.graphics.print( "E: " .. string.format("%.3f", thePlayer.shipState.laserCharge), 135, 70)
 	--Draw the game cursor on top of everything.
 	game:drawCursor()
 --	love.graphics.print(debug,5,500)
@@ -642,7 +653,7 @@ function add( a, b, coll )
 end
 
 --[[
---Handles player collisions.
+--Handles player and ai collisions.
 --Set needRespawn = true whenever player ship is destroyed.
 --]]
 function shipCollide( a, b, coll )

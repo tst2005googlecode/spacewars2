@@ -57,7 +57,7 @@ end
 function options:draw()
 	love.graphics.setFont(font["large"])
 	love.graphics.setColor(unpack(color["text"]))
-	love.graphics.print("OPTIONS",400-self.titleWidth/2,50)
+	love.graphics.print(self.title,400-self.titleWidth/2,50)
 	for n,b in pairs(self.buttons) do
 		b:draw()
 	end

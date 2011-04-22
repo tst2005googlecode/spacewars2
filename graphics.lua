@@ -31,6 +31,7 @@ require "subclass/class.lua"
 require "util/button.lua"
 require "util/controlBag.lua"
 require "resolution.lua"
+require "background.lua"
 
 graphics = class:new(...)
 
@@ -65,8 +66,9 @@ end
 function graphics:draw()
 	love.graphics.setFont(font["large"])
 	love.graphics.setColor(unpack(color["text"]))
-	love.graphics.print("Current resolution: " .. self.graphic["width"] .. " x " .. self.graphic["height"],200,50)
-	love.graphics.print("Fullscreen enabled: " .. self.graphic["fullscreen"],200,100)
+	love.graphics.print("Current resolution: " .. self.graphic["width"] .. " x " .. self.graphic["height"],100,50)
+	love.graphics.print("Fullscreen enabled: " .. self.graphic["fullscreen"],100,100)
+	love.graphics.print("Current background: " .. self.graphic["background"],100,150)
 	for n,b in pairs(self.buttons) do
 		b:draw()
 	end
@@ -103,6 +105,7 @@ function graphics:mousepressed(x,y,button)
 					self.config:setFullscreen("yes")
 				end
 			elseif(n == "background") then
+				state = background:new(self.config)
 			elseif(n == "exit") then
 				self:back()
 			end

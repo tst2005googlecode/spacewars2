@@ -35,7 +35,7 @@ config = {}
 --Polymorphic variable holding the current view.
 state = {}
 --Master bag that holds the default system configuration.
-local theControlBag = controlBag:new("w","a","s","d","q","e","r","1","2","EASY",800,600,"yes","*.png",200,9,"no",4,"no",100,1,100000)
+local theControlBag = controlBag:new("w","a","s","d","q","e","r","1","2","EASY",800,600,"yes","*.png",200,9,"no",4,"no",100,1,10 ^ 20)
 
 --[[
 --Initializing function that loads the LOVE2D framework.

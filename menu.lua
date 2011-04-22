@@ -29,9 +29,9 @@ In the future, it might also contain a "How to Play" button.
 require "game.lua"
 require "highScore.lua"
 require "options.lua"
+require "gameHelp.lua"
 require "subclass/class.lua"
 require "util/button.lua"
-require "controls.lua"
 
 menu = class:new(...)
 
@@ -80,7 +80,7 @@ function menu:mousepressed(x, y, button)
 			elseif n == "score" then
 				state = highScore:new(self.controlBag)
 			elseif n == "help" then
-				--state = gameHelp:new(self.controlBag)
+				state = gameHelp:new(self.controlBag)
 			elseif n == "exit" then
 				love.event.push("q") --Quit the program
 			end

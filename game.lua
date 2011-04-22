@@ -140,7 +140,9 @@ function game:construct( aConfigBag, coord )
 	--Fullscreen uses a string to determine, because booleans can't be written.
 	if (theConfigBag:isFullscreen() == "yes") then
 		--Set the graphics mode
-		love.graphics.setMode(theConfigBag:getResWidth(),theConfigBag:getResHeight(),fullscreen,false,0)
+		love.graphics.setMode(theConfigBag:getResWidth(),theConfigBag:getResHeight(),true,false,0)
+	else
+		love.graphics.setMode(theConfigBag:getResWidth(),theConfigBag:getResHeight(),false,false,0)
 	end
 	--Create the coordinate bag
 

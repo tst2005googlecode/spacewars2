@@ -247,7 +247,7 @@ end
 --Sets the fullscreen status of the screen.
 --Uses a yes/no string because booleans cannot be written to files.
 --]]
-function controlBag:setFullScreen( screen )
+function controlBag:setFullscreen( screen )
 	self.fullscreen = screen
 end
 

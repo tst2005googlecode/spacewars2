@@ -26,6 +26,8 @@ This class implements the options menu for Spacewars!II.
 It contains links to the controls, configuration, and resolution views.
 --]]
 
+require "controls.lua"
+require "graphics.lua"
 require "subclass/class.lua"
 require "util/button.lua"
 
@@ -38,16 +40,24 @@ options = class:new()
 --]]
 function options:construct(aControlBag)
 	--Initialize the buttons the user can press
-	self.buttons = {controls = button:new("Controls", 400, 350),
-					game = button:new("Game" , 400, 500)}
+	self.buttons = {controls = button:new("Controls", 400, 200),
+					config = button:new("Game Config", 400, 300),
+					graphics = button:new("Graphics", 400, 400),
+					game = button:new("Back" , 400, 500)}
 	--Store the configuration
 	self.controlBag = aControlBag
+
+	self.title = "OPTIONS"
+	self.titleWidth = font["large"]:getWidth(self.title)
 end
 
 --[[
 --Draws the various buttons to the screen.
 --]]
 function options:draw()
+	love.graphics.setFont(font["large"])
+	love.graphics.setColor(unpack(color["text"]))
+	love.graphics.print("OPTIONS",400-self.titleWidth/2,50)
 	for n,b in pairs(self.buttons) do
 		b:draw()
 	end
@@ -74,6 +84,8 @@ function options:mousepressed(x,y,button)
 		if b:mousepressed(x,y,button) then
 			if n == "controls" then
 				state = controls:new(self.controlBag) --Open controls
+			elseif n == "graphics" then
+				state = graphics:new(self.controlBag) --Open graphics
 			elseif n == "game" then
 				state = menu:new(self.controlBag) --Return to main menu
 			end

@@ -140,5 +140,5 @@ function controls:back()
 	self.bag:setRight(self.control["Right"])
 	self.bag:setStopTurn(self.control["StopTurn"])
 	self.bag:setStopThrust(self.control["StopThrust"])
-	state = menu:new(self.bag)
+	state = options:new(self.bag)
 end

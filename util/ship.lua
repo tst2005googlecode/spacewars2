@@ -552,7 +552,7 @@ function ship:launchMissile( x, y )
 		if(target ~= nil) then
 			aMissile:setTarget(target)
 		end
-		self.data.missiles[ #self.data.missiles + 1 ] = aMissile
+--		self.data.missiles[ #self.data.missiles + 1 ] = aMissile
 --		self.data.newMissiles[ #self.data.newMissiles + 1 ] = aMissile
 		self.data.missileBank = self.data.missileBank - 1
 		game:addActive( aMissile )

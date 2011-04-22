@@ -21,8 +21,8 @@ THE SOFTWARE.
 
 player.lua
 
-This class implements a player control.  This checks the mouse and keyboard for
-player input, which is supplied to the ship as commands on each update
+This class implements a player controller.
+The controller is checked for mouse and keyboard input each cycle.
 --]]
 
 require "subclass/class.lua"
@@ -32,14 +32,23 @@ local shipState
 
 player = class:new(...)
 
---Function to instantiate the ship and assign keyboard controls
+--[[
+--Constructs and initializes the player controller.
+--]]
 function player:construct( aCoordBag, shipConfig )
-	-- Assign the key commands
+	--Assign the keyboard controls.
 	self.thrustKey,self.leftKey,self.reverseKey,self.rightKey,self.stopTurnKey,self.stopThrustKey,self.orbitKey,dummy1,dummy2,self.turnMode = shipConfig:getAllControls()
+	--Initialize the state to all false.
 	self.state = { stepLeft = false, stepRight = false, launchMissile = false, engageLaser = false, disengageLaser = false, respawn = false }
-	self.shipState = { missileBank = 0 }
+	self.control = "P"
 end
 
+--[[
+--Checks the keyboard for input.
+--Only used for the "STEP" style of turning (deimplemented?)
+--
+--Requirement 4.1
+--]]
 function player:keypressed( key )
 	if self.turnMode == "STEP" then
 		if key == theConfigBag:getLeft() then
@@ -50,86 +59,118 @@ function player:keypressed( key )
 	end
 end
 
+--[[
+--Checks the mouse for input.
+--Left-click asks for the laser to start firing.
+--Right-click asks for a missile to launch.
+--
+--Requirement 4.1
+--]]
 function player:mousepressed( x, y, button )
-	if ( button == "r" ) then -- launch missile on right mouse click
+	if ( button == "r" ) then
+		--Launch missile
 		self.state.launchMissile = true
-	end -- engage laser on left mouse click
+	end
 	if ( button == "l" ) then
+		--Engage laser
 		self.state.engageLaser = true
 	end
 end
 
+--[[
+--Checks the mouse for input.
+--Left-release asks for the laser to sto firing.
+--
+--Requirement 4.1
+--]]
 function player:mousereleased( x, y, button )
-	-- disengage laser on left mouse up
 	if ( button == "l" ) then
+		--Disengage laser
 		self.state.disengageLaser = true
 	end
 end
 
+--[[
+--Checks for player input for thrust controls.
+--This function is polled every cycle by the attached ship.
+--
+--Requirement 4.1
+--]]
 function player:updateControls( theShipState )
 	self.shipState = theShipState
 	local commands = {}
 
+	--If dead, the ship should respawn.
+	--The ship will not respawn instantly, as game blocks on player destruction.
 	if self.state.respawn then
 		self.state.respawn = false
 		return { "respawn" }
 	end
 
-	-- stop motion ...
+	--Thrust controls
 	if love.keyboard.isDown(self.stopThrustKey) then
+		--Stop linear velocity.
 		commands[ #commands + 1 ] = "stop"
 	else
-		-- or, foward or reverse thrust
 		if love.keyboard.isDown( self.thrustKey ) then
+			--Forward thrusters.
 			commands[ #commands + 1 ] = "thrust"
 		elseif love.keyboard.isDown(self.reverseKey) then
+			--Reverse thrusters.
 			commands[ #commands + 1 ] = "reverse"
 		end
 	end
-	-- stop rotation
+	--Rotation controls.
 	if love.keyboard.isDown(self.stopTurnKey) then
+		--Stop angular velocity.
 		commands[ #commands + 1 ] = "stopRotation"
 	else
-		-- rotate left
+		--Left turn controls.
 		if self.state.stepLeft then
+			--Step turn left.
 			commands[ #commands + 1 ] = "stepLeft"
 		else
 			if love.keyboard.isDown( self.leftKey ) then
 				if ( self.turnMode == "EASY" ) then
+					--Easy turn left.
 					commands[ #commands + 1 ] = "easyLeft"
 				elseif ( self.turnMode == "NORMAL" ) then
+					--Normal turn left.
 					commands[ #commands + 1 ] = "normalLeft"
 				end
 			end
 		end
-		-- rotate right
-		if self.state.stepLeft then
+		--Right turn controls.
+		if self.state.stepRight then
+			--Step turn right.
 			commands[ #commands + 1 ] = "stepRight"
 		else
 			if love.keyboard.isDown( self.rightKey ) then
 				if ( self.turnMode == "EASY" ) then
+					--Easy turn right.
 					commands[ #commands + 1 ] = "easyRight"
 				elseif ( self.turnMode == "NORMAL" ) then
+					--Normal turn right.
 					commands[ #commands + 1 ] = "normalRight"
 				end
 			end
 		end
 	end
-	-- orbit planet
+	--Orbit control.
 	if love.keyboard.isDown(self.orbitKey) then
 		commands[ #commands + 1 ] = "orbit"
 	end
-	-- launch missile
+	--On right-click, launch a missile.
 	if self.state.launchMissile then
 		commands[ #commands + 1 ] = "launchMissile"
 		self.state.launchMissile = false
 	end
-	-- engage laser
+	--On left-click, engage lasers.
 	if self.state.engageLaser then
 		commands[ #commands + 1 ] = "engageLaser"
 		self.state.engageLaser = false
 	end
-	-- disengage laser
+	--On left-release, disengage lasers.
 	if self.state.disengageLaser then
 		commands[ #commands + 1 ] = "disengageLaser"
 		self.state.disengageLaser = false
@@ -138,7 +179,17 @@ function player:updateControls( theShipState )
 	return commands
 end
 
--- Respawn the player's ship
+--[[
+--This function returns the control string "P"
+--]]
+function player:getControl()
+	return self.control
+end
+
+
+--WARNING: The following function are for old behavior, and should not be used.
+
+--[[
 function player:respawn()
 	self:error()
 	self.theShip:respawn()
@@ -174,3 +225,4 @@ function player:getPoints()
 	self:error()
 	return self.theShip:getPoints()
 end
+--]]

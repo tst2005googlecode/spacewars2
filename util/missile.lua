@@ -21,15 +21,24 @@ THE SOFTWARE.
 
 missile.lua
 
-This class implements a missile object, which currently only thrusts once created 
-until it runs out of fuel ... self destructs when time expires after running out 
-of fuel.
+This class implements a missile object.
+Missiles are somewhat oblong in shape.
+Missiles spawn at the center of the ship.
+	Missiles immediately turn and pursue their chosen target.
+	Missiles thrust until they run out of fuel.
+	Upon fuel exhaustion, missiles coast until the killswitch exhausts.
+	Finally, the missile self-destructs.
+Missiles are aware of the borders of the world.
+	Upon reaching a border, the missile self-destructs.
+Missiles have 500 armor that must be depleted by lasers before destruction.
 
-Causes damage to other object on impact with detonation.
+WARNING: Uses global timeScale variable from game.lua
+WARNING: Uses global missile table from game.lua
 --]]
 
 require "subclass/class.lua"
 require "util/bodyObject.lua"
+require "util/functions.lua"
 
 local color
 local mass = 10
@@ -37,45 +46,78 @@ local owner
 
 missile = bodyObject:new(...)
 
--- object construction
+--[[
+--Construct a missile if a recycled instance does not exist.
+--Sets border awareness, constructs a body/shape, and sets object data.
+--Ends by calling the init function.
+--
+--Requirement 9.1
+--]]
 function missile:construct(aWorld, x, y, startAngle, aCoordBag, shipConfig, xVel, yVel)
-	self:constructBody(aWorld, x, y, 10, 10 * ( 25 * 10 ) * ( 100000 ^ 2 ) / 6)
+	--Construct a missile body.
+	self:constructBody(aWorld, x, y, mass, mass * ( 25 * 10 ) * ( 100000 ^ 2 ) / 6)
 	self.missilePoly = love.physics.newPolygonShape(self.body, 12, 0, 2, 4, -4, 4, -8, 0, -4, -4, 2, -4)
+	--Set world awareness.
 	self.minX,self.maxX,self.screenX,self.minY,self.maxY,self.screenY = aCoordBag:getCoords()
-	self.missilePoly:setData( self )
-	self.holdTime = 5
+	--Set the missile's data.
 	self.data = {}
 	self.objectType = types.missile
-	self.mass = 10
+	self.mass = mass
+	self.missilePoly:setData( self )
 
 	self:init( aWorld, x, y, startAngle, aCoordBag, shipConfig, xVel, yVel )
 end
 
--- method to initialize or reinitialize object
+--[[
+--Initializes a newly constructed or recycles instance of missile.
+--Sets the velocity, angle, and spawn position of the missile.
+--Sets the missile up for use in the game engine.
+--WARNING: Uses global timeScale variable.
+--
+--Requirement 9.1
+--]]
 function missile:init(aWorld, x, y, startAngle, aCoordBag, shipConfig, xVel, yVel)
+	--Sets the missile's position and velocity.
 	self.body:setAngle(startAngle)
 	self.body:setLinearVelocity(xVel,yVel)
 	self.body:setPosition( x, y )
+	--Setup the missile for simulation in the world.
 	self.body:wakeUp()
 	self.missilePoly:setSensor( true )
 
+	--Set the thrust and torque of the missile based on mass.
 	self.baseThrust = self.mass * 1000
-	self.baseTorque = self.mass ^ 3 * 10000
-	self.easyTurn = 0.005 / timeScale
+--	self.baseTorque = self.mass ^ 3 * 10000
+	self.easyTurn = 0.001 / timeScale
 
+	--Set the color of the missile, and reset its fuel, killswitch, and target.
 	self.color = shipConfig.color
-	self.fuel = 50000
-	self.killswitch = 25000
+	self.fuel = 6000/timeScale
+	self.killswitch = 6000/timeScale
 	self.target = {}
 
+	--Set the owner of the missile for collision detection.
 	self.data.owner = ""
 	self.data.status = ""
+
+	--Set the missiles armor and damage values.
+	self.data.armor = 500
+	self.data.damage = 1000
 end
 
-function missile:target(aBody)
-
+--[[
+--This sets the target of the missile to the specified body.
+--The missile should try to home in on the target while fuel is available.
+--
+--Requirement 9.1
+--]]
+function missile:setTarget(aBody)
+	self.target = aBody
 end
 
+--[[
+--Draws the missile on the screen.
+--]]
 function missile:draw()
 	if self.isActive then
 		love.graphics.setColor( unpack( self.color ) )
@@ -83,6 +125,14 @@ function missile:draw()
 	end
 end
 
+--[[
+--Updates the missile in the world.
+--Missiles will exhaust dt milliseconds of fuel on every update.
+--Once fuel is exhausted, it exhausts the killswitch instead.
+--Upon total killswitch exhaustion or exceeding a boundary, it self-destructs.
+--
+--Requirement 9.1
+--]]
 function missile:update(dt)
 	--[[if(self.data.status == "DEAD") then
 		--Hold down timer to make sure EVERYTHING stops referencing it
@@ -93,41 +143,86 @@ function missile:update(dt)
 		end
 		return
 	end--]]
-	--Missiles can't reliably track over the border, so it self-destructs safely
+	--Smart missiles can't track over a border, so all missiles self-destruct.
 	if(self:offedge() == true) then
 		self:destroy()
-	--Missile has fuel to thrust with
+	--Missile has fuel to thrust.
 	elseif(self.fuel > 0) then
 		self:thrust()
-		self.fuel = self.fuel - ( dt * timeScale )
-	--Missile drifts until killswitch time elapses
+		self:turn()
+		self.fuel = self.fuel - dt
+	--Missile drifts until killswitch time elapses.
 	elseif(self.killswitch > 0) then
-		self.killswitch = self.killswitch - ( dt * timeScale )
-	else -- out of time:  self destruct
+		self.killswitch = self.killswitch - dt
+	else --Killswitch exhaustion means the missile self-destructs.
 		self:destroy()
 	end
 end
 
+--[[
+--When a missile is destroyed, it needs to be cleaned up.
+--This function disables simulation in the game world.
+--Finally, it adds the missile to the recycle bag for use later.
+--WARNING: Uses global missile table.
+--
+--Requirement 9.2
+--]]
 function missile:destroy()
+	--Set the missile to stop simulation in the world.
 	self.missilePoly:setSensor( false )
 	self.body:putToSleep()
 	self:deactivate()
 	self.data.status = "DEAD"
-	-- set motion and position to zero, or will still move in the world
+	--Set velocity to zero and throw it off the screen.
 	self.body:setLinearVelocity( 0, 0 )
 	self.body:setPosition( -math.random( 10, 100 ), math.random( 10, 10000 ) )
-	--self.body:setPosition( 0,0 )
+	--Put the missile in the recycle bin.
 	missiles:recycle( self )
 end
 
+--[[
+--Executed on an update cycle if fuel still exists.
+--Causes the missile to accelerate in the direction it's pointed by applying force.
+--
+--Requirement 9.1
+--]]
 function missile:thrust()
 	local scaledThrust = self.baseThrust * forceScale
 	local angle = self.body:getAngle()
+	--Calculate what portion of thrust to apply on the X and Y axis.
 	local xThrust = math.cos( angle ) * scaledThrust
 	local yThrust = math.sin( angle ) * scaledThrust
 	self.body:applyForce( xThrust, yThrust )
 end
 
+--[[
+--Missiles that have a valid target should steer toward it.
+--For simplicity's sake the missile is forced to always point at the ship.
+--
+--Requirement 9.1
+--]]
+function missile:turn()
+	if (self.target ~= {}) then
+		angle = pointAngle(self.body:getX(),self.body:getY(),self.target.body:getX(),self.target.body:getY())
+		self.body:setAngle(angle)
+--[[
+	--Optional gradual turn behavior, however, it seems to work better with locked turning
+		if(angle > 0) then
+			self.body:setAngle( self.body:getAngle() + self.easyTurn * timeScale )
+		elseif(angle < 0) then
+			self.body:setAngle( self.body:getAngle() - self.easyTurn * timeScale )
+		end
+--]]
+	end
+end
+
+--[[
+--Checks to see if the missile has exceeded a world boundary.
+--If so, then it returns true, so the update method destroys the missile.
+--Otherwise, it returns false, which will cause nothing to happen.
+--
+--Requirement 9.1
+--]]
 function missile:offedge()
 	if(self.body:getX() > self.maxX) then
 		return true
@@ -142,30 +237,51 @@ function missile:offedge()
 	return false
 end
 
+--[[
+--Get the status of the missile.
+--]]
 function missile:getStatus()
 	return self.data.status
 end
 
+--[[
+--Set the status of the missile.
+--]]
 function missile:setStatus(stat)
 	self.data.status = stat
 end
 
+--[[
+--Get the owner of the missile.
+--]]
 function missile:getOwner()
 	return self.data.owner
 end
 
+--[[
+--Set the owner of the missile.
+--]]
 function missile:setOwner(own)
 	self.data.owner = own
 end
 
+--[[
+--Get the X coordinate of the missile.
+--]]
 function missile:getX()
 	return self.body:getX()
 end
 
+--[[
+--Get the Y coordinate of the missile.
+--]]
 function missile:getY()
 	return self.body:getY()
 end
 
+--[[
+--Get the type of the missile, which is "missile".
+--]]
 function missile:getType()
 	return "missile"
 end

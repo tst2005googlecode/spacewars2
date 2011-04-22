@@ -28,52 +28,61 @@ When the camera reaches the edge of the applicable game board, it stops.
 
 require "subclass/class.lua"
 
--- The body to follow
-local myBody
--- Border awareness
-local minX
-local maxX
-local screenX
-local minY
-local maxY
-local screenY
-local zoom
-local x
-local y
-
 camera = class:new(...)
 
--- Assigns the borders of the game and the current body to follow
+--[[
+--Creates and initializes a camera for the game.
+--Assigns boundaries, the focus object, and camera controls.
+--
+--Requirement 2.1
+--]]
 function camera:construct(aCoordBag, aBody, aConfigBag)
+	--Hold the boundaries of the world and window for movement.
 	self.minX,self.maxX,self.screenX,self.minY,self.maxY,self.screenY = aCoordBag:getCoords()
+	--Center the camera on the assigned body at default scale.
 	self.myBody = aBody
 	self.zoom = 1
+	--Assign the zoom keys.
 	self.zoomIn = aConfigBag:getZoomIn()
 	self.zoomOut = aConfigBag:getZoomOut()
 end
 
--- Allows the camera to jump to another body if needed.
+--[[
+--Allows the camera to jump to another body if needed.
+--]]
 function camera:assign(aBody)
 	self.myBody = aBody
 end
 
+--[[
+--Checks the key to see if it is a valid control.
+--Allows the camera to support zoom in and zoom out functions.
+--
+--Requirement 2.8
+--]]
 function camera:keypressed(key)
 	if key == self.zoomIn then
 		self.zoom = self.zoom + 0.125
-		if self.zoom > 2 then
+		if self.zoom > 2 then --Limit zoom at 200%
 			self.zoom = 2
 		end
 	elseif key == self.zoomOut then
 		self.zoom = self.zoom - 0.125
-		if self.zoom < 0.125 then
+		if self.zoom < 0.125 then --Limit zoom at 12.5%
 			self.zoom = 0.125
 		end
 	end
 end
 
--- Adjust the current position of the camera.
--- This verision of camera:adjust() assumes love.graphics.scale occurs before love.graphics.transform
--- Since love.graphics.print ASSUMES scale occurs before trasnform, this IS text-safe.
+--[[
+--Adjust the current position of the camera.
+--Returns the position to draw from, and the current zoom level.
+--
+--This verision of camera:adjust() assumes scaling occurs before tranlating
+--Since love.graphics.print ASSUMES scale occurs before translating, this IS text-safe.
+--
+--Requirement 2.1, 2.8
+--]]
 function camera:adjust()
 	local currentX = ((self.maxX - self.screenX/self.zoom) / 2) + (self.myBody:getX() - (self.maxX / 2))
 	local currentY = ((self.maxY - self.screenY/self.zoom) / 2) + (self.myBody:getY() - (self.maxY / 2))
@@ -92,13 +101,29 @@ function camera:adjust()
 	return currentX, currentY, self.zoom
 end
 
+--[[
+--Return the X coordinate of the camera without updating.
+--]]
 function camera:getX()
 	return self.x
 end
 
+--[[
+--Returns the Y coordinate of the camera without updating.
+--]]
 function camera:getY()
 	return self.y
 end
+
+--[[
+--Returns the zoom level of the camera without updating.
+--]]
+function camera:getZoom()
+	return self.zoom
+end
+
+
+--WARNING: OLD CODE NOT IN USE.  CURRENTLY ARCHIVED.
 
 --[[
 -- This version of camera:adjust() assumes love.graphics.transform occurs before love.graphics.scale

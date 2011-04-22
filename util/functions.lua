@@ -21,25 +21,40 @@ THE SOFTWARE.
 
 functions.lua
 
-library of common functions (no state or side effects)
+This static class contains common functions (no state or side effects).
+This includes distance functions, angle functions, and the ability to copy a table.
+
+These functions do not directly fulfill requirements.
+They aid in various calculations and adjustments throughout the program.
 --]]
 
--- return the distance between two coordinates (1 is origin, 2 is destination)
+--[[
+--Find the distance between two ordered pairs of points.
+--1 is the origin point, 2 is the destination point.
+--]]
 function pointDistance( x1, y1, x2, y2 )
     return hypotenuse( x2 - x1, y2 - y1 )
 end
 
--- return the angle in radians given two coordinates, from 1 to 2
+--[[
+--Find the angle in radians between two ordered pairs of points.
+--1 is the origin point, 2 is the destination point.
+--]]
 function pointAngle( x1, y1, x2, y2 )
     return math.atan2( y2 - y1, x2 - x1 )
 end
 
--- return the distance of hypotenuse for given x and y lengths
+--[[
+--Find the hypotenuse of two vectors.
+--Called by pointDistance, which has already derived the vectors.
+--]]
 function hypotenuse( x, y )
     return ( x ^ 2 + y ^ 2 ) ^ ( 1 / 2 )
 end
 
--- copy a lua table as a clone (shallow copy)
+--[[
+--Creates a shallow copy of a lua table, and returns it.
+--]]
 function copyTable( aTable )
     local newTable = {}
     for key, value in pairs( aTable ) do

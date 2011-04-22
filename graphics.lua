@@ -32,6 +32,7 @@ require "util/button.lua"
 require "util/controlBag.lua"
 require "resolution.lua"
 require "background.lua"
+require "help/graphicsHelp.lua"
 
 graphics = class:new(...)
 
@@ -51,6 +52,7 @@ function graphics:construct(aConfigBag)
 
 	self.buttons =
 	{
+		help = button:new("Help",400,300),
 		resolution = button:new("Change Resolution",400,350),
 		fullscreen = button:new("Toggle Fullscreen",400,400),
 		background = button:new("Change Background",400,450),
@@ -94,7 +96,9 @@ end
 function graphics:mousepressed(x,y,button)
 	for n,b in pairs(self.buttons) do
 		if b:mousepressed(x,y,button) then
-			if(n == "resolution") then
+			if(n == "help") then
+				state = graphicsHelp:new(self.config)
+			elseif(n == "resolution") then
 				state = resolution:new(self.config)
 			elseif(n == "fullscreen") then
 				if(self.graphic["fullscreen"] == "yes") then

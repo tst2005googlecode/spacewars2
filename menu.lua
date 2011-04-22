@@ -29,7 +29,7 @@ In the future, it might also contain a "How to Play" button.
 require "game.lua"
 require "highScore.lua"
 require "options.lua"
-require "gameHelp.lua"
+require "help/gameHelp.lua"
 require "subclass/class.lua"
 require "util/button.lua"
 

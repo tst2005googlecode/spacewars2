@@ -85,8 +85,8 @@ function ship:construct( theWorld, controlledBy, aCoordBag, shipConfig )
 	self.maxLinearV = 30 --NOT CURRENTLY IN USE!
 	self.maxAngleV = 0.1 * timeScale --NOT CURRENTLY IN USE!
 	self.baseThrust = shipConfig.mass * 500
-	self.baseTorque = shipConfig.mass * 10 ^ 15
-	self.easyTurn = 0.00000025 * timeScale
+	self.baseTorque = shipConfig.mass * 10 ^ 14
+	self.easyTurn = 0.00002 * timeScale
 
 	--State controls for step turning
 	self.turnStep = 0

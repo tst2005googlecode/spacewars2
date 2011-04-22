@@ -43,7 +43,7 @@ function pause:construct(aGame, aWidth, aControlBag, aScore)
 	--Store the game state and configuration
 	self.temp = aGame
 	self.tempControl = aControlBag
-	self.score = aScore
+	self.score = aScore or 0
 	self.width = aWidth
 	--Initialize the buttons the user can press.
 	--Easier to write the score down as a button!

@@ -35,7 +35,7 @@ config = {}
 --Polymorphic variable holding the current view.
 state = {}
 --Master bag that holds the default system configuration.
-local theControlBag = controlBag:new("w","a","s","d","q","e","r","1","2","EASY",800,600,"yes","*.png",200,9,"no",4,"no",100,1,10 ^ 20)
+local theControlBag = controlBag:new("w","a","s","d","q","e","r","1","2","EASY",800,600,"no","*.png",200,9,"no",4,"no",100,1,10 ^ 20)
 
 --[[
 --Initializing function that loads the LOVE2D framework.
@@ -55,7 +55,7 @@ function love.load()
 				large = love.graphics.newFont(32),
 				huge = love.graphics.newFont(72),
 				small = love.graphics.newFont(16) }
-	sound =	{	click = love.audio.newSource("media/click.ogg", "static"),}
+	sound = {	click = love.audio.newSource("media/click.ogg", "static") }
 
 	-- Variables
 	size = 6     -- size of the grid
@@ -64,7 +64,8 @@ function love.load()
 	--Checks for a configuration file, and if it exists, loads it.
 	--WARNING: Lua does NOT guarantee order of table output.
 	--Table must be manipulated directly, instead of using mutator functions!
-	if(love.filesystem.exists("keybinding.conf")) then
+-- uncomment when menu works!
+	--[[if(love.filesystem.exists("keybinding.conf")) then
 		local theFile = love.filesystem.newFile("keybinding.conf")
 		theFile:open("r")
 		for line in theFile:lines() do
@@ -75,7 +76,7 @@ function love.load()
 		end
 		theFile:close()
 		theFile = nil
-	end
+	end--]]
 
 	-- Setup the graphics engine
 	love.graphics.setBackgroundColor(0,0,0)

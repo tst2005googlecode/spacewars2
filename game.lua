@@ -135,16 +135,15 @@ function game:construct( aConfigBag, coord )
 	maxLives = 0
 	--Store theConfigBag
 	theConfigBag = aConfigBag
+
 	--Set selected screen resolution.
-	local fullscreen
 	--Fullscreen uses a string to determine, because booleans can't be written.
-	if(theConfigBag:isFullscreen() == "yes") then
-		fullscreen = true
-	else
-		fullscreen = false
+	if (theConfigBag:isFullscreen() == "yes") then
+		--Set the graphics mode
+		love.graphics.setMode(theConfigBag:getResWidth(),theConfigBag:getResHeight(),fullscreen,false,0)
 	end
-	--Set the graphics mode and create the coordinate bag
-	love.graphics.setMode(theConfigBag:getResWidth(),theConfigBag:getResHeight(),fullscreen,false,0)
+	--Create the coordinate bag
+
 	screenX = love.graphics.getWidth()
 	screenY = love.graphics.getHeight()
 	theCoordBag = coordBag:new(minX,maxX,screenX,minY,maxY,screenY)
@@ -228,6 +227,7 @@ function game:construct( aConfigBag, coord )
 	else
 		totalAi = theConfigBag:getAiNum()
 	end
+
 	--Create enemy ships up to the cap.
 	for i = 1, totalAi do
 		theConfigBag = copyTable( theConfigBag )
@@ -613,7 +613,7 @@ end
 --If the game loses focus, then this opens the pause menu.
 --]]
 function game:focus()
-	state = pause:new( game, theConfigBag )
+	state = pause:new( game, sWidth, theConfigBag, self.score )
 end
 
 --[[

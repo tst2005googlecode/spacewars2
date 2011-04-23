@@ -42,6 +42,7 @@ playerconfig = class:new(...)
 function playerconfig:construct(aControlBag)
 	--Store the configuration
 	self.bag = aControlBag
+       
 	--Load the appropriate controls for user configuration
 	self.control = {}
         self.control["GameSpeed"] = aControlBag:getSpeed()
@@ -57,13 +58,11 @@ function playerconfig:construct(aControlBag)
 			NumberofAI = button:new("Number of AI = " .. self.control["NumberofAI"] ,400, 150),
 			RandomOpponents = button:new("Random Opponents = " .. self.control["RandomOpponents"], 400, 200),
 			Moons = button:new("Moons = " .. self.control["Moons"], 400, 250),
-            RandomMoons = button:new("Random Moons = " .. self.control["RandomMoons"], 400, 300),
+                        RandomMoons = button:new("Random Moons = " .. self.control["RandomMoons"], 400, 300),
 			SolarDebris = button:new("Solar Debris = " .. self.control["SolarDebris"], 400, 350),
 			PlayerRespawns = button:new("Player Respawns = " .. self.control["PlayerRespawns"] , 400,400),
-                        Back = button:new("Back" , 400, 550)}
---We do not need input and have nothing to change in a new view.
-	self.needInput = false
-	self.change = ""
+                        exit = button:new("Back" , 400, 550)}
+
 end
 
 --Draws the various buttons to the screen.
@@ -77,17 +76,30 @@ function playerconfig:draw()
 end
 
 function playerconfig:mousepressed(x,y,button)
-	if(self.needInput == false) then
+	
 		for n,b in pairs(self.buttons) do
 			if b:mousepressed(x,y,button) then
-				if n == "Back" then
+				if (n == "exit") then
 					self:back() --Return to a higher menu
-				else
-					self.needInput = true
-					self.change = n --This is where input will go
-				end
+				
+				
 			end
 		end
 	end
 end
 
+--[[
+--Highlights a button if it has been hovered over.
+--]]
+function playerconfig:update(dt)
+	for n,b in pairs(self.buttons) do
+		b:update(dt)
+	end
+end
+
+--[[
+--Returns to the options menu.
+--]]
+function playerconfig:back()
+	state = options:new(self.bag)
+end

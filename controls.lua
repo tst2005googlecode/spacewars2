@@ -29,6 +29,7 @@ The player can change the Thrust, Left, Reverse, Right, Stop Turn, Stop Thrust
 require "subclass/class.lua"
 require "util/button.lua"
 require "util/controlBag.lua"
+require "help/controlsHelp.lua"
 
 controls = class:new()
 
@@ -64,6 +65,7 @@ function controls:construct(aControlBag)
 			ZoomIn = button:new("ZoomIn = " .. self.control["ZoomIn"] , 400,300),
 			ZoomOut = button:new("ZoomOut = " .. self.control["ZoomOut"] , 400,350),
 			TurnType = button:new("TurnType = " .. self.control["TurnType"], 400,400),
+			Help = button:new("Help", 400, 500),
 			Back = button:new("Back" , 400, 550)}
 
 	--We do not need input and have nothing to change in a new view.
@@ -108,6 +110,8 @@ function controls:mousepressed(x,y,button)
 			if b:mousepressed(x,y,button) then
 				if n == "Back" then
 					self:back() --Return to a higher menu
+				elseif n == "Help" then
+					state = controlsHelp:new(self.bag)
 				elseif n == "TurnType" then
 					--Toggle the type of turn!
 					if self.control["TurnType"] == "EASY" then

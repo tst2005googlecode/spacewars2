@@ -29,6 +29,7 @@ The player can change the Game speed, Number of AI, Shield Strength, Number of D
 require "subclass/class.lua"
 require "util/button.lua"
 require "util/controlBag.lua"
+require "help/configHelp.lua"
 
 playerconfig = class:new(...)
 
@@ -63,6 +64,7 @@ function playerconfig:construct(aControlBag)
 		RandomMoons = button:new("RandomMoons = " .. self.control["RandomMoons"], 400, 300),
 		SolarDebris = button:new("SolarDebris = " .. self.control["SolarDebris"], 400, 350),
 		PlayerRespawns = button:new("PlayerRespawns = " .. self.control["PlayerRespawns"] , 400,400),
+		Help = button:new("Help", 400, 500),
 		exit = button:new("Back" , 400, 550)}
 
 	self.needInput = false
@@ -164,6 +166,8 @@ function playerconfig:mousepressed(x,y,button)
 		if b:mousepressed(x,y,button) then
 			if (n == "exit") then
 				self:back() --Return to a higher menu
+			elseif(n == "Help") then
+				state = configHelp:new(self.bag)
 			elseif (n == "RandomOpponents") then
 				--Toggle the property
 			elseif (n == "RandomMoons") then

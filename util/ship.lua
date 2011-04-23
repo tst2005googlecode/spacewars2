@@ -106,7 +106,7 @@ function ship:construct( theWorld, controlledBy, aCoordBag, shipConfig )
 	self.data.owner = self.controller
 
 	self.data.armor = 2000
-	self.data.missiles = {}
+--	self.data.missiles = {}
 --	self.data.newMissiles = {}
 	self.data.missileBank = maxMissile
 	self.data.laserEngaged = false
@@ -510,6 +510,15 @@ function ship:engageLaser( dt, x2, y2, endOfBeam )
 end
 
 --[[
+--Returns the remaining laser energy.
+--
+--Requirement 8.2
+--]]
+function ship:getLaserEnergy()
+	return self.data.laserCharge
+end
+
+--[[
 --Add the list of enemy ships to the current ship.
 --Used in launchMissile for targeting purposes.
 --
@@ -528,7 +537,7 @@ end
 --
 --Requirement 9.1
 --]]
-function ship:launchMissile( x, y )
+function ship:launchMissile()
 	if self.data.missileBank > 0 then
 		--Launch a missile, figure the correct position, angle, and velocity.
 		local angle = self.body:getAngle()
@@ -617,6 +626,13 @@ end
 function ship:getBody()
 	return self.body
 end--]]
+
+--[[
+--Returns a ship's remaining armor.
+--]]
+function ship:getArmor()
+	return self.data.armor
+end
 
 --[[
 --Get the ship's STEP acceleration.

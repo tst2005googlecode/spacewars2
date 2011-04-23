@@ -82,6 +82,7 @@ local theConfigBag = {}
 --Box2D holder variables
 local theWorld
 local thePlayer
+local playerShip
 --Camera control variables
 theCamera = {}
 local currentX
@@ -212,6 +213,7 @@ function game:construct( aConfigBag, coord )
 	local aShip = ships:getNew( theWorld, thePlayer, theCoordBag, theConfigBag )
 	game:addActive( aShip )
 	playerShips[1] = aShip
+	playerShip = aShip
 
 	--Setup the camera and HUD elements to focus on player's ship.
 	theCamera = camera:new( theCoordBag, aShip.body, theConfigBag )
@@ -250,6 +252,8 @@ function game:construct( aConfigBag, coord )
 	needRespawn = false
 	currentLife = 1
 	maxLives = theConfigBag:getLives() + 0 --Must add zero to coerce to int
+	playerShips = {}
+	aiShips = {}
 end
 
 --[[
@@ -426,9 +430,9 @@ function game:draw()
 	love.graphics.print( "K: " .. kills, 135, 15)
 	love.graphics.print( "S: " .. string.format("%.1f", score), 135, 25)
 	love.graphics.print( "L: " .. maxLives - currentLife, 135, 40)
-	love.graphics.print( "A: " .. thePlayer.shipState.armor, 135, 50 )
-	love.graphics.print( "M: " .. thePlayer.shipState.missileBank, 135, 60 )
-	love.graphics.print( "E: " .. string.format("%.3f", thePlayer.shipState.laserCharge), 135, 70)
+	love.graphics.print( "A: " .. playerShip:getArmor(), 135, 50 )
+	love.graphics.print( "M: " .. playerShip:getMissileBank(), 135, 60 )
+	love.graphics.print( "E: " .. string.format("%.3f", playerShip:getLaserEnergy()), 135, 70)
 	--Draw the game cursor on top of everything.
 	game:drawCursor()
 --	love.graphics.print(debug,5,500)

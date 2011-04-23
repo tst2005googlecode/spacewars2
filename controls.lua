@@ -48,6 +48,8 @@ function controls:construct(aControlBag)
         self.control["Right"] = aControlBag:getRight()
         self.control["StopTurn"] = aControlBag:getStopTurn()
         self.control["StopThrust"] = aControlBag:getStopThrust()
+        self.control["zoomIn"] = aControlBag:getZoomIn()
+        self.control["zoomOut"] = aControlBag:getZoomOut()
 
 	--Initialize the buttons the user can press
 	self.buttons = {Thrust =  button:new("Thrust = " .. self.control["Thrust"], 400, 100),
@@ -56,7 +58,9 @@ function controls:construct(aControlBag)
 			Right = button:new("Right = " .. self.control["Right"], 400, 250),
 			StopTurn = button:new("StopTurn = " .. self.control["StopTurn"], 400, 300),
 			StopThrust = button:new("StopThrust = " .. self.control["StopThrust"] , 400,350),
-					Back = button:new("Back" , 400, 550)}
+                        zoomIn = button:new("Zoom In = " .. self.control["zoomIn"] , 400,400),
+                        zoomOut = button:new("Zoom Out = " .. self.control["zoomOut"] , 400,450),
+			Back = button:new("Back" , 400, 550)}
 
 	--We do not need input and have nothing to change in a new view.
 	self.needInput = false
@@ -140,5 +144,7 @@ function controls:back()
 	self.bag:setRight(self.control["Right"])
 	self.bag:setStopTurn(self.control["StopTurn"])
 	self.bag:setStopThrust(self.control["StopThrust"])
+        self.bag:setZoomIn(self.control["zoomIn"]) 
+        self.bag:setZoomOut(self.control["zoomOut"])
 	state = options:new(self.bag)
 end

@@ -96,13 +96,13 @@ function playerconfig:draw()
 		local helpMessage = ""
 		love.graphics.setFont(font["default"])
 		--Update the helpMessage to show the latest stringInput
-                    
+
 
 
 		if(self.change == "PlayerRespawns") then
 
 			helpMessage = "Please enter a number between " .. minSpawn .. " and " .. maxSpawn .. ": " .. self.inputString
-		
+
 			--Use elseifs for the rest of the properties
                 elseif(self.change == "GameSpeed") then
 
@@ -116,11 +116,11 @@ function playerconfig:draw()
 
                  helpMessage = "Please enter a number between " .. minAI .. " and " .. maxAI .. ": " .. self.inputString
 
-                elseif(self.change == "SolarDebris") then 
-                
-              helpMessage = "Please enter a number between " .. minDebris .. " and " .. maxDebris .. ": " .. self.inputString   
+                elseif(self.change == "SolarDebris") then
 
-                  
+              helpMessage = "Please enter a number between " .. minDebris .. " and " .. maxDebris .. ": " .. self.inputString
+
+
 
 		end
 		love.graphics.print(helpMessage,100,425)
@@ -156,7 +156,7 @@ function playerconfig:keypressed(key)
 					elseif(number > 30) then
 						number = 30
 					end
-				
+
 					--More number checks
 
                                  elseif(self.change == "GameSpeed") then
@@ -165,33 +165,33 @@ function playerconfig:keypressed(key)
                                  elseif(number > 500) then
                                           number = 500
                                         end
-                                  
+
                                  elseif(self.change == "Moons") then
                                           if(number < 0) then
                                           number = 0
-                                       
+
                                   elseif(number > 9) then
-                                          number = 9      
+                                          number = 9
                                          end
 
-                                   
+
                                  elseif(self.change == "NumberofAI") then
-                                          if(number < 0) then
-                                          number = 0
-                                       
+                                          if(number < 1) then
+                                          number = 1
+
                                   elseif(number > 9) then
-                                          number = 9      
+                                          number = 9
                                          end
 
                                   elseif(self.change == "SolarDebris") then
                                           if(number < 0) then
                                           number = 0
-                                       
+
                                   elseif(number > 200) then
-                                          number = 200      
+                                          number = 200
                                          end
 
-                                 
+
 				end
 				--Generic storage operations
 				self.control[self.change] = number
@@ -234,18 +234,15 @@ function playerconfig:mousepressed(x,y,button)
 
 			elseif (n == "RandomOpponents") then
 				--Toggle the property
-                             -- if(self.control["RandomOpponents"] == "yes") then
-
-                                  -- self.control["RandomOpponents"] = "no"
-                                  -- self.control:setRandomAi("no")
-                            --  else
-                                  -- self.control["RandomOpponents"] = "yes"
-                                  -- self.control:setRandomAi("yes")
-                            --  end
-                       
+				if(self.control["RandomOpponents"] == "yes") then
+					self.control["RandomOpponents"] = "no"
+				else
+					self.control["RandomOpponents"] = "yes"
+				end
+				self.buttons["RandomOpponents"]:changeText("RandomOpponents = " .. self.control["RandomOpponents"])
 			elseif (n == "RandomMoons") then
 				--Toggle the property
-                         
+
 
 
 			else
@@ -274,5 +271,6 @@ function playerconfig:back()
         self.bag:setMoonNum(self.control["Moons"])
         self.bag:setAiNum(self.control["NumberofAI"])
         self.bag:setDebrisNum(self.control["SolarDebris"])
+		self.bag:setRandomAi(self.control["RandomOpponents"])
 	state = options:new(self.bag)
 end

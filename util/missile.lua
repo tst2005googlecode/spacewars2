@@ -65,6 +65,17 @@ function missile:construct(aWorld, x, y, startAngle, aCoordBag, shipConfig, xVel
 	self.mass = mass
 	self.missilePoly:setData( self )
 
+	--Construct the particle effects
+	self.image = love.graphics.newImage("images/shipExhaust.png")
+	self.exhaust = love.graphics.newParticleSystem(self.image,10)
+	self.exhaust:setEmissionRate(10)
+	self.exhaust:setLifetime(0.1)
+	self.exhaust:setParticleLife(0.5)
+	self.exhaust:setSpin(-2, 2)
+	self.exhaust:setSpeed(150, 200)
+	self.exhaust:setSpread(math.pi/4)
+	self.exhaust:setSize(0.5)
+
 	self:init( aWorld, x, y, startAngle, aCoordBag, shipConfig, xVel, yVel )
 end
 
@@ -122,6 +133,7 @@ function missile:draw()
 	if self.isActive then
 		love.graphics.setColor( unpack( self.color ) )
 		love.graphics.polygon("fill", self.missilePoly:getPoints())
+		love.graphics.draw(self.exhaust,0,0)
 	end
 end
 
@@ -151,6 +163,7 @@ function missile:update(dt)
 		self:thrust()
 		self:turn()
 		self.fuel = self.fuel - dt
+		self.exhaust:update(dt)
 	--Missile drifts until killswitch time elapses.
 	elseif(self.killswitch > 0) then
 		self.killswitch = self.killswitch - dt
@@ -193,6 +206,10 @@ function missile:thrust()
 	local xThrust = math.cos( angle ) * scaledThrust
 	local yThrust = math.sin( angle ) * scaledThrust
 	self.body:applyForce( xThrust, yThrust )
+	--Generate some particles
+	self.exhaust:setPosition(self.body:getX() - math.cos(angle) * 10,self.body:getY() - math.sin(angle) * 10)
+	self.exhaust:setDirection(angle - math.pi)
+	self.exhaust:start()
 end
 
 --[[

@@ -107,7 +107,7 @@ function ship:construct( theWorld, controlledBy, aCoordBag, shipConfig )
 	self.objectType = types.ship
 	self.data.owner = self.controller
 
-	self.data.armor = 2
+	self.data.armor = 2000
 --	self.data.missiles = {}
 --	self.data.newMissiles = {}
 	self.data.missileBank = maxMissile
@@ -666,7 +666,7 @@ function ship:respawn()
 	--Reinitialize position and armor.
 	self.body:setLinearVelocity(0,0)
 	self.body:setAngularVelocity(0)
-	self.data.armor = 2
+	self.data.armor = 2000
 	self.controller.state.respawn = false
 end
 

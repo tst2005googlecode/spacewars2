@@ -37,6 +37,8 @@ WARNING: Uses global missile, laser, and junk tables from game.lua
 require "util/bodyObject.lua"
 require "util/functions.lua"
 require "util/missile.lua"
+require "util/laser.lua"
+require "util/explosion.lua"
 
 -- Movement constants
 local maxLinearV -- NOT CURRENTLY IN USE!
@@ -86,7 +88,7 @@ function ship:construct( theWorld, controlledBy, aCoordBag, shipConfig )
 	self.maxAngleV = 0.1 * timeScale --NOT CURRENTLY IN USE!
 	self.baseThrust = shipConfig.mass * 500
 	self.baseTorque = shipConfig.mass * 10 ^ 14
-	self.easyTurn = 0.00002 * timeScale
+	self.easyTurn = 0.00003 * timeScale
 
 	--State controls for step turning
 	self.turnStep = 0
@@ -105,7 +107,7 @@ function ship:construct( theWorld, controlledBy, aCoordBag, shipConfig )
 	self.objectType = types.ship
 	self.data.owner = self.controller
 
-	self.data.armor = 2000
+	self.data.armor = 2
 --	self.data.missiles = {}
 --	self.data.newMissiles = {}
 	self.data.missileBank = maxMissile
@@ -163,10 +165,10 @@ function ship:update( dt )
 	local commands = self.controller:updateControls( self.data, dt )
 	--Check for respawn
 	if self.data.status == "DEAD" then
+		self:stop()
 		if commands[1] == "respawn" then
 			self:respawn()
 		end
-		return
 	end
 	--Charge laser and reload missiles
 	if(self.data.missileBank < maxMissile) then
@@ -403,7 +405,7 @@ function ship:stopThrust( dt )
 	self.body:applyForce( xThrust, yThrust )
 	--Generate some particles
 	self.exhaust:setPosition(self.body:getX() - math.cos(self.body:getAngle()) * 20,self.body:getY() - math.sin(self.body:getAngle()) * 20)
-	self.exhaust:setDirection(direction)
+	self.exhaust:setDirection(self.body:getAngle() - math.pi)
 	self.exhaust:start()
 end
 
@@ -474,33 +476,19 @@ function ship:warpDrive()
 end
 
 --[[
---Ship's automatically respawn at the next available opportunity.
---This sets the controller to call for a respawn automatically.
---It also spawns 1-4 debris at the ship's destruction point.
---These debris will spawn above the soft cap in the configuration.
---WARNING: Uses global activeDebris variable.
---WARNING: Uses global junk table.
+--When ships are destroyed, they must be respawned.
+--This sets the controller to call for a respawn until the command is given.
+--Debris from destruction is made in respawn() to prevent infinite collision!
+--WARNING: Uses global explosions table.
 --
---Requirement 10.2
+--Requirement 11
 --]]
 function ship:destroy()
 	--self:deactivate()
 	self.data.status = "DEAD"
 	self.controller.state.respawn = true
-	local tempMass = math.random(50,75)/100 * self.mass
-	local numSpawn = math.random(1,4)
-	for i = 1,numSpawn do
-		local aDebris = {}
-		if(i == numSpawn) then
-			aDebris = junk:getNew( self.world, self.coordBag, "ship", self.body:getX(), self.body:getY(), tempMass )
-		else
-			tempMass2 = math.random(10,15)/100 * tempMass
-			tempMass = tempMass - tempMass2
-			aDebris = junk:getNew( self.world, self.coordBag, "ship", self.body:getX(), self.body:getY(), tempMass2 )
-		end
-		game:addActive( aDebris )
-		activeDebris = activeDebris + 1
-	end
+	local explode = explosions:getNew(self.body:getX(),self.body:getY(),1,20)
+	game:addEffect( explode )
 end
 
 --[[
@@ -623,10 +611,42 @@ function ship:engageTractor()
 end
 
 --[[
+--Stops the ship dead in the water when it is destroyed.
+--Essentially used only for players, as they do not instantly respawn.
+--]]
+function ship:stop()
+	self.body:setLinearVelocity(0,0)
+	self.body:setAngularVelocity(0)
+end
+
+--[[
 --Respawn the ship in a random quadrant within 800 pixels of the borders.
 --The ship will be pointed at a random angle.
+--It also spawns 1-4 debris at the ship's destruction point.
+--These debris will spawn above the soft cap in the configuration.
+--Debris spawn from destruction is done HERE to prevent infinite collison.
+--WARNING: Uses global activeDebris variable.
+--WARNING: Uses global junk table.
+--
+--Requirement 10.2
 --]]
 function ship:respawn()
+	--Create the debris from the destroyed ship.
+	local tempMass = math.random(50,75)/100 * self.mass
+	local numSpawn = math.random(1,4)
+	for i = 1,numSpawn do
+		local aDebris = {}
+		if(i == numSpawn) then
+			aDebris = junk:getNew( self.world, self.coordBag, "ship", self.body:getX(), self.body:getY(), tempMass )
+		else
+			tempMass2 = math.random(10,15)/100 * tempMass
+			tempMass = tempMass - tempMass2
+			aDebris = junk:getNew( self.world, self.coordBag, "ship", self.body:getX(), self.body:getY(), tempMass2 )
+		end
+		game:addActive( aDebris )
+		activeDebris = activeDebris + 1
+	end
+
 	self.data.status = "ACTIVE"
 	x = math.random(0,800)
 	y = math.random(0,800)
@@ -646,7 +666,8 @@ function ship:respawn()
 	--Reinitialize position and armor.
 	self.body:setLinearVelocity(0,0)
 	self.body:setAngularVelocity(0)
-	self.data.armor = 2000
+	self.data.armor = 2
+	self.controller.state.respawn = false
 end
 
 --[[] Returns the ship body for use by other classes, such as a camera!

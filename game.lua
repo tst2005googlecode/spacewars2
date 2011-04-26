@@ -42,6 +42,7 @@ require "util/missile.lua"
 require "util/laser.lua"
 require "util/debris.lua"
 require "util/radar.lua"
+require "util/explosion.lua"
 require "pause.lua"
 
 --Declare constants/variables
@@ -63,6 +64,7 @@ ships = {}        -- list of capital ships, drones/fighters, etc (players, AIs)
 missiles = {}     -- all the missiles
 lasers = {}       -- all the laser beams
 junk = {}         -- asteroids, debris, etc
+explosions = {}	  -- holds explosions for simulation
 
 types = {}       -- used by object framework
 
@@ -106,6 +108,8 @@ local highA = -1000000000000000000000
 lastAngle = 0
 --All updatable and drawable objects (except theWorld)
 local activeObjects = {}
+--Special effects are drawable/updatable, but not affected by gravity!
+local activeEffects = {}
 --Soft debris cap and total debris.
 local maxDebris
 activeDebris = 0
@@ -178,6 +182,7 @@ function game:construct( aConfigBag, coord )
 	missiles = objectBag:new( missile )
 	lasers = objectBag:new( laser )
 	junk = objectBag:new( debris )
+	explosions = objectBag:new( explosion )
 
 	--Setup type constants
 	types.solarMass = "SOLARMASS"
@@ -185,6 +190,7 @@ function game:construct( aConfigBag, coord )
 	types.debris = "DEBRIS"
 	types.missile = "MISSILE"
 	types.laser = "LASER"
+	types.explosion = "EXPLOSION"
 
 	--Declare the world.
 	theWorld = love.physics.newWorld( minX - 1000, minY - 1000, maxX + 1000, maxY + 1000 )
@@ -313,6 +319,24 @@ function game:removeActive( index )
 end
 
 --[[
+--Adds a special effect to the game.
+--
+--Requirement 11
+--]]
+function game:addEffect( anEffect )
+	activeEffects[ #activeEffects + 1 ] = anEffect
+end
+
+--[[
+--Removes a special effect from the game.
+--
+--Requirement 11
+--]]
+function game:removeEffect( index )
+	table.remove( activeEffects, index )
+end
+
+--[[
 --Generates a new solarMass with the neccessary parameters.
 --solarMass 0 is the planet, so it uses basic generation.
 --solarMasses above 0 are moons, which have additional properties added to the object.
@@ -416,6 +440,9 @@ function game:draw()
 	for i, anObject in ipairs( activeObjects ) do
 		anObject:draw()
 	end
+	for i, anEffect in ipairs( activeEffects ) do
+		anEffect:draw()
+	end
 
 	love.graphics.pop() --Return to default settings to draw static objects.
 
@@ -477,9 +504,9 @@ end
 --]]
 function game:update( dt )
 	--If the player needs to respawn, then freeze the game.
-	if needRespawn == true then
-		return
-	end
+--	if needRespawn == true then
+--		return
+--	end
 
 	lastA = 0
 	seconds = seconds + dt
@@ -516,6 +543,14 @@ if dt > highDt then highDt = dt end
 				applyGravity( aSolarMass, anObject )
 			end
 			anObject:update( dt )
+		end
+	end
+	--For each active effect, update the particle system
+	for i, anEffect in ipairs( activeEffects ) do
+		if (not anEffect:getActive()) then
+			game:removeEffect( i )
+		else
+			anEffect:update( dt )
 		end
 	end
 
@@ -626,7 +661,7 @@ end
 --This function handles what to do when the player dies.
 --Could pass a parameter here for ship explosions?
 --
---Requirement 11, 12
+--Requirement 12
 --]]
 function playerDeath()
 	needRespawn = true
@@ -638,7 +673,7 @@ end
 --This function handles what to do when a player kills an ai.
 --Could pass a parameter here for ship explosions?
 --
---Requirement 11, 12
+--Requirement 12
 --]]
 function aiKill()
 	kills = kills + 1
@@ -836,7 +871,7 @@ end
 --
 --Requirement 2.7, 10, 11
 --]]
-function debrisCollide(a,b)
+function debrisCollide(a,b,coll)
 	if b.objectType == types.solarMass then
 		--solarMasses instantly destroy debris.
 		a:destroy()

@@ -181,6 +181,9 @@ end
 --Requirement 9.2
 --]]
 function missile:destroy()
+	--Create the explosion before doing anything.
+	local explode = explosions:getNew(self.body:getX(),self.body:getY(),0.5,10)
+	game:addEffect( explode )
 	--Set the missile to stop simulation in the world.
 	self.missilePoly:setSensor( false )
 	self.body:putToSleep()

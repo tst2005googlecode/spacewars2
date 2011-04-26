@@ -70,8 +70,8 @@ function highScore:draw()
 	--10 high scores.
 	for i = 1,10 do
 		love.graphics.print(i .. ".", self.col1, self.start + i * self.space)
-		love.graphics.print("THE PLAYER NAME GOES RIGHT HERE EVERYONE", self.col2, self.start + i * self.space)
-		love.graphics.print("SCORE",self.col3,self.start + i * self.space)
+		love.graphics.print(highscoreTable[i]["name"], self.col2, self.start + i * self.space)
+		love.graphics.print(highscoreTable[i]["score"],self.col3,self.start + i * self.space)
 	end
 	--Draw the exit button
 	self.exit:draw()

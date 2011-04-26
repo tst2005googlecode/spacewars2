@@ -35,7 +35,8 @@ config = {}
 --Polymorphic variable holding the current view.
 state = {}
 --Master bag that holds the default system configuration.
-local theControlBag = controlBag:new("w","a","s","d","q","e","r","1","2","EASY",800,600,"no","*.png",200,9,"no",4,"no",100,1,10 ^ 20)
+local theControlBag = controlBag:new("w","a","s","d","q","e","r","1","2","EASY",800,600,"no","",200,9,"no",4,"no",100,1,10 ^ 20)
+highscoreTable = {}
 
 --[[
 --Initializing function that loads the LOVE2D framework.
@@ -64,8 +65,7 @@ function love.load()
 	--Checks for a configuration file, and if it exists, loads it.
 	--WARNING: Lua does NOT guarantee order of table output.
 	--Table must be manipulated directly, instead of using mutator functions!
--- uncomment when menu works!
-	--[[if(love.filesystem.exists("keybinding.conf")) then
+	if(love.filesystem.exists("keybinding.conf")) then
 		local theFile = love.filesystem.newFile("keybinding.conf")
 		theFile:open("r")
 		for line in theFile:lines() do
@@ -76,7 +76,30 @@ function love.load()
 		end
 		theFile:close()
 		theFile = nil
-	end--]]
+	end
+
+	--Fill an empty high score table.
+	for i = 1,10 do
+		highscoreTable[i] = {}
+		highscoreTable[i]["name"] = "NoName"
+		highscoreTable[i]["score"] = 0
+	end
+
+	--Load the high scores table from a file, if it exists.
+	--Since it's an iterated file, Lua DOES guarantee order of output.
+	if(love.filesystem.exists("highscore.conf")) then
+		local theFile = love.filesystem.newFile("highscore.conf")
+		theFile:open("r")
+		local i = 1
+		for line in theFile:lines() do
+			equal = line:find("=")
+			highscoreTable[i]["name"] = line:sub(1,equal-1)
+			highscoreTable[i]["score"] = line:sub(equal+1) + 0
+			i = i + 1
+		end
+		theFile:close()
+		theFile = nil
+	end
 
 	-- Setup the graphics engine
 	love.graphics.setBackgroundColor(0,0,0)
@@ -158,6 +181,13 @@ function love.quit()
 		if(type(v) ~= "table") then --Tables cannot be written. __baseclass is a table, and this throttles it.
 			theFile:write(k .. "=" .. v .. "\r\n")
 		end
+	end
+	theFile:close()
+	theFile = nil
+	theFile = love.filesystem.newFile("highscore.conf")
+	theFile:open("w")
+	for i,v in ipairs(highscoreTable) do
+		theFile:write(highscoreTable[i]["name"] .. "=" .. highscoreTable[i]["score"] .. "\r\n")
 	end
 	theFile:close()
 	theFile = nil

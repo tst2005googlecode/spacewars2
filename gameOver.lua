@@ -38,25 +38,35 @@ gameOver = class:new(...)
 --Requirement 1.2.4, 12
 --]]
 function gameOver:construct(aConfigBag, score)
+	self.configBag = aConfigBag
+	--Define the buttons.
+	self.width = sWidth/2
+	self.continue = button:new("See High Scores", self.width, 500)
+	self.skip = button:new("Skip", self.width, 550)
+	--Check high scores!
+	local i = 1
+	self.nameEntry = false
+	self.newScore = score + 0
+	while (i <= 10 and not self.nameEntry ) do
+		if(self.newScore > highscoreTable[i]["score"]) then
+			self.nameEntry = true
+			self.placement = i
+			self.rankString = "RANK: " .. self.placement
+			self.rankLength = font["large"]:getWidth(self.rankString)
+			self.namePrompt = "Enter a name for the high score table!"
+			self.namePromptLength = font["large"]:getWidth(self.namePrompt)
+			self.namePrompt2 = "Press enter when finished!"
+			self.namePrompt2Length = font["large"]:getWidth(self.namePrompt2)
+			self.nameString = ""
+			self.continue = button:new("Add High Score", self.width, 500)
+		end
+		i = i + 1
+	end
 	--Unhide the mouse
 	love.mouse.setVisible(true)
-	--Create a few variables.
-	self.configBag = aConfigBag
-	self.newScore = score
-	self.width = sWidth/2
-	--Define the buttons.
-	self.continue = button:new("Add High Score", self.width, 500)
-	self.skip = button:new("Skip", self.width, 550)
 	--Define the static strings and their lengths
 	self.scoreString = "Final Score: " .. score .. " points!"
 	self.scoreLength = font["large"]:getWidth(self.scoreString)
-	self.rankString = "RANK: "
-	self.rankLength = font["large"]:getWidth(self.rankString)
-	--This is only used if there is a new high score
-	self.nameEntry = true --Set to true or false depending on score status
-	self.namePrompt = "Enter a name for the high score table!"
-	self.namePromptLength = font["large"]:getWidth(self.namePrompt)
-	self.nameString = ""
 end
 
 --[[
@@ -68,12 +78,13 @@ function gameOver:draw()
 	love.graphics.setFont(font["large"])
 	--Write things to the screen
 	love.graphics.print(self.scoreString, self.width - self.scoreLength/2, 150)
-	love.graphics.print(self.rankString, self.width - self.rankLength/2, 225)
 	--The following should only be displayed if there is a new high score
 	if(self.nameEntry == true) then
+		love.graphics.print(self.rankString, self.width - self.rankLength/2, 225)
 		love.graphics.print(self.namePrompt, self.width - self.namePromptLength/2,300)
+		love.graphics.print(self.namePrompt2, self.width - self.namePrompt2Length/2,350)
 		self.nameStringLength = font["large"]:getWidth(self.nameString)
-		love.graphics.print(self.nameString, self.width - self.nameStringLength/2,375)
+		love.graphics.print(self.nameString, self.width - self.nameStringLength/2,400)
 	end
 	--Draw the buttons.
 	self.continue:draw()
@@ -120,8 +131,7 @@ function gameOver:keypressed(key)
 				self.nameString = string.sub(self.nameString,1,self.nameString:len() - 1)
 			end
 		elseif(key == "return") then
-			--Submit the name
-			self.nameEntry = false
+			--Submit the score
 			self:highScore()
 		elseif(key:len() == 1) then
 			--Append a character, if the key is one character long
@@ -144,5 +154,15 @@ end
 --]]
 function gameOver:highScore()
 	--Append to the high score table HERE, then load the view.
+	if(self.nameEntry) then
+		local i = 10
+		while(i > self.placement) do
+			highscoreTable[i]["name"] = highscoreTable[i-1]["name"]
+			highscoreTable[i]["score"] = highscoreTable[i-1]["score"]
+			i = i - 1
+		end
+		highscoreTable[self.placement]["name"] = self.nameString
+		highscoreTable[self.placement]["score"] = self.newScore
+	end
 	state = highScore:new(self.configBag)
 end

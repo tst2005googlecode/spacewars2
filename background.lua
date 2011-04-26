@@ -62,6 +62,7 @@ function background:construct(aConfigBag)
 
 	self.title = "CHANGE BACKGROUND"
 	self.titleWidth = font["large"]:getWidth(self.title)
+	self.default = button:new("Clear",400,500)
 	self.exit = button:new("Back",400,550)
 end
 
@@ -77,6 +78,7 @@ function background:draw()
 	for n,b in ipairs(self.bgButtons) do
 		b:draw()
 	end
+	self.default:draw()
 	self.exit:draw()
 end
 
@@ -87,6 +89,7 @@ function background:update(dt)
 	for n,b in ipairs(self.bgButtons) do
 		b:update(dt)
 	end
+	self.default:update(dt)
 	self.exit:update(dt)
 end
 
@@ -108,6 +111,9 @@ end
 --]]
 function background:mousepressed(x,y,button)
 	if(self.exit:mousepressed(x,y,button)) then
+		self:back()
+	elseif(self.default:mousepressed(x,y,button)) then
+		self.config:setBackground("")
 		self:back()
 	else
 		for n,b in ipairs(self.bgButtons) do

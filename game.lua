@@ -123,6 +123,9 @@ local score = 0
 local kills = 0
 local currentLife = 0
 local maxLives = 0
+--Background settings
+local background = {}
+local quad = {}
 
 game = class:new(...)
 
@@ -260,6 +263,20 @@ function game:construct( aConfigBag, coord )
 	maxLives = theConfigBag:getLives() + 0 --Must add zero to coerce to int
 	playerShips = {}
 	aiShips = {}
+
+	if(theConfigBag:getBackground() ~= "") then
+		local fileString = "backgrounds/" .. theConfigBag:getBackground()
+		if(love.filesystem.exists(fileString)) then
+			background = love.graphics.newImage(fileString)
+		else
+			background = love.graphics.newImage("images/defaultbg.png")
+		end
+	else
+		background = love.graphics.newImage("images/defaultbg.png")
+	end
+	background:setWrap("repeat","repeat")
+	quad = love.graphics.newQuad(0,0,maxX,maxY,512,512)
+
 end
 
 --[[
@@ -425,6 +442,8 @@ end
 --Requirement 2.1-2.2, 2.6, 2.8
 --]]
 function game:draw()
+	--Reset the color pallete
+	love.graphics.setColor(255,255,255,255)
 	love.graphics.push() -- Allow quick return to default settings
 	--Get the current camera position and apply it
 	currentX, currentY, screenZoom = theCamera:adjust()
@@ -432,6 +451,8 @@ function game:draw()
 	--WARNING: Scale must come before translate, they are not commutative properties!
 	love.graphics.scale( screenZoom )
 	love.graphics.translate( -currentX, -currentY )
+	--Draw the background
+	love.graphics.drawq(background,quad,0,0)
 
 	--Draw all game objects
 	for i, aSolarMass in ipairs( solarMasses.objects ) do

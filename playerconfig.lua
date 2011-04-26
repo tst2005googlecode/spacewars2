@@ -243,6 +243,14 @@ function playerconfig:mousepressed(x,y,button)
 			elseif (n == "RandomMoons") then
 				--Toggle the property
 
+                             if(self.control["RandomMoons"] == "yes") then
+					self.control["RandomMoons"] = "no"
+				else
+					self.control["RandomMoons"] = "yes"
+				end
+				self.buttons["RandomMoons"]:changeText("RandomMoons = " .. self.control["RandomMoons"])
+                                   
+
 
 
 			else

@@ -107,7 +107,7 @@ local lowA = 1000000000000000000000
 local highA = -1000000000000000000000
 lastAngle = 0
 --All updatable and drawable objects (except theWorld)
-local activeObjects = {}
+activeObjects = {}
 --Special effects are drawable/updatable, but not affected by gravity!
 local activeEffects = {}
 --Soft debris cap and total debris.
@@ -478,7 +478,7 @@ function game:draw()
 	love.graphics.print( "K: " .. kills, 135, 15)
 	love.graphics.print( "S: " .. string.format("%.1f", score), 135, 25)
 	love.graphics.print( "L: " .. maxLives - currentLife, 135, 40)
-	love.graphics.print( "A: " .. playerShip:getArmor(), 135, 50 )
+	love.graphics.print( "A: " .. string.format("%.0f" , playerShip:getArmor()), 135, 50 )
 	love.graphics.print( "M: " .. playerShip:getMissileBank(), 135, 60 )
 	love.graphics.print( "E: " .. string.format("%.3f", playerShip:getLaserEnergy()), 135, 70)
 	--Draw the game cursor on top of everything.
@@ -524,6 +524,10 @@ end
 --Requirement 2.7
 --]]
 function game:update( dt )
+	--The world must be updated first.
+	--Ensures new objects get a first draw BEFORE they start moving.
+	theWorld:update( dt )
+
 	--If the player needs to respawn, then freeze the game.
 --	if needRespawn == true then
 --		return
@@ -580,9 +584,6 @@ if dt > highDt then highDt = dt end
 	for i = activeDebris, maxDebris do
 		game:generateDebris("border",0,0)
 	end
-
-	--Update the world separate from the other objects
-	theWorld:update( dt )
 end
 
 --[[
@@ -761,6 +762,7 @@ end
 --Requirement 2.7, 8.2, 9.2, 10, 11, 12
 --]]
 function shipCollide( a, b, coll )
+	if (not a.controller.state.respawn) then
 	if b.objectType == types.solarMass then
 		--Solar masses destroy ships instantly.
 		a:destroy()
@@ -821,6 +823,7 @@ function shipCollide( a, b, coll )
 	--[[elseif b.status == "DEAD" then
 		a.status = "DEAD"
 		needRespawn = true--]]
+	end
 	end
 end
 

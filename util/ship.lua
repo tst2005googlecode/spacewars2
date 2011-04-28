@@ -162,7 +162,7 @@ end
 -- checks every dt seconds for commands, and execute the appropriate function
 function ship:update( dt )
 	--Get commands from controller
-	local commands = self.controller:updateControls( self.data, dt )
+	local commands = self.controller:updateControls( self, dt )
 	--Check for respawn
 	if self.data.status == "DEAD" then
 		self:stop()
@@ -222,7 +222,8 @@ function ship:update( dt )
 	end
 	--Start/continue laser beam
 	if self.data.laserEngaged then
-		self:engageLaser( dt, love.mouse.getX(), love.mouse.getY() )
+		local x, y = self.controller:getLaserCoords()
+		self:engageLaser( dt, x, y )
 	end
 	--Sccelerate turn if using STEP mode.
 	if self.turnAccel then
@@ -511,7 +512,8 @@ function ship:engageLaser( dt, x2, y2, endOfBeam )
 	local y1 = self.body:getY()
 --	print( theCamera:getX() + x2, theCamera:getY() + y2 )
 	--Figure the correct angle and velocity on the X and Y directions.
-	local angle = pointAngle( x1, y1, theCamera:getX() + x2 / theCamera.zoom, theCamera:getY() + y2 / theCamera.zoom )
+--	local angle = pointAngle( x1, y1, theCamera:getX() + x2 / theCamera.zoom, theCamera:getY() + y2 / theCamera.zoom )
+	local angle = pointAngle( x1, y1, x2, y2)
 	local xVel = math.cos( angle ) * lightSpeed
 	local yVel = math.sin( angle ) * lightSpeed
 	--Create the laser, own it with this ship, and add it to the game.

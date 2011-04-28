@@ -182,6 +182,14 @@ function player:updateControls( theShipState )
 end
 
 --[[
+--This function returns the coordinates for the laser to point at.
+--WARNING: Uses global theCamera from game.lua
+--]]
+function player:getLaserCoords()
+	return (theCamera:getX() + love.mouse.getX() / theCamera.zoom), (theCamera:getY() + love.mouse.getY() / theCamera.zoom)
+end
+
+--[[
 --This function returns the control string "P"
 --]]
 function player:getControl()

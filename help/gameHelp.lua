@@ -78,7 +78,7 @@ function gameHelp:construct(aConfigBag)
 	self.objects[#self.objects + 1] = self.theLaser
 
 	--Build a debris
-	self.theDebris = debris:new(self.theWorld,self.theCoordBag,"ship",100,275,100)
+	self.theDebris = debris:new(self.theWorld,self.theCoordBag,"ship",100,275,0,0,100)
 	self.objects[#self.objects + 1] = self.theDebris
 
 	--Build a solarMass

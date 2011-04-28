@@ -100,11 +100,13 @@ function player:updateControls( theShipState )
 	self.shipState = theShipState
 	local commands = {}
 
-	--If dead, the ship should respawn.
-	--The ship will not respawn instantly, as game blocks on player destruction.
+	--If dead, the ship can respawn.
+	--Players do not respawn instantly, they block until "return" is pressed.
 	if self.state.respawn then
-		self.state.respawn = false
-		return { "respawn" }
+		if love.keyboard.isDown("return") then
+			return { "respawn" }
+		else return {}
+		end
 	end
 
 	--Thrust controls

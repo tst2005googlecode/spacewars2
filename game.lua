@@ -42,6 +42,7 @@ require "util/missile.lua"
 require "util/laser.lua"
 require "util/debris.lua"
 require "util/radar.lua"
+require "util/explosion.lua"
 require "pause.lua"
 
 --Declare constants/variables
@@ -63,6 +64,7 @@ ships = {}        -- list of capital ships, drones/fighters, etc (players, AIs)
 missiles = {}     -- all the missiles
 lasers = {}       -- all the laser beams
 junk = {}         -- asteroids, debris, etc
+explosions = {}	  -- holds explosions for simulation
 
 types = {}       -- used by object framework
 
@@ -82,6 +84,7 @@ local theConfigBag = {}
 --Box2D holder variables
 local theWorld
 local thePlayer
+local playerShip
 --Camera control variables
 theCamera = {}
 local currentX
@@ -105,6 +108,8 @@ local highA = -1000000000000000000000
 lastAngle = 0
 --All updatable and drawable objects (except theWorld)
 local activeObjects = {}
+--Special effects are drawable/updatable, but not affected by gravity!
+local activeEffects = {}
 --Soft debris cap and total debris.
 local maxDebris
 activeDebris = 0
@@ -118,6 +123,9 @@ local score = 0
 local kills = 0
 local currentLife = 0
 local maxLives = 0
+--Background settings
+local background = {}
+local quad = {}
 
 game = class:new(...)
 
@@ -177,6 +185,7 @@ function game:construct( aConfigBag, coord )
 	missiles = objectBag:new( missile )
 	lasers = objectBag:new( laser )
 	junk = objectBag:new( debris )
+	explosions = objectBag:new( explosion )
 
 	--Setup type constants
 	types.solarMass = "SOLARMASS"
@@ -184,6 +193,7 @@ function game:construct( aConfigBag, coord )
 	types.debris = "DEBRIS"
 	types.missile = "MISSILE"
 	types.laser = "LASER"
+	types.explosion = "EXPLOSION"
 
 	--Declare the world.
 	theWorld = love.physics.newWorld( minX - 1000, minY - 1000, maxX + 1000, maxY + 1000 )
@@ -212,6 +222,7 @@ function game:construct( aConfigBag, coord )
 	local aShip = ships:getNew( theWorld, thePlayer, theCoordBag, theConfigBag )
 	game:addActive( aShip )
 	playerShips[1] = aShip
+	playerShip = aShip
 
 	--Setup the camera and HUD elements to focus on player's ship.
 	theCamera = camera:new( theCoordBag, aShip.body, theConfigBag )
@@ -250,6 +261,22 @@ function game:construct( aConfigBag, coord )
 	needRespawn = false
 	currentLife = 1
 	maxLives = theConfigBag:getLives() + 0 --Must add zero to coerce to int
+	playerShips = {}
+	aiShips = {}
+
+	if(theConfigBag:getBackground() ~= "") then
+		local fileString = "backgrounds/" .. theConfigBag:getBackground()
+		if(love.filesystem.exists(fileString)) then
+			background = love.graphics.newImage(fileString)
+		else
+			background = love.graphics.newImage("images/defaultbg.png")
+		end
+	else
+		background = love.graphics.newImage("images/defaultbg.png")
+	end
+	background:setWrap("repeat","repeat")
+	quad = love.graphics.newQuad(0,0,maxX,maxY,512,512)
+
 end
 
 --[[
@@ -306,6 +333,24 @@ end
 --]]
 function game:removeActive( index )
 	table.remove( activeObjects, index )
+end
+
+--[[
+--Adds a special effect to the game.
+--
+--Requirement 11
+--]]
+function game:addEffect( anEffect )
+	activeEffects[ #activeEffects + 1 ] = anEffect
+end
+
+--[[
+--Removes a special effect from the game.
+--
+--Requirement 11
+--]]
+function game:removeEffect( index )
+	table.remove( activeEffects, index )
 end
 
 --[[
@@ -397,6 +442,8 @@ end
 --Requirement 2.1-2.2, 2.6, 2.8
 --]]
 function game:draw()
+	--Reset the color pallete
+	love.graphics.setColor(255,255,255,255)
 	love.graphics.push() -- Allow quick return to default settings
 	--Get the current camera position and apply it
 	currentX, currentY, screenZoom = theCamera:adjust()
@@ -404,6 +451,8 @@ function game:draw()
 	--WARNING: Scale must come before translate, they are not commutative properties!
 	love.graphics.scale( screenZoom )
 	love.graphics.translate( -currentX, -currentY )
+	--Draw the background
+	love.graphics.drawq(background,quad,0,0)
 
 	--Draw all game objects
 	for i, aSolarMass in ipairs( solarMasses.objects ) do
@@ -411,6 +460,9 @@ function game:draw()
 	end
 	for i, anObject in ipairs( activeObjects ) do
 		anObject:draw()
+	end
+	for i, anEffect in ipairs( activeEffects ) do
+		anEffect:draw()
 	end
 
 	love.graphics.pop() --Return to default settings to draw static objects.
@@ -426,9 +478,9 @@ function game:draw()
 	love.graphics.print( "K: " .. kills, 135, 15)
 	love.graphics.print( "S: " .. string.format("%.1f", score), 135, 25)
 	love.graphics.print( "L: " .. maxLives - currentLife, 135, 40)
-	love.graphics.print( "A: " .. thePlayer.shipState.armor, 135, 50 )
-	love.graphics.print( "M: " .. thePlayer.shipState.missileBank, 135, 60 )
-	love.graphics.print( "E: " .. string.format("%.3f", thePlayer.shipState.laserCharge), 135, 70)
+	love.graphics.print( "A: " .. playerShip:getArmor(), 135, 50 )
+	love.graphics.print( "M: " .. playerShip:getMissileBank(), 135, 60 )
+	love.graphics.print( "E: " .. string.format("%.3f", playerShip:getLaserEnergy()), 135, 70)
 	--Draw the game cursor on top of everything.
 	game:drawCursor()
 --	love.graphics.print(debug,5,500)
@@ -473,9 +525,9 @@ end
 --]]
 function game:update( dt )
 	--If the player needs to respawn, then freeze the game.
-	if needRespawn == true then
-		return
-	end
+--	if needRespawn == true then
+--		return
+--	end
 
 	lastA = 0
 	seconds = seconds + dt
@@ -512,6 +564,14 @@ if dt > highDt then highDt = dt end
 				applyGravity( aSolarMass, anObject )
 			end
 			anObject:update( dt )
+		end
+	end
+	--For each active effect, update the particle system
+	for i, anEffect in ipairs( activeEffects ) do
+		if (not anEffect:getActive()) then
+			game:removeEffect( i )
+		else
+			anEffect:update( dt )
 		end
 	end
 
@@ -622,7 +682,7 @@ end
 --This function handles what to do when the player dies.
 --Could pass a parameter here for ship explosions?
 --
---Requirement 11, 12
+--Requirement 12
 --]]
 function playerDeath()
 	needRespawn = true
@@ -634,7 +694,7 @@ end
 --This function handles what to do when a player kills an ai.
 --Could pass a parameter here for ship explosions?
 --
---Requirement 11, 12
+--Requirement 12
 --]]
 function aiKill()
 	kills = kills + 1
@@ -835,7 +895,7 @@ end
 --
 --Requirement 2.7, 10, 11
 --]]
-function debrisCollide(a,b)
+function debrisCollide(a,b,coll)
 	if b.objectType == types.solarMass then
 		--solarMasses instantly destroy debris.
 		a:destroy()

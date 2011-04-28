@@ -19,40 +19,40 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
-graphicsHelp.lua
+controlsHelp.lua
 
-This class displays a graphics help screen for the user.
-This help file explains how the graphic change settings work.
+This class displays a controls help screen for the user.
+This help file explains what the controls do within the game.
 --]]
 
 require "subclass/class.lua"
 require "util/button.lua"
 
-graphicsHelp = class:new(...)
+controlsHelp = class:new(...)
 
 --[[
---Construct the graphics help screen.
+--Construct the controls help screen.
 --Establishes all strings used on the screen.
 --
---Requirement 1.2, 1.2.3
+--Requirement 1.2, 1.2.1
 --]]
-function graphicsHelp:construct(aConfigBag)
+function controlsHelp:construct(aConfigBag)
 	self.config = aConfigBag
 
-	self.changeRes1 = "Change Resolution"
-	self.changeRes2 = "Clicking this will list all supported resolutions."
-	self.changeRes3 = "Clicking any resolution will set it and return to the graphics menu."
+	self.thrust = "Thrust - Accelerates your ship in the direction you're facing."
+	self.brake = "Brake - Slows your ship down at 1/2 thrust, opposite the direction you're FACING."
+	self.left = "Left - Turns your ship to the left."
+	self.right = "Right - Turns your ship to the right."
+	self.stopTurn = "StopTurn - Stops your turning if you are using NORMAL mode."
+	self.stopThrust = "StopThrust - Slows your ship down at 1/3 thrust, opposite the direction you're MOVING."
+	self.orbit = "Orbit - Allows your ship to orbit the planet, if it's close enough."
+	self.zoomIn = "ZoomIn - Zoom in on the action."
+	self.zoomOut = "ZoomOut - Zoom out of the action."
+	self.turn = "TurnType - Two different modes."
+	self.turnEasy = "EASY - Turns at a constant speed for as long as you hold the turn button."
+	self.turnNormal = "NORMAL - Accelerate turning while the button is held. You keep turning after release!"
 
-	self.toggleFull1 = "Toggle Fullscreen"
-	self.toggleFull2 = "Clicking this will toggle fullscreen mode off and on."
-
-	self.changeBg1 = "Change Background"
-	self.changeBg2 = "Clicking this will list all supported backgrounds."
-	self.changeBg3 = "Backgrounds must be in .png format."
-	self.changeBg4 = "Backgrounds are stored in the %appdata%/love/Spacewars!II/backgrounds directory"
-	self.changeBg5 = "Clicking any background will set it and return to the graphics menu."
-
-	self.title = "GRAPHICS HELP"
+	self.title = "CONTROLS HELP"
 	self.titleWidth = font["large"]:getWidth(self.title)
 	self.exit = button:new("Back",400,550)
 end
@@ -61,9 +61,9 @@ end
 --Draws all the help strings to the screen.
 --Uses drawX and drawY to hold position, allowing easy resetting of the origin.
 --
---Requirement 1.2, 1.2.3
+--Requirement 1.2, 1.2.1
 --]]
-function graphicsHelp:draw()
+function controlsHelp:draw()
 	love.graphics.setFont(font["large"])
 	love.graphics.setColor(unpack(color["text"]))
 	love.graphics.print(self.title,400-self.titleWidth/2,50)
@@ -71,34 +71,38 @@ function graphicsHelp:draw()
 	local drawX = 50
 	local drawY = 120
 	love.graphics.setFont(font["small"])
-	love.graphics.print(self.changeRes1,drawX,drawY)
+	love.graphics.print(self.thrust,drawX,drawY)
 	drawY = drawY + 30
-	love.graphics.print(self.changeRes2,drawX,drawY)
+	love.graphics.print(self.brake,drawX,drawY)
 	drawY = drawY + 30
-	love.graphics.print(self.changeRes3,drawX,drawY)
-	drawY = drawY + 60
-	love.graphics.print(self.toggleFull1,drawX,drawY)
+	love.graphics.print(self.left,drawX,drawY)
 	drawY = drawY + 30
-	love.graphics.print(self.toggleFull2,drawX,drawY)
-	drawY = drawY + 60
-	love.graphics.print(self.changeBg1,drawX,drawY)
+	love.graphics.print(self.right,drawX,drawY)
 	drawY = drawY + 30
-	love.graphics.print(self.changeBg2,drawX,drawY)
+	love.graphics.print(self.stopTurn,drawX,drawY)
 	drawY = drawY + 30
-	love.graphics.print(self.changeBg3,drawX,drawY)
+	love.graphics.print(self.stopThrust,drawX,drawY)
 	drawY = drawY + 30
-	love.graphics.print(self.changeBg4,drawX,drawY)
+	love.graphics.print(self.orbit,drawX,drawY)
 	drawY = drawY + 30
-	love.graphics.print(self.changeBg5,drawX,drawY)
+	love.graphics.print(self.zoomIn,drawX,drawY)
+	drawY = drawY + 30
+	love.graphics.print(self.zoomOut,drawX,drawY)
+	drawY = drawY + 30
+	love.graphics.print(self.turn,drawX,drawY)
+	drawY = drawY + 30
+	love.graphics.print(self.turnEasy,drawX,drawY)
+	drawY = drawY + 30
+	love.graphics.print(self.turnNormal,drawX,drawY)
 	drawY = drawY + 30
 
 	self.exit:draw()
 end
 
 --[[
---Catches the escape key to return to the graphics menu.
+--Catches the escape key to return to the controls menu.
 --]]
-function graphicsHelp:keypressed(key)
+function controlsHelp:keypressed(key)
 	if(key == "escape") then
 		self:back()
 	end
@@ -107,22 +111,22 @@ end
 --[[
 --If the exit button is hovered over, highlight it.
 --]]
-function graphicsHelp:update(dt)
+function controlsHelp:update(dt)
 	self.exit:update(dt)
 end
 
 --[[
 --Catches the mouseclick, if it is on the exit button.
 --]]
-function graphicsHelp:mousepressed(x,y,button)
+function controlsHelp:mousepressed(x,y,button)
 	if self.exit:mousepressed(x,y,button) then
 		self:back()
 	end
 end
 
 --[[
---Return to the graphics menu.
+--Return to the controls menu.
 --]]
-function graphicsHelp:back()
-	state = graphics:new(self.config)
+function controlsHelp:back()
+	state = controls:new(self.config)
 end

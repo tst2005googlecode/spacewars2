@@ -29,6 +29,7 @@ The player can change the Thrust, Left, Reverse, Right, Stop Turn, Stop Thrust
 require "subclass/class.lua"
 require "util/button.lua"
 require "util/controlBag.lua"
+require "help/controlsHelp.lua"
 
 controls = class:new()
 
@@ -48,15 +49,24 @@ function controls:construct(aControlBag)
         self.control["Right"] = aControlBag:getRight()
         self.control["StopTurn"] = aControlBag:getStopTurn()
         self.control["StopThrust"] = aControlBag:getStopThrust()
+		self.control["Orbit"] = aControlBag:getOrbit()
+        self.control["ZoomIn"] = aControlBag:getZoomIn()
+        self.control["ZoomOut"] = aControlBag:getZoomOut()
+		self.control["TurnType"] = aControlBag:getTurn()
 
 	--Initialize the buttons the user can press
-	self.buttons = {Thrust =  button:new("Thrust = " .. self.control["Thrust"], 400, 100),
-			Reverse = button:new("Reverse = " .. self.control["Reverse"] ,400, 150),
-			Left = button:new("Left = " .. self.control["Left"], 400, 200),
-			Right = button:new("Right = " .. self.control["Right"], 400, 250),
-			StopTurn = button:new("StopTurn = " .. self.control["StopTurn"], 400, 300),
-			StopThrust = button:new("StopThrust = " .. self.control["StopThrust"] , 400,350),
-					Back = button:new("Back" , 400, 550)}
+	self.buttons = {Thrust =  button:new("Thrust = " .. self.control["Thrust"], 200, 100),
+			Reverse = button:new("Reverse = " .. self.control["Reverse"] ,200, 150),
+			Left = button:new("Left = " .. self.control["Left"], 200, 200),
+			Right = button:new("Right = " .. self.control["Right"], 200, 250),
+			StopTurn = button:new("StopTurn = " .. self.control["StopTurn"], 600, 100),
+			StopThrust = button:new("StopThrust = " .. self.control["StopThrust"] , 600,150),
+			Orbit = button:new("Orbit = " .. self.control["Orbit"], 600,200),
+			ZoomIn = button:new("ZoomIn = " .. self.control["ZoomIn"] , 400,300),
+			ZoomOut = button:new("ZoomOut = " .. self.control["ZoomOut"] , 400,350),
+			TurnType = button:new("TurnType = " .. self.control["TurnType"], 400,400),
+			Help = button:new("Help", 400, 500),
+			Back = button:new("Back" , 400, 550)}
 
 	--We do not need input and have nothing to change in a new view.
 	self.needInput = false
@@ -100,6 +110,16 @@ function controls:mousepressed(x,y,button)
 			if b:mousepressed(x,y,button) then
 				if n == "Back" then
 					self:back() --Return to a higher menu
+				elseif n == "Help" then
+					state = controlsHelp:new(self.bag)
+				elseif n == "TurnType" then
+					--Toggle the type of turn!
+					if self.control["TurnType"] == "EASY" then
+						self.control["TurnType"] = "NORMAL"
+					else
+						self.control["TurnType"] = "EASY"
+					end
+					self.buttons["TurnType"]:changeText("TurnType = " .. self.control["TurnType"])
 				else
 					self.needInput = true
 					self.change = n --This is where input will go
@@ -140,5 +160,9 @@ function controls:back()
 	self.bag:setRight(self.control["Right"])
 	self.bag:setStopTurn(self.control["StopTurn"])
 	self.bag:setStopThrust(self.control["StopThrust"])
+	self.bag:setOrbit(self.control["Orbit"])
+	self.bag:setZoomIn(self.control["ZoomIn"])
+	self.bag:setZoomOut(self.control["ZoomOut"])
+	self.bag:setTurn(self.control["TurnType"])
 	state = options:new(self.bag)
 end

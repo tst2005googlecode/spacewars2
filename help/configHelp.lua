@@ -19,40 +19,35 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
-graphicsHelp.lua
+configHelp.lua
 
-This class displays a graphics help screen for the user.
-This help file explains how the graphic change settings work.
+This class displays a configuration help screen for the user.
+This help file explains what the config options do within the game.
 --]]
 
 require "subclass/class.lua"
 require "util/button.lua"
 
-graphicsHelp = class:new(...)
+configHelp = class:new(...)
 
 --[[
---Construct the graphics help screen.
+--Construct the configuration help screen.
 --Establishes all strings used on the screen.
 --
---Requirement 1.2, 1.2.3
+--Requirement 1.2, 1.2.2
 --]]
-function graphicsHelp:construct(aConfigBag)
+function configHelp:construct(aConfigBag)
 	self.config = aConfigBag
 
-	self.changeRes1 = "Change Resolution"
-	self.changeRes2 = "Clicking this will list all supported resolutions."
-	self.changeRes3 = "Clicking any resolution will set it and return to the graphics menu."
+	self.speed = "GameSpeed - Accelerates the speed of the simulation, between 100 and 500"
+	self.ai = "NumberOfAi - The number of AI ships, between 1 and 9."
+	self.aiRand = "RandomOpponents - If marked yes, the game spawns between 1 and NumberOfAi enemies."
+	self.moon = "NumberOfMoons - The number of moons on the field, between 0 and 9."
+	self.moonRand = "RandomMoons - If marked yes, the game spawns between 0 and NumberOfMoons moons."
+	self.debris = "SolarDebris - Sets the soft limit for the amount of debris on the field."
+	self.respawn = "PlayerRespawns - The number of ships you can lose before the game is over."
 
-	self.toggleFull1 = "Toggle Fullscreen"
-	self.toggleFull2 = "Clicking this will toggle fullscreen mode off and on."
-
-	self.changeBg1 = "Change Background"
-	self.changeBg2 = "Clicking this will list all supported backgrounds."
-	self.changeBg3 = "Backgrounds must be in .png format."
-	self.changeBg4 = "Backgrounds are stored in the %appdata%/love/Spacewars!II/backgrounds directory"
-	self.changeBg5 = "Clicking any background will set it and return to the graphics menu."
-
-	self.title = "GRAPHICS HELP"
+	self.title = "CONFIG HELP"
 	self.titleWidth = font["large"]:getWidth(self.title)
 	self.exit = button:new("Back",400,550)
 end
@@ -61,9 +56,9 @@ end
 --Draws all the help strings to the screen.
 --Uses drawX and drawY to hold position, allowing easy resetting of the origin.
 --
---Requirement 1.2, 1.2.3
+--Requirement 1.2, 1.2.2
 --]]
-function graphicsHelp:draw()
+function configHelp:draw()
 	love.graphics.setFont(font["large"])
 	love.graphics.setColor(unpack(color["text"]))
 	love.graphics.print(self.title,400-self.titleWidth/2,50)
@@ -71,34 +66,28 @@ function graphicsHelp:draw()
 	local drawX = 50
 	local drawY = 120
 	love.graphics.setFont(font["small"])
-	love.graphics.print(self.changeRes1,drawX,drawY)
+	love.graphics.print(self.speed,drawX,drawY)
 	drawY = drawY + 30
-	love.graphics.print(self.changeRes2,drawX,drawY)
+	love.graphics.print(self.ai,drawX,drawY)
 	drawY = drawY + 30
-	love.graphics.print(self.changeRes3,drawX,drawY)
-	drawY = drawY + 60
-	love.graphics.print(self.toggleFull1,drawX,drawY)
+	love.graphics.print(self.aiRand,drawX,drawY)
 	drawY = drawY + 30
-	love.graphics.print(self.toggleFull2,drawX,drawY)
-	drawY = drawY + 60
-	love.graphics.print(self.changeBg1,drawX,drawY)
+	love.graphics.print(self.moon,drawX,drawY)
 	drawY = drawY + 30
-	love.graphics.print(self.changeBg2,drawX,drawY)
+	love.graphics.print(self.moonRand,drawX,drawY)
 	drawY = drawY + 30
-	love.graphics.print(self.changeBg3,drawX,drawY)
+	love.graphics.print(self.debris,drawX,drawY)
 	drawY = drawY + 30
-	love.graphics.print(self.changeBg4,drawX,drawY)
-	drawY = drawY + 30
-	love.graphics.print(self.changeBg5,drawX,drawY)
+	love.graphics.print(self.respawn,drawX,drawY)
 	drawY = drawY + 30
 
 	self.exit:draw()
 end
 
 --[[
---Catches the escape key to return to the graphics menu.
+--Catches the escape key to return to the config menu.
 --]]
-function graphicsHelp:keypressed(key)
+function configHelp:keypressed(key)
 	if(key == "escape") then
 		self:back()
 	end
@@ -107,22 +96,22 @@ end
 --[[
 --If the exit button is hovered over, highlight it.
 --]]
-function graphicsHelp:update(dt)
+function configHelp:update(dt)
 	self.exit:update(dt)
 end
 
 --[[
 --Catches the mouseclick, if it is on the exit button.
 --]]
-function graphicsHelp:mousepressed(x,y,button)
+function configHelp:mousepressed(x,y,button)
 	if self.exit:mousepressed(x,y,button) then
 		self:back()
 	end
 end
 
 --[[
---Return to the graphics menu.
+--Return to the config menu.
 --]]
-function graphicsHelp:back()
-	state = graphics:new(self.config)
+function configHelp:back()
+	state = playerconfig:new(self.config)
 end

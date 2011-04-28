@@ -30,8 +30,10 @@ require "controls.lua"
 require "graphics.lua"
 require "subclass/class.lua"
 require "util/button.lua"
+require "playerconfig.lua"
 
 options = class:new()
+
 
 --[[
 --Both creates and initializes the main options view.
@@ -41,7 +43,7 @@ options = class:new()
 function options:construct(aControlBag)
 	--Initialize the buttons the user can press
 	self.buttons = {controls = button:new("Controls", 400, 200),
-					config = button:new("Game Config", 400, 300),
+					playerconfig = button:new("Game Config", 400, 300),
 					graphics = button:new("Graphics", 400, 400),
 					game = button:new("Back" , 400, 500)}
 	--Store the configuration
@@ -84,6 +86,9 @@ function options:mousepressed(x,y,button)
 		if b:mousepressed(x,y,button) then
 			if n == "controls" then
 				state = controls:new(self.controlBag) --Open controls
+                        elseif n == "playerconfig" then
+				state = playerconfig:new(self.controlBag) --Open Game Configurations
+
 			elseif n == "graphics" then
 				state = graphics:new(self.controlBag) --Open graphics
 			elseif n == "game" then

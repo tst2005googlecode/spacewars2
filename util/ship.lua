@@ -37,6 +37,8 @@ WARNING: Uses global missile, laser, and junk tables from game.lua
 require "util/bodyObject.lua"
 require "util/functions.lua"
 require "util/missile.lua"
+require "util/laser.lua"
+require "util/explosion.lua"
 
 -- Movement constants
 local maxLinearV -- NOT CURRENTLY IN USE!
@@ -86,7 +88,7 @@ function ship:construct( theWorld, controlledBy, aCoordBag, shipConfig )
 	self.maxAngleV = 0.1 * timeScale --NOT CURRENTLY IN USE!
 	self.baseThrust = shipConfig.mass * 500
 	self.baseTorque = shipConfig.mass * 10 ^ 14
-	self.easyTurn = 0.000025 * timeScale
+	self.easyTurn = 0.00003 * timeScale
 
 	--State controls for step turning
 	self.turnStep = 0
@@ -106,7 +108,7 @@ function ship:construct( theWorld, controlledBy, aCoordBag, shipConfig )
 	self.data.owner = self.controller
 
 	self.data.armor = 2000
-	self.data.missiles = {}
+--	self.data.missiles = {}
 --	self.data.newMissiles = {}
 	self.data.missileBank = maxMissile
 	self.data.laserEngaged = false
@@ -122,6 +124,17 @@ function ship:construct( theWorld, controlledBy, aCoordBag, shipConfig )
 	--Timers to measure against constants
 	self.missileTimer = 0
 	self.rearmMissile = 40
+
+	--Ship exhaust
+	self.image = love.graphics.newImage("images/shipExhaust.png")
+	self.exhaust = love.graphics.newParticleSystem(self.image,10)
+	self.exhaust:setEmissionRate(20)
+	self.exhaust:setLifetime(0.1)
+	self.exhaust:setParticleLife(0.5)
+	self.exhaust:setSpin(-2, 2)
+	self.exhaust:setSpeed(150, 200)
+	self.exhaust:setSpread(math.pi/2)
+	self.exhaust:setSize(0.8)
 end
 
 --[[
@@ -135,6 +148,7 @@ function ship:draw()
 	if(not self.controller.state.respawn) then
 		love.graphics.setColor( unpack( self.color ) )
 		love.graphics.polygon( "fill", self.shipPoly:getPoints() )
+		love.graphics.draw(self.exhaust, 0, 0)
 	end
 end
 
@@ -151,10 +165,10 @@ function ship:update( dt )
 	local commands = self.controller:updateControls( self.data, dt )
 	--Check for respawn
 	if self.data.status == "DEAD" then
+		self:stop()
 		if commands[1] == "respawn" then
 			self:respawn()
 		end
-		return
 	end
 	--Charge laser and reload missiles
 	if(self.data.missileBank < maxMissile) then
@@ -199,10 +213,7 @@ function ship:update( dt )
 		elseif command == "orbit" then
 			self:orbit( dt )
 		elseif command == "launchMissile" then
-			if (self.rearmMissile >= self.armMissile) then
-				self:launchMissile( love.mouse.getX(), love.mouse.getY() )
-				self.rearmMissile = 0
-			end
+			self:launchMissile( love.mouse.getX(), love.mouse.getY() )
 		elseif command == "engageLaser" then
 			self.data.laserEngaged = true
 		elseif command == "disengageLaser" then
@@ -219,6 +230,8 @@ function ship:update( dt )
 	end
 	--Check boundary and activate the ship's warp drive if needed.
 	self:warpDrive()
+	--Emit particles
+	self.exhaust:update(dt)
 end
 
 --[[
@@ -339,6 +352,10 @@ function ship:thrust()
 	local xThrust = math.cos( angle ) * scaledThrust
 	local yThrust = math.sin( angle ) * scaledThrust
 	self.body:applyForce( xThrust, yThrust )
+	--Generate some particles
+	self.exhaust:setPosition(self.body:getX() - math.cos(angle) * 20,self.body:getY() - math.sin(angle) * 20)
+	self.exhaust:setDirection(angle - math.pi)
+	self.exhaust:start()
 end
 
 --[[
@@ -354,6 +371,10 @@ function ship:reverse()
 	local xThrust = math.cos( angle ) * halfThrustScaled
 	local yThrust = math.sin( angle ) * halfThrustScaled
 	self.body:applyForce( -xThrust, -yThrust  )
+	--Generate some particles
+	self.exhaust:setPosition(self.body:getX() - math.cos(angle) * 20,self.body:getY() - math.sin(angle) * 20)
+	self.exhaust:setDirection(angle - math.pi)
+	self.exhaust:start()
 end
 
 --[[
@@ -382,6 +403,10 @@ function ship:stopThrust( dt )
 	local yThrust = halfThrustScaled * math.sin( direction )
 
 	self.body:applyForce( xThrust, yThrust )
+	--Generate some particles
+	self.exhaust:setPosition(self.body:getX() - math.cos(self.body:getAngle()) * 20,self.body:getY() - math.sin(self.body:getAngle()) * 20)
+	self.exhaust:setDirection(self.body:getAngle() - math.pi)
+	self.exhaust:start()
 end
 
 --[[
@@ -451,19 +476,24 @@ function ship:warpDrive()
 end
 
 --[[
---Ship's automatically respawn at the next available opportunity.
---This sets the controller to call for a respawn automatically.
+--When ships are destroyed, they must be respawned.
+--This sets the controller to call for a respawn until the command is given.
 --It also spawns 1-4 debris at the ship's destruction point.
 --These debris will spawn above the soft cap in the configuration.
+--WARNING: Uses global explosions table.
 --WARNING: Uses global activeDebris variable.
 --WARNING: Uses global junk table.
 --
---Requirement 10.2
+--Requirement 11
 --]]
 function ship:destroy()
 	--self:deactivate()
 	self.data.status = "DEAD"
 	self.controller.state.respawn = true
+	local explode = explosions:getNew(self.body:getX(),self.body:getY(),1,20)
+	game:addEffect( explode )
+
+	--Create the debris from the destroyed ship.
 	local tempMass = math.random(50,75)/100 * self.mass
 	local numSpawn = math.random(1,4)
 	local velX, velY = self.body:getLinearVelocity()
@@ -511,6 +541,15 @@ function ship:engageLaser( dt, x2, y2, endOfBeam )
 end
 
 --[[
+--Returns the remaining laser energy.
+--
+--Requirement 8.2
+--]]
+function ship:getLaserEnergy()
+	return self.data.laserCharge
+end
+
+--[[
 --Add the list of enemy ships to the current ship.
 --Used in launchMissile for targeting purposes.
 --
@@ -529,34 +568,38 @@ end
 --
 --Requirement 9.1
 --]]
-function ship:launchMissile( x, y )
-	if self.data.missileBank > 0 then
-		--Launch a missile, figure the correct position, angle, and velocity.
-		local angle = self.body:getAngle()
-		local x = self.body:getX() -- + math.cos( angle ) * 25
-		local y = self.body:getY() -- + math.sin( angle ) * 25
-		local xVel, yVel = self.body:getLinearVelocity()
-		--Generate the missile, assign the owner, and add it to the game.
-		local aMissile = missiles:getNew( self.world, x, y, angle, self.coordBag, self.shipConfig, xVel, yVel )
-		aMissile:setOwner( self.controller )
-		--Find the closest valid target
-		local curDist = 9999999
-		local target = nil
-		for i, v in pairs(self.targets) do
-			dist = pointDistance(self.body:getX(),self.body:getY(),v.body:getX(),v.body:getY())
-			if(dist < curDist) then
-				curDist = dist
-				target = v
+function ship:launchMissile()
+	if (self.rearmMissile >= self.armMissile) then
+		if self.data.missileBank > 0 then
+			--Launch a missile, figure the correct position, angle, and velocity.
+			local angle = self.body:getAngle()
+			local x = self.body:getX() -- + math.cos( angle ) * 25
+			local y = self.body:getY() -- + math.sin( angle ) * 25
+			local xVel, yVel = self.body:getLinearVelocity()
+			--Generate the missile, assign the owner, and add it to the game.
+			local aMissile = missiles:getNew( self.world, x, y, angle, self.coordBag, self.shipConfig, xVel, yVel )
+			aMissile:setOwner( self.controller )
+			--Find the closest valid target
+			local curDist = 9999999
+			local target = nil
+			for i, v in pairs(self.targets) do
+				dist = pointDistance(self.body:getX(),self.body:getY(),v.body:getX(),v.body:getY())
+				if(dist < curDist) then
+					curDist = dist
+					target = v
+				end
 			end
-		end
 		--If there's a target, then set it as the missile's target
-		if(target ~= nil) then
-			aMissile:setTarget(target)
+			if(target ~= nil) then
+				aMissile:setTarget(target)
+			end
+	--		self.data.missiles[ #self.data.missiles + 1 ] = aMissile
+	--		self.data.newMissiles[ #self.data.newMissiles + 1 ] = aMissile
+			self.data.missileBank = self.data.missileBank - 1
+			game:addActive( aMissile )
+
+			self.rearmMissile = 0
 		end
---		self.data.missiles[ #self.data.missiles + 1 ] = aMissile
---		self.data.newMissiles[ #self.data.newMissiles + 1 ] = aMissile
-		self.data.missileBank = self.data.missileBank - 1
-		game:addActive( aMissile )
 	end
 end
 
@@ -588,8 +631,19 @@ function ship:engageTractor()
 end
 
 --[[
+--Stops the ship dead in the water when it is destroyed.
+--Essentially used only for players, as they do not instantly respawn.
+--]]
+function ship:stop()
+	self.body:setLinearVelocity(0,0)
+	self.body:setAngularVelocity(0)
+end
+
+--[[
 --Respawn the ship in a random quadrant within 800 pixels of the borders.
 --The ship will be pointed at a random angle.
+--
+--Requirement 10.2
 --]]
 function ship:respawn()
 	self.data.status = "ACTIVE"
@@ -612,12 +666,20 @@ function ship:respawn()
 	self.body:setLinearVelocity(0,0)
 	self.body:setAngularVelocity(0)
 	self.data.armor = 2000
+	self.controller.state.respawn = false
 end
 
 --[[] Returns the ship body for use by other classes, such as a camera!
 function ship:getBody()
 	return self.body
 end--]]
+
+--[[
+--Returns a ship's remaining armor.
+--]]
+function ship:getArmor()
+	return self.data.armor
+end
 
 --[[
 --Get the ship's STEP acceleration.

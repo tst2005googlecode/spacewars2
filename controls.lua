@@ -45,13 +45,14 @@ function controls:construct(aControlBag)
 	self.control = {}
 	self.control["Thrust"] = aControlBag:getThrust()
 		self.control["Left"] =  aControlBag:getLeft()
-        self.control["Reverse"] = aControlBag:getReverse()
-        self.control["Right"] = aControlBag:getRight()
-        self.control["StopTurn"] = aControlBag:getStopTurn()
-        self.control["StopThrust"] = aControlBag:getStopThrust()
+		self.control["Reverse"] = aControlBag:getReverse()
+		self.control["Right"] = aControlBag:getRight()
+		self.control["StopTurn"] = aControlBag:getStopTurn()
+		self.control["StopThrust"] = aControlBag:getStopThrust()
 		self.control["Orbit"] = aControlBag:getOrbit()
-        self.control["ZoomIn"] = aControlBag:getZoomIn()
-        self.control["ZoomOut"] = aControlBag:getZoomOut()
+		self.control["TargetAssist"] = aControlBag:getAssist()
+		self.control["ZoomIn"] = aControlBag:getZoomIn()
+		self.control["ZoomOut"] = aControlBag:getZoomOut()
 		self.control["TurnType"] = aControlBag:getTurn()
 
 	--Initialize the buttons the user can press
@@ -62,6 +63,7 @@ function controls:construct(aControlBag)
 			StopTurn = button:new("StopTurn = " .. self.control["StopTurn"], 600, 100),
 			StopThrust = button:new("StopThrust = " .. self.control["StopThrust"] , 600,150),
 			Orbit = button:new("Orbit = " .. self.control["Orbit"], 600,200),
+			TargetAssist = button:new("TargetAssist = " .. self.control["TargetAssist"], 600,250),
 			ZoomIn = button:new("ZoomIn = " .. self.control["ZoomIn"] , 400,300),
 			ZoomOut = button:new("ZoomOut = " .. self.control["ZoomOut"] , 400,350),
 			TurnType = button:new("TurnType = " .. self.control["TurnType"], 400,400),
@@ -161,6 +163,7 @@ function controls:back()
 	self.bag:setStopTurn(self.control["StopTurn"])
 	self.bag:setStopThrust(self.control["StopThrust"])
 	self.bag:setOrbit(self.control["Orbit"])
+	self.bag:setAssist(self.control["TargetAssist"])
 	self.bag:setZoomIn(self.control["ZoomIn"])
 	self.bag:setZoomOut(self.control["ZoomOut"])
 	self.bag:setTurn(self.control["TurnType"])

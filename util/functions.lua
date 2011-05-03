@@ -62,3 +62,36 @@ function copyTable( aTable )
     end
     return setmetatable( newTable, getmetatable( aTable ) )
 end
+
+--[[
+-- Returns the nearest object in objects list to given coordinates
+-- assumed object is a game object, that has active state and a body
+-- if owner is provided, object owned by owner will be ignored
+--
+-- Requirement 14
+--]]
+function nearest( x, y, objects, owner )
+	local nearestObject = {}
+	local nearestDistance = 999999
+	local nearestAngle = -1
+	if objects ~= nil then -- only search if something to search in
+		local tempX = 0
+		local tempY = 0
+		local tempDist = 0
+		for i, anObject in ipairs( objects ) do
+			if owner == nil or owner and anObject.owner ~= owner then
+				if anObject.isActive == true then -- check only active objects
+					local tempX = anObject.body:getX()
+					local tempY = anObject.body:getY()
+					local tempDist = pointDistance( x, y, tempX, tempY )
+					if tempDist < nearestDistance then
+						nearestObject = anObject
+						nearestDistance = tempDist
+						nearestAngle = pointAngle( x, y, tempX, tempY )
+					end
+				end
+			end
+		end
+	end
+	return nearestObject, nearestDistance, nearestAngle
+end

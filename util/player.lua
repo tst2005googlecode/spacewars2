@@ -26,9 +26,9 @@ The controller is checked for mouse and keyboard input each cycle.
 --]]
 
 require "subclass/class.lua"
+require "util/functions.lua"
 
 local state
-local shipState
 
 player = class:new(...)
 
@@ -37,7 +37,7 @@ player = class:new(...)
 --]]
 function player:construct( aCoordBag, shipConfig )
 	--Assign the keyboard controls.
-	self.thrustKey,self.leftKey,self.reverseKey,self.rightKey,self.stopTurnKey,self.stopThrustKey,self.orbitKey,dummy1,dummy2,self.turnMode = shipConfig:getAllControls()
+	self.thrustKey,self.leftKey,self.reverseKey,self.rightKey,self.stopTurnKey,self.stopThrustKey,self.orbitKey,self.assistKey,dummy1,dummy2,self.turnMode = shipConfig:getAllControls()
 	--Initialize the state to all false.
 	self.state = { stepLeft = false, stepRight = false, launchMissile = false, engageLaser = false, disengageLaser = false, respawn = false }
 	self.control = "P"
@@ -96,86 +96,136 @@ end
 --
 --Requirement 4.1
 --]]
-function player:updateControls( theShipState )
-	self.shipState = theShipState
+function player:updateControls( ownShip )
 	local commands = {}
-
+	self.ownShip = ownShip
+	
 	--If dead, the ship can respawn.
 	--Players do not respawn instantly, they block until "return" is pressed.
 	if self.state.respawn then
 		if love.keyboard.isDown("return") then
-			return { "respawn" }
+			return { { "respawn" } }
 		else return {}
 		end
 	end
 
 	--Thrust controls
-	if love.keyboard.isDown(self.stopThrustKey) then
+	if love.keyboard.isDown( self.stopThrustKey ) then
 		--Stop linear velocity.
-		commands[ #commands + 1 ] = "stop"
+		commands[ #commands + 1 ] = { "stop" }
 	else
 		if love.keyboard.isDown( self.thrustKey ) then
 			--Forward thrusters.
-			commands[ #commands + 1 ] = "thrust"
-		elseif love.keyboard.isDown(self.reverseKey) then
+			commands[ #commands + 1 ] = { "thrust" }
+		elseif love.keyboard.isDown( self.reverseKey ) then
 			--Reverse thrusters.
-			commands[ #commands + 1 ] = "reverse"
+			commands[ #commands + 1 ] = { "reverse" }
 		end
 	end
 	--Rotation controls.
-	if love.keyboard.isDown(self.stopTurnKey) then
+	if love.keyboard.isDown( self.stopTurnKey ) then
 		--Stop angular velocity.
-		commands[ #commands + 1 ] = "stopRotation"
+		commands[ #commands + 1 ] = { "stopRotation" }
 	else
 		--Left turn controls.
 		if self.state.stepLeft then
 			--Step turn left.
-			commands[ #commands + 1 ] = "stepLeft"
+			commands[ #commands + 1 ] = { "stepLeft" }
 		else
 			if love.keyboard.isDown( self.leftKey ) then
 				if ( self.turnMode == "EASY" ) then
 					--Easy turn left.
-					commands[ #commands + 1 ] = "easyLeft"
+					commands[ #commands + 1 ] = { "easyLeft" }
 				elseif ( self.turnMode == "NORMAL" ) then
 					--Normal turn left.
-					commands[ #commands + 1 ] = "normalLeft"
+					commands[ #commands + 1 ] = { "normalLeft" }
 				end
 			end
 		end
 		--Right turn controls.
 		if self.state.stepRight then
 			--Step turn right.
-			commands[ #commands + 1 ] = "stepRight"
+			commands[ #commands + 1 ] = { "stepRight" }
 		else
 			if love.keyboard.isDown( self.rightKey ) then
 				if ( self.turnMode == "EASY" ) then
 					--Easy turn right.
-					commands[ #commands + 1 ] = "easyRight"
+					commands[ #commands + 1 ] = { "easyRight" }
 				elseif ( self.turnMode == "NORMAL" ) then
 					--Normal turn right.
-					commands[ #commands + 1 ] = "normalRight"
+					commands[ #commands + 1 ] = { "normalRight" }
 				end
 			end
 		end
 	end
 	--Orbit control.
-	if love.keyboard.isDown(self.orbitKey) then
-		commands[ #commands + 1 ] = "orbit"
+	if love.keyboard.isDown( self.orbitKey ) then
+		commands[ #commands + 1 ] = { "orbit" }
+	end
+	-- locate nearest enemy missile and ship if targeting (similar to AI ability) ...
+	-- this is not exactly accurate, as it targets where the object is, not where
+	-- it will be
+	if love.keyboard.isDown( self.assistKey ) then
+		-- locating a target should only be needed when there is no current target
+		-- or the current target is now inactive
+		--if self.laserTarget == nil or self.laserTarget.isActive == false then
+			--self.laserTarget = nil
+			-- this will search for closest target from mouse cursor location
+			-- probably not most useful ... leave in case used later
+			--local x = theCamera:getX() + love.mouse.getX() / theCamera.zoom
+			--local y = theCamera:getY() + love.mouse.getY() / theCamera.zoom
+			-- this will search starting from ship's location
+			local x = self.ownShip.body:getX()
+			local y = self.ownShip.body:getY()
+			local eMissile, eMissileDistance = nearest( x, y, missiles.objects, self )
+			local eShip, eShipDistance = nearest( x, y, self.ownShip.targets )
+			-- for now, only missiles will be considered
+			if eMissileDistance < 8000 then--or eShipDistance < 8000 then
+				--if eMissileDistance < eShipDistance then
+					self.laserTarget = eMissile
+				--else
+				--	self.laserTarget = eShip
+			--	end
+			end
+		--end
 	end
 	--On right-click, launch a missile.
 	if self.state.launchMissile then
-		commands[ #commands + 1 ] = "launchMissile"
+		if eMissileDistance or eShipDistance then
+			if eMissileDistance < eShipDistance then
+				commands[ #commands + 1 ] = { "launchMissile", eMissile }
+			else
+				commands[ #commands + 1 ] = { "launchMissile", eShip }
+			end
+		else -- missile will target closest enemy ... can be used to "find" the enemy
+			commands[ #commands + 1 ] = { "launchMissile" }
+		end
 		self.state.launchMissile = false
 	end
 	--On left-click, engage lasers.
 	if self.state.engageLaser then
-		commands[ #commands + 1 ] = "engageLaser"
+		if love.keyboard.isDown( self.assistKey ) and ( eMissile ~= nil or eShip ~= nil ) then
+			if eMissileDistance < eShipDistance then
+				commands[ #commands + 1 ] = { "engageLaser", eMissile }
+				self.laserTarget = eMissile
+			-- currently, only missiles will be auto targeted
+			--else
+			--	commands[ #commands + 1 ] = { "engageLaser", eShip }
+			--	self.laserTarget = eShip
+			end
+		else
+			local coordinates = {}
+			coordinates["x"] = love.mouse.getX()
+			coordinates["y"] = love.mouse.getY()
+			commands[ #commands + 1 ] = { "engageLaser" }
+		end
 		self.state.engageLaser = false
 	end
 	--On left-release, disengage lasers.
 	if self.state.disengageLaser then
-		commands[ #commands + 1 ] = "disengageLaser"
+		commands[ #commands + 1 ] = { "disengageLaser" }
 		self.state.disengageLaser = false
+		self.laserTarget = nil
 	end
 
 	return commands
@@ -183,10 +233,14 @@ end
 
 --[[
 --This function returns the coordinates for the laser to point at.
+--
 --WARNING: Uses global theCamera from game.lua
 --]]
 function player:getLaserCoords()
-	return (theCamera:getX() + love.mouse.getX() / theCamera.zoom), (theCamera:getY() + love.mouse.getY() / theCamera.zoom)
+	if self.laserTarget ~= nil then
+		return self.laserTarget
+	end
+	return { x = ( theCamera:getX() + love.mouse.getX() / theCamera.zoom), y = ( theCamera:getY() + love.mouse.getY() / theCamera.zoom ) }
 end
 
 --[[

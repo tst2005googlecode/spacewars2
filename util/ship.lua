@@ -163,9 +163,11 @@ end
 function ship:update( dt )
 	--Get commands from controller
 	local commands = self.controller:updateControls( self, dt )
+	local laserTarget = {}
 	--Check for respawn
 	if self.data.status == "DEAD" then
 		self:stop()
+		self.data.laserEngaged = false
 		if commands[1] == "respawn" then
 			self:respawn()
 		end
@@ -190,40 +192,39 @@ function ship:update( dt )
 
 	--Execute all commands from controller
 	for i, command in ipairs( commands ) do
-		if command == "stop" then
+		if command[1] == "stop" then
 			self:stopThrust( dt )
-		elseif command == "thrust" then
+		elseif command[1] == "thrust" then
 			self:thrust()
-		elseif command == "reverse" then
+		elseif command[1] == "reverse" then
 			self:reverse()
-		elseif command == "stopRotation" then
+		elseif command[1] == "stopRotation" then
 			self:stopTurn()
-		elseif command == "easyLeft" then
+		elseif command[1] == "easyLeft" then
 			self:easyLeft()
-		elseif command == "normalLeft" then
+		elseif command[1] == "normalLeft" then
 			self:normalLeft()
-		elseif command == "stepLeft" then
+		elseif command[1] == "stepLeft" then
 			self:stepLeft()
-		elseif command == "easyRight" then
+		elseif command[1] == "easyRight" then
 			self:easyRight()
-		elseif command == "normalRight" then
+		elseif command[1] == "normalRight" then
 			self:normalRight()
-		elseif command == "stepRight" then
+		elseif command[1] == "stepRight" then
 			self:stepRight()
-		elseif command == "orbit" then
+		elseif command[1] == "orbit" then
 			self:orbit( dt )
-		elseif command == "launchMissile" then
-			self:launchMissile( love.mouse.getX(), love.mouse.getY() )
-		elseif command == "engageLaser" then
+		elseif command[1] == "launchMissile" then
+			self:launchMissile( command[2] )
+		elseif command[1] == "engageLaser" then
 			self.data.laserEngaged = true
-		elseif command == "disengageLaser" then
+		elseif command[1] == "disengageLaser" then
 			self.data.laserEngaged = false
 		end
 	end
 	--Start/continue laser beam
 	if self.data.laserEngaged then
-		local x, y = self.controller:getLaserCoords()
-		self:engageLaser( dt, x, y )
+		self:engageLaser( dt, self.controller:getLaserCoords() )
 	end
 	--Sccelerate turn if using STEP mode.
 	if self.turnAccel then
@@ -488,16 +489,16 @@ end
 --Requirement 11
 --]]
 function ship:destroy()
-	--self:deactivate()
+	self:deactivate()
 	self.data.status = "DEAD"
 	self.controller.state.respawn = true
-	local explode = explosions:getNew(self.body:getX(),self.body:getY(),1,20)
+	local velX, velY = self.body:getLinearVelocity()
+	local explode = explosions:getNew(self.body:getX(),self.body:getY(),velX,velY,1,20)
 	game:addEffect( explode )
 
 	--Create the debris from the destroyed ship.
 	local tempMass = math.random(50,75)/100 * self.mass
 	local numSpawn = math.random(1,4)
-	local velX, velY = self.body:getLinearVelocity()
 	for i = 1,numSpawn do
 		local aDebris = {}
 		if(i == numSpawn) then
@@ -514,13 +515,25 @@ end
 
 --[[
 --Engages the laser, given sufficient charge.
---The laser fires from the ship to the mouse crosshair.
+--The laser fires from the ship to the given target (cross-hair or object).
 --Lasers travel extremely quickly, and inflict 1 damage/millisecond.
 --WARNING: Uses global laser table.
 --
 --Requirement 8.1
 --]]
-function ship:engageLaser( dt, x2, y2, endOfBeam )
+function ship:engageLaser( dt, target )
+	local x2 = 0
+	local y2 = 0
+	-- determine coordinates by target type
+	if target.body then -- get coordinates from target body
+		x2 = target.body:getX()
+		y2 = target.body:getY()
+	else -- adjust coordinates for camera position
+		--x2 = theCamera:getX() + target.x / theCamera.zoom
+		--y2 = theCamera:getY() + target.y / theCamera.zoom
+		x2 = target.x
+		y2 = target.y
+	end
 	--Track usage and return if insufficient charge/energy.
 	if self.data.laserCharge >= dt then
 		self.data.laserCharge = self.data.laserCharge - dt
@@ -532,8 +545,7 @@ function ship:engageLaser( dt, x2, y2, endOfBeam )
 	local y1 = self.body:getY()
 --	print( theCamera:getX() + x2, theCamera:getY() + y2 )
 	--Figure the correct angle and velocity on the X and Y directions.
---	local angle = pointAngle( x1, y1, theCamera:getX() + x2 / theCamera.zoom, theCamera:getY() + y2 / theCamera.zoom )
-	local angle = pointAngle( x1, y1, x2, y2)
+	local angle = pointAngle( x1, y1, x2, y2 )
 	local xVel = math.cos( angle ) * lightSpeed
 	local yVel = math.sin( angle ) * lightSpeed
 	--Create the laser, own it with this ship, and add it to the game.
@@ -570,7 +582,7 @@ end
 --
 --Requirement 9.1
 --]]
-function ship:launchMissile()
+function ship:launchMissile( target )
 	if (self.rearmMissile >= self.armMissile) then
 		if self.data.missileBank > 0 then
 			--Launch a missile, figure the correct position, angle, and velocity.
@@ -583,12 +595,13 @@ function ship:launchMissile()
 			aMissile:setOwner( self.controller )
 			--Find the closest valid target
 			local curDist = 9999999
-			local target = nil
-			for i, v in pairs(self.targets) do
-				dist = pointDistance(self.body:getX(),self.body:getY(),v.body:getX(),v.body:getY())
-				if(dist < curDist) then
-					curDist = dist
-					target = v
+			if target == nil then -- find closest ship target
+				for i, v in pairs(self.targets) do
+					dist = pointDistance(self.body:getX(),self.body:getY(),v.body:getX(),v.body:getY())
+					if(dist < curDist) then
+						curDist = dist
+						target = v
+					end
 				end
 			end
 		--If there's a target, then set it as the missile's target
@@ -648,6 +661,7 @@ end
 --Requirement 10.2
 --]]
 function ship:respawn()
+	self:activate()
 	self.data.status = "ACTIVE"
 	x = math.random(0,800)
 	y = math.random(0,800)

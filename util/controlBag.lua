@@ -43,7 +43,7 @@ controlBag = class:new(...)
 --For proper functionality, ALL properties must be sent to this function!
 --]]
 --This call can be complicated.  The proper call is: key,key,key,key,key,key,key,key,key,string,double,double,yes/no,file,double,double,yes/no,double,yes/no,double,double,double
-function controlBag:construct(thrustKey,leftKey,reverseKey,rightKey,stopTurnKey,stopThrustKey, orbitKey, zoomInKey, zoomOutKey, turnType, width, height, screen, background, gameSpeed, ai, randomAi, moons, randomMoon, debris, lives, pMass)
+function controlBag:construct(thrustKey,leftKey,reverseKey,rightKey,stopTurnKey,stopThrustKey, orbitKey, assistKey, zoomInKey, zoomOutKey, turnType, width, height, screen, background, gameSpeed, ai, randomAi, moons, randomMoon, debris, lives, pMass)
 	self.thrust = thrustKey
 	self.left = leftKey
 	self.reverse = reverseKey
@@ -52,6 +52,7 @@ function controlBag:construct(thrustKey,leftKey,reverseKey,rightKey,stopTurnKey,
 	self.stopThrust = stopThrustKey
 	self.turn = turnType
 	self.orbit = orbitKey
+	self.targetAssist = assistKey
 	self.zoomIn = zoomInKey
 	self.zoomOut = zoomOutKey
 	self.resWidth = width
@@ -177,6 +178,20 @@ end
 --]]
 function controlBag:setOrbit(key)
 	self.orbit = key
+end
+
+--[[
+--Gets the key for target assistance.
+--]]
+function controlBag:getAssist()
+	return self.targetAssist
+end
+
+--[[
+--Sets the key for target assistance.
+--]]
+function controlBag:setAssist(key)
+	self.targetAssist = key
 end
 
 --[[
@@ -375,13 +390,13 @@ end
 --Get all the control parameters in one call.
 --]]
 function controlBag:getAllControls()
-	return self.thrust,self.left,self.reverse,self.right,self.stopTurn,self.stopThrust,self.orbit,self.zoomIn,self.zoomOut,self.turn
+	return self.thrust,self.left,self.reverse,self.right,self.stopTurn,self.stopThrust,self.orbit,self.targetAssist,self.zoomIn,self.zoomOut,self.turn
 end
 
 --[[
 --Set all the control parameters in one call.
 --]]
-function controlBag:setAllControls(thrustKey,leftKey,reverseKey,rightKey,stopTurnKey,stopThrustKey,orbitKey,zoomInKey,zoomOutKey,turnType)
+function controlBag:setAllControls(thrustKey,leftKey,reverseKey,rightKey,stopTurnKey,stopThrustKey,orbitKey,assistKey,zoomInKey,zoomOutKey,turnType)
 	self.thrust = thrustKey
 	self.left = leftKey
 	self.reverse = reverseKey
@@ -390,6 +405,7 @@ function controlBag:setAllControls(thrustKey,leftKey,reverseKey,rightKey,stopTur
 	self.stopThrust = stopThrustKey
 	self.turn = turnType
 	self.orbit = orbitKey
+	self.targetAssist = assistKey
 	self.zoomIn = zoomInKey
 	self.zoomOut = zoomOutKey
 end

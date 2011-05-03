@@ -26,8 +26,12 @@ Allows explosions to be delinked from the object creating them.
 --]]
 
 require "subclass/class.lua"
+require "util/functions.lua"
 
 explosion = class:new(...)
+
+local velX = 0
+local velY = 0
 
 --[[
 --Constructs an explosion with default parameters.
@@ -35,17 +39,15 @@ explosion = class:new(...)
 --
 --Requirement 11
 --]]
-function explosion:construct(x,y,size,rate)
+function explosion:construct(x,y,velX,velY,size,rate)
 	self.image = love.graphics.newImage("images/explosion.png")
 	self.explode = love.graphics.newParticleSystem(self.image,200)
 	self.explode:setEmissionRate(20)
-	self.explode:setLifetime(2)
+	self.explode:setLifetime(1)
 	self.explode:setParticleLife(0.5)
 	self.explode:setSpin(0,0)
-	self.explode:setSpeed(100,100)
-	self.explode:setSpread(math.pi*2)
 	self.explode:setSize(1)
-	self:init(x,y,size,rate)
+	self:init(x,y,velX,velY,size,rate)
 end
 
 --[[
@@ -53,11 +55,16 @@ end
 --
 --Requirement 11
 --]]
-function explosion:init(x,y,size,rate)
+function explosion:init(x,y,velX,velY,size,rate)
 	self.x = x
 	self.y = y
+	self.velX = velX
+	self.velY = velY
 	self.explode:setPosition(x,y)
-	self.explode:setDirection(0)
+	self.explode:setDirection( math.atan2( velY, velX ) )
+	local speed = hypotenuse( velX, velY ) + 100
+	self.explode:setSpeed( speed / 2, speed * 1.5)
+	self.explode:setSpread( maxAngle / (1 + speed / 1000 ) )
 	self.explode:setSize(size)
 	self.explode:setEmissionRate(rate)
 	self.explode:start()
@@ -81,6 +88,9 @@ end
 --Requirement 11
 --]]
 function explosion:update(dt)
+	self.x = self.x + self.velX * dt
+	self.y = self.y + self.velY * dt
+	self.explode:setPosition(self.x,self.y)
 	if(not self.explode:isActive()) then
 		if(self.explode:count() == 0) then
 			self:destroy()
@@ -88,7 +98,6 @@ function explosion:update(dt)
 		end
 	end
 	self.explode:update(dt)
-
 end
 
 --[[

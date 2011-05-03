@@ -70,7 +70,6 @@ end--]]
 function objectBag:recycle( anObject )
 	self.recycled[ #self.recycled + 1 ] = anObject -- self.objects[ anObject.index ]
 	anObject:deactivate()
-	assert( anObject.isActive == false, "did not deactivate" )
 end
 
 --[[

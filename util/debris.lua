@@ -174,27 +174,34 @@ end
 --Allows a debris to spawn somewhere in the game world.
 --This is the default spawn behavior if neither alternative is specified.
 --This is specifically used when the game is first started.
---The debris spawns within 9600 pixels of the X/Y borders.
+--The debris spawns closest to the game borders, radially from the planet
 --It spawns with a random X/Y velocity.
---This keeps a cross shaped area clear for a short time on game start.
 --
 --Requirement 10.1
 --]]
 function debris:respawnRandom()
-	local x = math.random(0,9600)
-	local y = math.random(0,9600)
-	local xSide = math.random(0,1)
-	local ySide = math.random(0,1)
-	if(xSide == 0) then
-		self.body:setX(self.minX + x)
-	else
-		self.body:setX(self.maxX - x)
+	local angle = math.random() * maxAngle
+	local halfWidth = ( self.maxX - self.minX ) / 2
+	local halfHeight = ( self.maxY - self.minY ) / 2
+	local maxDist = ( halfWidth ^ 2 + halfHeight ^ 2 ) ^ (0.5)
+	local maxDistRoot = maxDist ^ (0.5)
+	local outOfBounds = true
+	local x = 0
+	local y = 0
+	-- find a location in bounds
+	while outOfBounds do
+		local temp = ( math.random() * maxDistRoot ) ^ 2
+		local distance = maxDist - temp / 2
+		if distance > 1000 then -- minumum distance from planet
+			x = halfWidth + math.cos( angle ) * distance
+			y = halfWidth + math.sin( angle ) * distance
+			if x > self.minX and x < self.maxX and y > self.minY and y <= self.maxY then
+				outOfBounds = false -- statistically, only a few iterations at most should occur
+			end
+		end
 	end
-	if(ySide == 0) then
-		self.body:setY(self.minY + y)
-	else
-		self.body:setY(self.maxY - y)
-	end
+	self.body:setX( x )
+	self.body:setY( y )
 	local xVel = math.random(-80,80)
 	local yVel = math.random(-80,80)
 	self.body:setLinearVelocity(xVel,yVel)

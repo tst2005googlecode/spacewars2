@@ -148,12 +148,14 @@ function game:construct( aConfigBag, coord )
 	--Fullscreen uses a string to determine, because booleans can't be written.
 	if (theConfigBag:isFullscreen() == "yes") then
 		--Set the graphics mode
-		love.graphics.setMode(theConfigBag:getResWidth(),theConfigBag:getResHeight(),true,false,0)
+		--love.graphics.setMode(theConfigBag:getResWidth(),theConfigBag:getResHeight(),true,false,0)
+		love.graphics.setMode(1400,900,true,false,0)
 	else
-		love.graphics.setMode(theConfigBag:getResWidth(),theConfigBag:getResHeight(),false,false,0)
+		--love.graphics.setMode(1024,768,false,false,0)
+		--love.graphics.setMode(theConfigBag:getResWidth(),theConfigBag:getResHeight(),false,false,0)
 	end
-	--Create the coordinate bag
 
+	--Create the coordinate bag
 	screenX = love.graphics.getWidth()
 	screenY = love.graphics.getHeight()
 	theCoordBag = coordBag:new(minX,maxX,screenX,minY,maxY,screenY)
@@ -165,7 +167,7 @@ function game:construct( aConfigBag, coord )
 	--Hide the mouse cursor and will draw cross-hairs
 	love.mouse.setVisible( false )
 
-	--Set constants and scalars
+	--Set constants and scalars used by various calculations
 	maxAngle = math.pi * 2
 	quarterCircle = math.pi / 2
 	gravity = 0.0000000000667428
@@ -215,6 +217,8 @@ function game:construct( aConfigBag, coord )
 	game:generateMasses( totalMoon )
 
 	--Configure and create the player's ship.
+	playerShips = {}
+	aiShips = {}
 	theConfigBag["color"] = color["ship"]
 	theConfigBag["shipType"] = "playerShip"
 	theConfigBag:setStartPosition( game:randomeStartLocation() )
@@ -249,20 +253,18 @@ function game:construct( aConfigBag, coord )
 		theConfigBag["shipType"] = "aiShip"
 		anAI = ai:new( theCoordBag, theConfigBag )
 		aShip = ships:getNew( theWorld, anAI, theCoordBag, theConfigBag )
-		aShip:addTargets(playerShips)
+		aShip:addTargets( playerShips )
 		game:addActive( aShip )
 		aiShips[i] = aShip
 	end
 
 	--Engage player targeting system
-	playerShips[1]:addTargets(aiShips)
+	playerShip:addTargets(aiShips)
 
 	--The player doesn't need to respawn when the game starts.
 	needRespawn = false
 	currentLife = 1
 	maxLives = theConfigBag:getLives() + 0 --Must add zero to coerce to int
-	playerShips = {}
-	aiShips = {}
 
 	if(theConfigBag:getBackground() ~= "") then
 		local fileString = "backgrounds/" .. theConfigBag:getBackground()
@@ -276,7 +278,6 @@ function game:construct( aConfigBag, coord )
 	end
 	background:setWrap("repeat","repeat")
 	quad = love.graphics.newQuad(0,0,maxX,maxY,512,512)
-
 end
 
 --[[
@@ -478,7 +479,7 @@ function game:draw()
 	love.graphics.print( "K: " .. kills, 135, 15)
 	love.graphics.print( "S: " .. string.format("%.1f", score), 135, 25)
 	love.graphics.print( "L: " .. maxLives - currentLife, 135, 40)
-	love.graphics.print( "A: " .. string.format("%.0f" , playerShip:getArmor()), 135, 50 )
+	love.graphics.print( "A: " .. math.floor( playerShip:getArmor() ), 135, 50 )
 	love.graphics.print( "M: " .. playerShip:getMissileBank(), 135, 60 )
 	love.graphics.print( "E: " .. string.format("%.3f", playerShip:getLaserEnergy()), 135, 70)
 	--Draw the game cursor on top of everything.
@@ -524,10 +525,6 @@ end
 --Requirement 2.7
 --]]
 function game:update( dt )
-	--The world must be updated first.
-	--Ensures new objects get a first draw BEFORE they start moving.
-	theWorld:update( dt )
-
 	--If the player needs to respawn, then freeze the game.
 --	if needRespawn == true then
 --		return
@@ -584,6 +581,9 @@ if dt > highDt then highDt = dt end
 	for i = activeDebris, maxDebris do
 		game:generateDebris("border",0,0)
 	end
+
+	--Update the world separate from the other objects
+	theWorld:update( dt )
 end
 
 --[[
@@ -686,9 +686,11 @@ end
 --Requirement 12
 --]]
 function playerDeath()
+	if currentLife < maxLives then -- player has use last life, so score is final
+		score = kills/currentLife
+	end
 	needRespawn = true
 	currentLife = currentLife + 1
-	score = kills/currentLife
 end
 
 --[[
@@ -737,7 +739,7 @@ end
 --]]
 function add( a, b, coll )
 	if a.isActive == false or b.isActive == false then
-		return -- this collision was already dealth with, as one or more objects are already inactive
+		return -- this collision was already dealt with, as one or more objects are already inactive
 	end
 	if a.objectType == types.ship then
 		shipCollide( a, b, coll )
@@ -765,9 +767,9 @@ end
 --Requirement 2.7, 8.2, 9.2, 10, 11, 12
 --]]
 function shipCollide( a, b, coll )
-	if (not a.controller.state.respawn) then
 	if b.objectType == types.solarMass then
 		--Solar masses destroy ships instantly.
+		a.body:setLinearVelocity( 0, 0) -- ship doesn't continue to move through a planet
 		a:destroy()
 		if a.controller == thePlayer then
 			playerDeath()
@@ -788,7 +790,7 @@ function shipCollide( a, b, coll )
 		a.data.armor = a.data.armor - b.data.damage
 		b:destroy()
 		activeDebris = activeDebris - 1
-		if(a.data.armor <= 0) then
+		if(a.data.armor < 0) then
 			a:destroy()
 			if(a.controller == thePlayer) then
 				playerDeath()
@@ -798,7 +800,7 @@ function shipCollide( a, b, coll )
 		--Enemy lasers are destroyed and inflict damage on the ship.
 		if b.data.owner ~= a.data.owner then
 			a.data.armor = a.data.armor - b.data.damage
-			if(a.data.armor <= 0) then
+			if(a.data.armor < 0) then
 				a:destroy()
 				if(a.controller == thePlayer) then
 					playerDeath()
@@ -807,13 +809,12 @@ function shipCollide( a, b, coll )
 				end
 			end
 			b:destroy()
-			--b.body:setPosition( coll:getPosition() )
 		end
 	elseif b.objectType == types.missile then
 		--Enemy missiles are destroyed and inflict damage on the ship.
 		if b.data.owner ~= a.data.owner then
 			a.data.armor = a.data.armor - b.data.damage
-			if(a.data.armor <= 0) then
+			if(a.data.armor < 0) then
 				a:destroy()
 				if(a.controller == thePlayer) then
 					playerDeath()
@@ -827,7 +828,6 @@ function shipCollide( a, b, coll )
 		a.status = "DEAD"
 		needRespawn = true--]]
 	end
-	end
 end
 
 --[[
@@ -839,11 +839,12 @@ end
 function missileCollide( a, b, coll )
 	if b.objectType == types.solarMass then
 		--solarMasses destroy missiles instantly.
+		a.body:setLinearVelocity( 0, 0) -- missile doesn't continue to move through a planet
 		a:destroy()
 	elseif b.objectType == types.debris then
 		--Missiles are destroyed and inflict damage on debris.
 		b.data.armor = b.data.armor - a.data.damage
-		if(b.data.armor <= 0) then
+		if(b.data.armor < 0) then
 			b:destroy()
 			activeDebris = activeDebris - 1
 		end
@@ -852,7 +853,7 @@ function missileCollide( a, b, coll )
 		--Lasers are destroyed and inflict damage on missiles.
 		if a.data.owner ~= b.data.owner then
 			a.data.armor = a.data.armor - b.data.damage
-			if(a.data.armor <= 0) then
+			if(a.data.armor < 0) then
 				a:destroy()
 			end
 			b:destroy()
@@ -881,7 +882,7 @@ function laserCollide( a, b, coll )
 	elseif b.objectType == types.debris then
 		--Lasers are destroyed and inflict damage on debris.
 		b.data.armor = b.data.armor - a.data.damage
-		if(b.data.armor <= 0) then
+		if(b.data.armor < 0) then
 			b:destroy()
 			activeDebris = activeDebris - 1
 		end

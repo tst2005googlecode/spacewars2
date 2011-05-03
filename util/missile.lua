@@ -62,8 +62,8 @@ missile = bodyObject:new(...)
 function missile:construct(aWorld, x, y, startAngle, aCoordBag, shipConfig, xVel, yVel)
 	--Construct a missile body.
 	self:constructBody(aWorld, x, y, mass, mass * ( 25 * 10 ) * ( 100000 ^ 2 ) / 6)
-	--self.missilePoly = love.physics.newPolygonShape(self.body, 12, 0, 6, -1, -6, -1, -8, 0, -6, 1, 6, 1)
-	self.missilePoly = love.physics.newPolygonShape(self.body, 12, 0, 2, 4, -4, 4, -8, 0, -4, -4, 2, -4)
+	self.missilePoly = love.physics.newPolygonShape(self.body, 12, 0, 6, -1, -6, -1, -8, 0, -6, 1, 6, 1)
+	--self.missilePoly = love.physics.newPolygonShape(self.body, 12, 0, 2, 4, -4, 4, -8, 0, -4, -4, 2, -4)
 	--Set world awareness.
 	self.minX,self.maxX,self.screenX,self.minY,self.maxY,self.screenY = aCoordBag:getCoords()
 	--Set the missile's data.
@@ -119,8 +119,8 @@ function missile:init(aWorld, x, y, startAngle, aCoordBag, shipConfig, xVel, yVe
 	self.data.status = ""
 
 	--Set the missiles armor and damage values.
-	self.data.armor = 500
-	self.data.damage = 1000
+	self.data.armor = 25
+	self.data.damage = 500
 
 	-- set initial "previous" values
 	self.lastTargetAngle = startAngle
@@ -215,7 +215,7 @@ function missile:update(dt)
 	if(self:offedge() == true) then
 		self:destroy()
 	--Missile has fuel to thrust.
-	elseif(self.fuel > 0) then
+	elseif(self.fuel > 0) and self.target.isActive then
 		self:thrust()
 		self:turn( dt )
 		self.fuel = self.fuel - dt
@@ -238,7 +238,8 @@ end
 --]]
 function missile:destroy()
 	--Create the explosion before doing anything.
-	local explode = explosions:getNew(self.body:getX(),self.body:getY(),0.5,10)
+	local velX, velY = self.body:getLinearVelocity()
+	local explode = explosions:getNew(self.body:getX(),self.body:getY(),velX,velY,0.5,10)
 	game:addEffect( explode )
 	--Set the missile to stop simulation in the world.
 	self.missilePoly:setSensor( false )
@@ -382,6 +383,7 @@ end
 --]]
 function missile:setOwner(own)
 	self.data.owner = own
+	self.owner = own
 end
 
 --[[

@@ -224,7 +224,7 @@ function game:construct( aConfigBag, coord )
 	theConfigBag:setStartPosition( game:randomeStartLocation() )
 	thePlayer = player:new( theCoordBag, theConfigBag )
 	local aShip = ships:getNew( theWorld, thePlayer, theCoordBag, theConfigBag )
-	game:addActive( aShip )
+--	game:addActive( aShip )
 	playerShips[1] = aShip
 	playerShip = aShip
 
@@ -254,7 +254,7 @@ function game:construct( aConfigBag, coord )
 		anAI = ai:new( theCoordBag, theConfigBag )
 		aShip = ships:getNew( theWorld, anAI, theCoordBag, theConfigBag )
 		aShip:addTargets( playerShips )
-		game:addActive( aShip )
+--		game:addActive( aShip )
 		aiShips[i] = aShip
 	end
 
@@ -459,6 +459,12 @@ function game:draw()
 	for i, aSolarMass in ipairs( solarMasses.objects ) do
 		aSolarMass:draw()
 	end
+	for i, aPlayer in ipairs( playerShips ) do
+		aPlayer:draw()
+	end
+	for i, anAi in ipairs( playerShips ) do
+		anAi:draw()
+	end
 	for i, anObject in ipairs( activeObjects ) do
 		anObject:draw()
 	end
@@ -469,8 +475,12 @@ function game:draw()
 	love.graphics.pop() --Return to default settings to draw static objects.
 
 	--Render hud elements.
+	theRadar:drawFrame()
 	theRadar:draw( solarMasses.objects )
 	theRadar:draw( activeObjects )
+	theRadar:draw( playerShips )
+	theRadar:draw( aiShips)
+
 	love.graphics.setFont( digits )
 	love.graphics.setColor(255,255,255)
 	--Draw ammo and armor to the right of the radar
@@ -549,6 +559,9 @@ if dt < lowDt then lowDt = dt end
 if dt > highDt then highDt = dt end
 --]]
 
+	--Update the world separate from the other objects
+	theWorld:update( dt )
+
 	--Update planet positions first
 	for i, aSolarMass in ipairs( solarMasses.objects ) do
 		aSolarMass:update( dt )
@@ -567,6 +580,20 @@ if dt > highDt then highDt = dt end
 			anObject:update( dt )
 		end
 	end
+	--For each player, apply gravitation force from each solar mass
+	for i, aPlayer in ipairs( playerShips ) do
+		for i, aSolarMass in ipairs( solarMasses.objects ) do
+			applyGravity( aSolarMass, aPlayer )
+		end
+		aPlayer:update( dt )
+	end
+	--For each ai, apply gravitation force from each solar mass
+	for i, anAi in ipairs( aiShips ) do
+		for i, aSolarMass in ipairs( solarMasses.objects ) do
+			applyGravity( aSolarMass, anAi )
+		end
+		anAi:update( dt )
+	end
 	--For each active effect, update the particle system
 	for i, anEffect in ipairs( activeEffects ) do
 		if (not anEffect:getActive()) then
@@ -582,8 +609,6 @@ if dt > highDt then highDt = dt end
 		game:generateDebris("border",0,0)
 	end
 
-	--Update the world separate from the other objects
-	theWorld:update( dt )
 end
 
 --[[

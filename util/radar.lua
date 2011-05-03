@@ -56,19 +56,22 @@ function radar:construct(theRadius,theBody)
 	self.scale = (self.radius*2)/size
 end
 
---[[
---Draws the radar using the current list of active objects.
---
---Requirement 2.6, 7.2
---]]
-function radar:draw(obj_table)
+function radar:drawFrame()
 	--Draw the frame.
 	love.graphics.setColor(frameColor)
 	love.graphics.rectangle("line",self.offX,self.offY,size+10,size+10)
 	--Draw the background with 50% opacity.
 	love.graphics.setColor(bgColor)
 	love.graphics.rectangle("fill",self.offX+1,self.offY+1,size+9,size+9)
-	--Iterate through all active objects
+end
+
+--[[
+--Draws the radar using the current list of active objects.
+--
+--Requirement 2.6, 7.2
+--]]
+function radar:draw(obj_table)
+	--Iterate through all the objects
 	for i,obj in ipairs(obj_table) do
 		local x = obj:getX()
 		local y = obj:getY()

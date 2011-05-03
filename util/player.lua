@@ -99,12 +99,13 @@ end
 function player:updateControls( ownShip )
 	local commands = {}
 	self.ownShip = ownShip
-	
+
 	--If dead, the ship can respawn.
 	--Players do not respawn instantly, they block until "return" is pressed.
 	if self.state.respawn then
 		if love.keyboard.isDown("return") then
-			return { { "respawn" } }
+			commands[#commands + 1] = "respawn"
+			return commands
 		else return {}
 		end
 	end

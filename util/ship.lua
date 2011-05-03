@@ -514,6 +514,37 @@ function ship:destroy()
 end
 
 --[[
+--Respawn the ship in a random quadrant within 800 pixels of the borders.
+--The ship will be pointed at a random angle.
+--
+--Requirement 10.2
+--]]
+function ship:respawn()
+	self:activate()
+	self.data.status = "ACTIVE"
+	x = math.random(0,800)
+	y = math.random(0,800)
+	--Figure out which side to spawn on.  0 is minimum X/Y, and 1 is maximum.
+	xSide = math.random(0,1)
+	ySide = math.random(0,1)
+	if xSide == 1 then
+		x = self.maxX - x
+	end
+	if ySide == 1 then
+		y = self.maxY - y
+	end
+	angle = math.random() * maxAngle
+	self.body:setX(x)
+	self.body:setY(y)
+	self.body:setAngle(angle)
+	--Reinitialize position and armor.
+	self.body:setLinearVelocity(0,0)
+	self.body:setAngularVelocity(0)
+	self.data.armor = 2000
+	self.controller.state.respawn = false
+end
+
+--[[
 --Engages the laser, given sufficient charge.
 --The laser fires from the ship to the given target (cross-hair or object).
 --Lasers travel extremely quickly, and inflict 1 damage/millisecond.
@@ -652,37 +683,6 @@ end
 function ship:stop()
 	self.body:setLinearVelocity(0,0)
 	self.body:setAngularVelocity(0)
-end
-
---[[
---Respawn the ship in a random quadrant within 800 pixels of the borders.
---The ship will be pointed at a random angle.
---
---Requirement 10.2
---]]
-function ship:respawn()
-	self:activate()
-	self.data.status = "ACTIVE"
-	x = math.random(0,800)
-	y = math.random(0,800)
-	--Figure out which side to spawn on.  0 is minimum X/Y, and 1 is maximum.
-	xSide = math.random(0,1)
-	ySide = math.random(0,1)
-	if xSide == 1 then
-		x = self.maxX - x
-	end
-	if ySide == 1 then
-		y = self.maxY - y
-	end
-	angle = math.random() * maxAngle
-	self.body:setX(x)
-	self.body:setY(y)
-	self.body:setAngle(angle)
-	--Reinitialize position and armor.
-	self.body:setLinearVelocity(0,0)
-	self.body:setAngularVelocity(0)
-	self.data.armor = 2000
-	self.controller.state.respawn = false
 end
 
 --[[] Returns the ship body for use by other classes, such as a camera!

@@ -102,6 +102,8 @@ end
 --Debris are removed from game area when out of bounds ... more will be created
 --Debris are generally slow moving, therefore they only check once per second.
 --This saves a good amount of processing time.
+--
+--WARNING: Uses global activeDebris from main.lua.  Not the best fix, but it'll have to do.
 --]]
 function debris:update(dt)
 	--Add dt milliseconds to the timer.
@@ -111,6 +113,7 @@ function debris:update(dt)
 		if (self.body:getX() > self.maxX) or (self.body:getX() < self.minX) or
 				(self.body:getY() > self.maxY) or (self.body:getY() < self.minY) then
 			self:destroy()
+			activeDebris = activeDebris - 1
 		end
 		self.warpTimer = 0
 	end

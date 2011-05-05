@@ -151,10 +151,11 @@ function game:construct( aConfigBag, coord )
 	if (theConfigBag:isFullscreen() == "yes") then
 		--Set the graphics mode
 		love.graphics.setMode(theConfigBag:getResWidth(),theConfigBag:getResHeight(),true,false,0)
-		--love.graphics.setMode(1400,900,true,false,0)
 	else
-		--love.graphics.setMode(1024,768,false,false,0)
-		love.graphics.setMode(theConfigBag:getResWidth(),theConfigBag:getResHeight(),false,false,0)
+		-- change window size if different
+		if theConfigBag:getResWidth() ~= love.graphics.getWidth() or theConfigBag:getResHeight() ~= love.graphics.getHeight() then
+			love.graphics.setMode(theConfigBag:getResWidth(),theConfigBag:getResHeight(),false,false,0)
+		end
 	end
 
 	--Create the coordinate bag
@@ -740,7 +741,9 @@ function game:destroy()
 	lasers = {}
 	junk = {}
 
-	if theConfigBag:isFullscreen() == "yes" then
+	-- revert to menu graphic mode / window size
+	if theConfigBag:isFullscreen() == "yes" or theConfigBag:getResWidth() ~= sWidth or 
+			theConfigBag:getResHeight() ~= sHeight then
 		love.graphics.setMode(sWidth,sHeight,false,false,0)
 	end
 end

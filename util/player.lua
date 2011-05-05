@@ -57,6 +57,9 @@ function player:keypressed( key )
 			state.stepRight = true
 		end
 	end
+	--if self.state.respawn and key == "return" then
+		
+	--end
 end
 
 --[[
@@ -99,13 +102,12 @@ end
 function player:updateControls( ownShip )
 	local commands = {}
 	self.ownShip = ownShip
-
+	
 	--If dead, the ship can respawn.
 	--Players do not respawn instantly, they block until "return" is pressed.
 	if self.state.respawn then
 		if love.keyboard.isDown("return") then
-			commands[#commands + 1] = "respawn"
-			return commands
+			return { {"respawn" } }
 		else return {}
 		end
 	end

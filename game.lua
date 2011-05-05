@@ -72,8 +72,8 @@ types = {}       -- used by object framework
 local minX = 0
 local minY = 0
 --Coordinate variables holding max x,y World coordinates
-local maxX = 32768
-local maxY = 32768
+local maxX = 16384 --32768
+local maxY = 16384 --32768
 --Coordinate variables holding max x,y Screen coordinates
 --WARNING: These cannot be set until the screen mode has been set!
 local screenX = 0
@@ -121,6 +121,7 @@ local aiShips = {}
 --Scoring and lives
 local score = 0
 local kills = 0
+local points = 0
 local currentLife = 0
 local maxLives = 0
 --Background settings
@@ -139,6 +140,7 @@ function game:construct( aConfigBag, coord )
 	activeDebris = 0
 	score = 0
 	kills = 0
+	points = 0
 	currentLife = 0
 	maxLives = 0
 	--Store theConfigBag
@@ -148,11 +150,11 @@ function game:construct( aConfigBag, coord )
 	--Fullscreen uses a string to determine, because booleans can't be written.
 	if (theConfigBag:isFullscreen() == "yes") then
 		--Set the graphics mode
-		--love.graphics.setMode(theConfigBag:getResWidth(),theConfigBag:getResHeight(),true,false,0)
-		love.graphics.setMode(1400,900,true,false,0)
+		love.graphics.setMode(theConfigBag:getResWidth(),theConfigBag:getResHeight(),true,false,0)
+		--love.graphics.setMode(1400,900,true,false,0)
 	else
 		--love.graphics.setMode(1024,768,false,false,0)
-		--love.graphics.setMode(theConfigBag:getResWidth(),theConfigBag:getResHeight(),false,false,0)
+		love.graphics.setMode(theConfigBag:getResWidth(),theConfigBag:getResHeight(),false,false,0)
 	end
 
 	--Create the coordinate bag
@@ -217,15 +219,15 @@ function game:construct( aConfigBag, coord )
 	game:generateMasses( totalMoon )
 
 	--Configure and create the player's ship.
-	playerShips = {}
-	aiShips = {}
+	self.playerShips = {}
+	self.aiShips = {}
 	theConfigBag["color"] = color["ship"]
 	theConfigBag["shipType"] = "playerShip"
 	theConfigBag:setStartPosition( game:randomeStartLocation() )
 	thePlayer = player:new( theCoordBag, theConfigBag )
 	local aShip = ships:getNew( theWorld, thePlayer, theCoordBag, theConfigBag )
---	game:addActive( aShip )
-	playerShips[1] = aShip
+	game:addActive( aShip )
+	self.playerShips[1] = aShip
 	playerShip = aShip
 
 	--Setup the camera and HUD elements to focus on player's ship.
@@ -253,13 +255,13 @@ function game:construct( aConfigBag, coord )
 		theConfigBag["shipType"] = "aiShip"
 		anAI = ai:new( theCoordBag, theConfigBag )
 		aShip = ships:getNew( theWorld, anAI, theCoordBag, theConfigBag )
-		aShip:addTargets( playerShips )
---		game:addActive( aShip )
-		aiShips[i] = aShip
+		aShip:addTargets( self.playerShips )
+		game:addActive( aShip )
+		self.aiShips[i] = aShip
 	end
 
 	--Engage player targeting system
-	playerShip:addTargets(aiShips)
+	playerShip:addTargets( self.aiShips )
 
 	--The player doesn't need to respawn when the game starts.
 	needRespawn = false
@@ -459,12 +461,6 @@ function game:draw()
 	for i, aSolarMass in ipairs( solarMasses.objects ) do
 		aSolarMass:draw()
 	end
-	for i, aPlayer in ipairs( playerShips ) do
-		aPlayer:draw()
-	end
-	for i, anAi in ipairs( playerShips ) do
-		anAi:draw()
-	end
 	for i, anObject in ipairs( activeObjects ) do
 		anObject:draw()
 	end
@@ -478,9 +474,6 @@ function game:draw()
 	theRadar:drawFrame()
 	theRadar:draw( solarMasses.objects )
 	theRadar:draw( activeObjects )
-	theRadar:draw( playerShips )
-	theRadar:draw( aiShips)
-
 	love.graphics.setFont( digits )
 	love.graphics.setColor(255,255,255)
 	--Draw ammo and armor to the right of the radar
@@ -488,7 +481,7 @@ function game:draw()
 	love.graphics.print( "F: " .. fps, 135, 5)
 	love.graphics.print( "K: " .. kills, 135, 15)
 	love.graphics.print( "S: " .. string.format("%.1f", score), 135, 25)
-	love.graphics.print( "L: " .. maxLives - currentLife, 135, 40)
+	love.graphics.print( "L: " .. maxLives - currentLife + 1, 135, 40)
 	love.graphics.print( "A: " .. math.floor( playerShip:getArmor() ), 135, 50 )
 	love.graphics.print( "M: " .. playerShip:getMissileBank(), 135, 60 )
 	love.graphics.print( "E: " .. string.format("%.3f", playerShip:getLaserEnergy()), 135, 70)
@@ -559,9 +552,6 @@ if dt < lowDt then lowDt = dt end
 if dt > highDt then highDt = dt end
 --]]
 
-	--Update the world separate from the other objects
-	theWorld:update( dt )
-
 	--Update planet positions first
 	for i, aSolarMass in ipairs( solarMasses.objects ) do
 		aSolarMass:update( dt )
@@ -580,20 +570,6 @@ if dt > highDt then highDt = dt end
 			anObject:update( dt )
 		end
 	end
-	--For each player, apply gravitation force from each solar mass
-	for i, aPlayer in ipairs( playerShips ) do
-		for i, aSolarMass in ipairs( solarMasses.objects ) do
-			applyGravity( aSolarMass, aPlayer )
-		end
-		aPlayer:update( dt )
-	end
-	--For each ai, apply gravitation force from each solar mass
-	for i, anAi in ipairs( aiShips ) do
-		for i, aSolarMass in ipairs( solarMasses.objects ) do
-			applyGravity( aSolarMass, anAi )
-		end
-		anAi:update( dt )
-	end
 	--For each active effect, update the particle system
 	for i, anEffect in ipairs( activeEffects ) do
 		if (not anEffect:getActive()) then
@@ -609,6 +585,20 @@ if dt > highDt then highDt = dt end
 		game:generateDebris("border",0,0)
 	end
 
+	-- update deactivated AI and player
+	for i, aShip in ipairs( self.playerShips ) do
+		if not aShip.isActive then
+			aShip:update( dt )
+		end
+	end
+	for i, aShip in ipairs( self.aiShips ) do
+		if not aShip.isActive then
+			aShip:update( dt )
+		end
+	end
+
+	--Update the world separate from the other objects
+	theWorld:update( dt )
 end
 
 --[[
@@ -673,7 +663,7 @@ function game:keypressed( key, code )
 	end
 	--Escape key opens the pause menu.
 	if key == "escape" then
-		state = pause:new( game, screenX, theConfigBag, score )
+		state = pause:new( self, screenX, theConfigBag, score )
 	else
 		--Handle camera adjustments.
 		theCamera:keypressed(key)
@@ -701,7 +691,7 @@ end
 --If the game loses focus, then this opens the pause menu.
 --]]
 function game:focus()
-	state = pause:new( game, sWidth, theConfigBag, self.score )
+	state = pause:new( self, sWidth, theConfigBag, self.score )
 end
 
 --[[
@@ -712,7 +702,7 @@ end
 --]]
 function playerDeath()
 	if currentLife < maxLives then -- player has use last life, so score is final
-		score = kills/currentLife
+		score = points / currentLife
 	end
 	needRespawn = true
 	currentLife = currentLife + 1
@@ -720,13 +710,13 @@ end
 
 --[[
 --This function handles what to do when a player kills an ai.
---Could pass a parameter here for ship explosions?
 --
 --Requirement 12
 --]]
-function aiKill()
-	kills = kills + 1
-	score = kills/currentLife
+function addPlayerPoints( amount, kill )
+	points = points + amount
+	score = points / currentLife
+	kills = kills + kill
 end
 
 --[[
@@ -734,6 +724,8 @@ end
 --WARNING: Uses global sWidth and sHeight variables in main.lua
 --]]
 function game:destroy()
+	playerShips = {}
+	aiShips = {}
 	thePlayer = {}
 	theWorld = {}
 	theCamera = {}
@@ -748,7 +740,9 @@ function game:destroy()
 	lasers = {}
 	junk = {}
 
-	love.graphics.setMode(sWidth,sHeight,false,false,0)
+	if theConfigBag:isFullscreen() == "yes" then
+		love.graphics.setMode(sWidth,sHeight,false,false,0)
+	end
 end
 
 --[[
@@ -804,10 +798,10 @@ function shipCollide( a, b, coll )
 		a:destroy()
 		b:destroy()
 		if (a.controller == thePlayer) then
-			aiKill()
+			addPlayerPoints( 10, 1 )
 			playerDeath()
 		elseif (b.controller == thePlayer) then
-			aiKill()
+			addPlayerPoints( 10, 1 )
 			playerDeath()
 		end
 	elseif b.objectType == types.debris then
@@ -830,7 +824,7 @@ function shipCollide( a, b, coll )
 				if(a.controller == thePlayer) then
 					playerDeath()
 				else
-					aiKill()
+					addPlayerPoints( 10, 1 )
 				end
 			end
 			b:destroy()
@@ -844,7 +838,7 @@ function shipCollide( a, b, coll )
 				if(a.controller == thePlayer) then
 					playerDeath()
 				else
-					aiKill()
+					addPlayerPoints( 10, 1 )
 				end
 			end
 			b:destroy()
@@ -879,6 +873,9 @@ function missileCollide( a, b, coll )
 		if a.data.owner ~= b.data.owner then
 			a.data.armor = a.data.armor - b.data.damage
 			if(a.data.armor < 0) then
+				if b.data.owner == thePlayer then
+					addPlayerPoints( 1, 0 )
+				end
 				a:destroy()
 			end
 			b:destroy()
@@ -889,6 +886,7 @@ function missileCollide( a, b, coll )
 		if a.data.owner ~= b.data.owner then
 			a:destroy()
 			b:destroy()
+			addPlayerPoints( 1, 0 )
 		end
 	end
 end

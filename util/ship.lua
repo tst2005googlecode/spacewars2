@@ -49,7 +49,7 @@ local easyTurn
 local turnStep
 local turnAccel
 
-local maxMissile = 25
+local maxMissile = 10
 
 -- ship attributes
 local shipType
@@ -168,7 +168,7 @@ function ship:update( dt )
 	if self.data.status == "DEAD" then
 		self:stop()
 		self.data.laserEngaged = false
-		if commands[1] == "respawn" then
+		if commands[1] and commands[1][1] == "respawn" then
 			self:respawn()
 		end
 	end
@@ -521,6 +521,7 @@ end
 --]]
 function ship:respawn()
 	self:activate()
+	game:addActive( self )
 	self.data.status = "ACTIVE"
 	x = math.random(0,800)
 	y = math.random(0,800)
@@ -541,6 +542,7 @@ function ship:respawn()
 	self.body:setLinearVelocity(0,0)
 	self.body:setAngularVelocity(0)
 	self.data.armor = 2000
+	self.missileBank = maxMissiles
 	self.controller.state.respawn = false
 end
 

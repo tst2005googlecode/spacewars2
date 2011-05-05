@@ -46,7 +46,7 @@ function gameOver:construct(aConfigBag, score)
 	--Check high scores!
 	local i = 1
 	self.nameEntry = false
-	self.newScore = score + 0
+	self.newScore = math.modf( score )
 	while (i <= 10 and not self.nameEntry ) do
 		if(self.newScore > highscoreTable[i]["score"]) then
 			self.nameEntry = true
@@ -59,13 +59,14 @@ function gameOver:construct(aConfigBag, score)
 			self.namePrompt2Length = font["large"]:getWidth(self.namePrompt2)
 			self.nameString = ""
 			self.continue = button:new("Add High Score", self.width, 500)
+			break
 		end
 		i = i + 1
 	end
 	--Unhide the mouse
 	love.mouse.setVisible(true)
 	--Define the static strings and their lengths
-	self.scoreString = "Final Score: " .. score .. " points!"
+	self.scoreString = "Final Score: " .. self.newScore .. " points!"
 	self.scoreLength = font["large"]:getWidth(self.scoreString)
 end
 

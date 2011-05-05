@@ -109,13 +109,13 @@ function ai:updateControls( ownShip, dt )
 		if ownShip.data.armor > 500 then
 			if eShipDist > 1000 and eShipDist < 8000 then
 				commands[ #commands + 1 ] = { "thrust" } -- toward
-				self.toHeading = self.objAngle
+				self.toHeading = eShipAngle
 				--print( "ai: head to player")
 			end
 		else
 			if eShipDist < 4000 then
 				commands[ #commands + 1 ] = { "thrust" } -- away
-				self.toHeading = self.toHeading + math.pi
+				self.toHeading = eShipAngle + math.pi
 				if self.toHeading > maxAngle then -- normalize angle
 					self.toHeading = self.toHeading - maxAngle
 					--print( "ai: head away from player")

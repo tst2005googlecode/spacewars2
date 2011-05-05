@@ -108,7 +108,7 @@ function debris:update(dt)
 	self.warpTimer = self.warpTimer + dt * 1000
 	if(self.warpTimer > 1000) then
 		-- check if out of bounds
-		if (self.body:getX() > self.maxX) or (self.body:getX() < self.minX) or 
+		if (self.body:getX() > self.maxX) or (self.body:getX() < self.minX) or
 				(self.body:getY() > self.maxY) or (self.body:getY() < self.minY) then
 			self:destroy()
 		end

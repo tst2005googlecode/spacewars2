@@ -35,7 +35,7 @@ config = {}
 --Polymorphic variable holding the current view.
 state = {}
 --Master bag that holds the default system configuration.
-local theControlBag = controlBag:new("w","a","s","d","q","e","r"," ","1","2","EASY",800,600,"no","",200,1,"no",4,"no",50,1,10 ^ 20)
+local theControlBag = controlBag:new("w","a","s","d","q","e","r"," ","1","2","EASY",800,600,"no","bg1.png",200,1,"no",4,"no",50,1,10 ^ 20)
 highscoreTable = {}
 
 --[[

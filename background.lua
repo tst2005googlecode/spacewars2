@@ -49,7 +49,8 @@ function background:construct(aConfigBag)
 	local drawY = 150
 	for n,b in pairs(self.bgs) do
 		--Require the file to have a .png in it
-		if(string.find(b, ".png") ~= nil) then
+		b = string.lower(b)
+		if(string.find(b, ".png") ~= nil) or (string.find(b, ".PNG") ~= nil) then
 			self.bgButtons[#self.bgButtons + 1] = button:new(b,drawX,drawY)
 			self.bgButtons[#self.bgButtons]["bg"] = b
 			drawX = drawX + 400

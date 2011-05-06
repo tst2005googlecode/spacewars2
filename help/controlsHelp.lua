@@ -46,6 +46,7 @@ function controlsHelp:construct(aConfigBag)
 	self.stopTurn = "StopTurn - Stops your turning if you are using NORMAL mode."
 	self.stopThrust = "StopThrust - Slows your ship down at 1/3 thrust, opposite the direction you're MOVING."
 	self.orbit = "Orbit - Allows your ship to orbit the planet, if it's close enough."
+	self.target = "TargetAssist - Points your lasers in the direction of the nearest AI or missile!"
 	self.zoomIn = "ZoomIn - Zoom in on the action."
 	self.zoomOut = "ZoomOut - Zoom out of the action."
 	self.turn = "TurnType - Two different modes."
@@ -84,6 +85,8 @@ function controlsHelp:draw()
 	love.graphics.print(self.stopThrust,drawX,drawY)
 	drawY = drawY + 30
 	love.graphics.print(self.orbit,drawX,drawY)
+	drawY = drawY + 30
+	love.graphics.print(self.target,drawX,drawY)
 	drawY = drawY + 30
 	love.graphics.print(self.zoomIn,drawX,drawY)
 	drawY = drawY + 30

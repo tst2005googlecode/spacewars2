@@ -102,8 +102,8 @@ function gameHelp:construct(aConfigBag)
 	self.scoreString = "Your score, which is kills/deaths.  Aim for the top!"
 	self.lifeString = "Your number of remaining ships.  Careful not to run out!"
 	self.armorString = "How much armor you have.  If this reaches 0, you die!"
-	self.missileString = "Your number of remaining missiles.  They regenerate slowly!"
-	self.laserString = "Your remaining laser charges.  They regenerate quickly!"
+	self.missileString = "Your number of remaining missiles.  Fire with right mouse button!"
+	self.laserString = "Your remaining laser charges.  Fire with the left mouse button!"
 
 	--Construct a back button
 	self.backButton = button:new("Back",400,580)

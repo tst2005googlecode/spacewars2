@@ -250,7 +250,6 @@ function game:construct( aConfigBag, coord )
 
 	--Create enemy ships up to the cap.
 	for i = 1, totalAi do
-		theConfigBag = copyTable( theConfigBag )
 		theConfigBag:setStartPosition( game:randomeStartLocation() )
 		theConfigBag["color"] = color["ai"]
 		theConfigBag["shipType"] = "aiShip"
@@ -289,11 +288,28 @@ end
 --Requirement 2.3
 --]]
 function game:randomeStartLocation()
-	--Simple location which may collide with other objects.
-	local startX = math.random( 0, maxX - 1 )
-	local startY = math.random( 0, maxY - 1 )
-	local startAngle = math.random() * maxAngle
-	return startX, startY, startAngle
+	--Advanced location which avoids the center of the map.
+	local angle = math.random() * maxAngle
+	local halfWidth = ( maxX - minX ) / 2
+	local halfHeight = ( maxY - minY ) / 2
+	local maxDist = ( halfWidth ^ 2 + halfHeight ^ 2 ) ^ (0.5)
+	local maxDistRoot = maxDist ^ (0.5)
+	local outOfBounds = true
+	local x = 0
+	local y = 0
+	-- find a location in bounds
+	while outOfBounds do
+		local temp = ( math.random() * maxDistRoot ) ^ 2
+		local distance = maxDist - temp / 2
+		if distance > 1000 then -- minumum distance from planet
+			x = halfWidth + math.cos( angle ) * distance
+			y = halfWidth + math.sin( angle ) * distance
+			if x > minX and x < maxX and y > minY and y <= maxY then
+				outOfBounds = false -- statistically, only a few iterations at most should occur
+			end
+		end
+	end
+	return x, y, angle
 end
 
 --[[
@@ -692,7 +708,7 @@ end
 --If the game loses focus, then this opens the pause menu.
 --]]
 function game:focus()
-	state = pause:new( self, sWidth, theConfigBag, self.score )
+	state = pause:new( self, sWidth, theConfigBag, score )
 end
 
 --[[
@@ -742,7 +758,7 @@ function game:destroy()
 	junk = {}
 
 	-- revert to menu graphic mode / window size
-	if theConfigBag:isFullscreen() == "yes" or theConfigBag:getResWidth() ~= sWidth or 
+	if theConfigBag:isFullscreen() == "yes" or theConfigBag:getResWidth() ~= sWidth or
 			theConfigBag:getResHeight() ~= sHeight then
 		love.graphics.setMode(sWidth,sHeight,false,false,0)
 	end

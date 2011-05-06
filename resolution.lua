@@ -75,7 +75,7 @@ function resolution:draw()
 	for i,v in pairs(self.resButtons) do
 		v:draw()
 	end
-
+	self.exit:draw()
 end
 
 --[[
@@ -85,6 +85,7 @@ function resolution:update(dt)
 	for i,v in pairs(self.resButtons) do
 		v:update(dt)
 	end
+	self.exit:update(dt)
 end
 
 --[[

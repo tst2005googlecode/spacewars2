@@ -49,7 +49,7 @@ local easyTurn
 local turnStep
 local turnAccel
 
-local maxMissile = 10
+local maxMissile
 
 -- ship attributes
 local shipType
@@ -108,9 +108,9 @@ function ship:construct( theWorld, controlledBy, aCoordBag, shipConfig )
 	self.data.owner = self.controller
 
 	self.data.armor = 2000
---	self.data.missiles = {}
---	self.data.newMissiles = {}
-	self.data.missileBank = maxMissile
+	self.maxMissile = 10
+	self.data.missileBank = self.maxMissile
+
 	self.data.laserEngaged = false
 	--laserCharge is modified by the timeScale.  IE: 500/200 = 2.5 seconds.
 	self.data.laserCharge = 500 / timeScale
@@ -163,7 +163,6 @@ end
 function ship:update( dt )
 	--Get commands from controller
 	local commands = self.controller:updateControls( self, dt )
-	local laserTarget = {}
 	--Check for respawn
 	if self.data.status == "DEAD" then
 		self:stop()
@@ -173,7 +172,7 @@ function ship:update( dt )
 		end
 	end
 	--Charge laser and reload missiles
-	if(self.data.missileBank < maxMissile) then
+	if(self.data.missileBank < self.maxMissile) then
 		self.missileTimer = self.missileTimer + dt
 		if(self.missileTimer > self.reloadMissile) then
 			self.data.missileBank = self.data.missileBank + 1
@@ -542,7 +541,8 @@ function ship:respawn()
 	self.body:setLinearVelocity(0,0)
 	self.body:setAngularVelocity(0)
 	self.data.armor = 2000
-	self.missileBank = maxMissiles
+	--self.data.laserCharge = 500 / timeScale
+	self.data.missileBank = self.maxMissile
 	self.controller.state.respawn = false
 end
 

@@ -55,11 +55,15 @@ end
 function ai:updateControls( ownShip, dt )
 	--Create a table to hold the commands
 	local commands = {}
-	
+
 	--If dead, the AI should respawn instantly
 	if self.state.respawn then
 		commands[ #commands + 1 ] = { "respawn" }
 		self.state.respawn = false
+		-- reset state
+		self.thrustTime = 0
+		self.cruiseTime = 0
+		self.toHeading = nil
 		return commands
 	end
 
@@ -116,9 +120,9 @@ function ai:updateControls( ownShip, dt )
 			if eShipDist < 4000 then
 				commands[ #commands + 1 ] = { "thrust" } -- away
 				self.toHeading = eShipAngle + math.pi
+				--print( "ai: head away from player")
 				if self.toHeading > maxAngle then -- normalize angle
 					self.toHeading = self.toHeading - maxAngle
-					--print( "ai: head away from player")
 				end
 			end
 		end

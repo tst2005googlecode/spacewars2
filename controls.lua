@@ -67,8 +67,8 @@ function controls:construct(aControlBag)
 			ZoomIn = button:new("ZoomIn = " .. self.control["ZoomIn"] , 400,300),
 			ZoomOut = button:new("ZoomOut = " .. self.control["ZoomOut"] , 400,350),
 			TurnType = button:new("TurnType = " .. self.control["TurnType"], 400,400),
-			Help = button:new("Help", 400, 500),
-			Back = button:new("Back" , 400, 550)}
+			Help = button:new("Help", 400, 450),
+			Back = button:new("Back" , 400, 500)}
 
 	--We do not need input and have nothing to change in a new view.
 	self.needInput = false
@@ -80,10 +80,11 @@ end
 --Also draws the "press key" message when the user elects to change a control.
 --]]
 function controls:draw()
-	love.graphics.setFont(font["small"])
+	love.graphics.setFont(font["default"])
 	--Instruct the user we need a keypress
 	if(self.needInput == true) then
-		love.graphics.print("Please enter the key for " .. self.change,100,450)
+
+		love.graphics.print("Please enter the key for " .. self.change,100,550)
 	end
 	--Draw the buttons
 	for n,b in pairs(self.buttons) do

@@ -71,8 +71,8 @@ function playerconfig:construct(aControlBag)
 		RandomMoons = button:new("RandomMoons = " .. self.control["RandomMoons"], 400, 300),
 		SolarDebris = button:new("SolarDebris = " .. self.control["SolarDebris"], 400, 350),
 		PlayerRespawns = button:new("PlayerRespawns = " .. self.control["PlayerRespawns"] , 400,400),
-		Help = button:new("Help", 400, 500),
-		exit = button:new("Back" , 400, 550)}
+		Help = button:new("Help", 400, 450),
+		exit = button:new("Back" , 400, 500)}
 
 	self.needInput = false
 	self.change = nil
@@ -123,7 +123,7 @@ function playerconfig:draw()
 
 
 		end
-		love.graphics.print(helpMessage,100,425)
+		love.graphics.print(helpMessage,100,550)
 	end
 end
 
@@ -249,7 +249,7 @@ function playerconfig:mousepressed(x,y,button)
 					self.control["RandomMoons"] = "yes"
 				end
 				self.buttons["RandomMoons"]:changeText("RandomMoons = " .. self.control["RandomMoons"])
-                                   
+
 
 
 
@@ -277,6 +277,7 @@ function playerconfig:back()
 	self.bag:setLives(self.control["PlayerRespawns"])
         self.bag:setSpeed(self.control["GameSpeed"])
         self.bag:setMoonNum(self.control["Moons"])
+		self.bag:setRandomMoon(self.control["RandomMoons"])
         self.bag:setAiNum(self.control["NumberofAI"])
         self.bag:setDebrisNum(self.control["SolarDebris"])
 		self.bag:setRandomAi(self.control["RandomOpponents"])

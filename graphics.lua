@@ -52,10 +52,10 @@ function graphics:construct(aConfigBag)
 
 	self.buttons =
 	{
-		help = button:new("Help",400,300),
-		resolution = button:new("Change Resolution",400,350),
-		fullscreen = button:new("Toggle Fullscreen",400,400),
-		background = button:new("Change Background",400,450),
+		resolution = button:new("Change Resolution",400,300),
+		fullscreen = button:new("Toggle Fullscreen",400,350),
+		background = button:new("Change Background",400,400),
+		help = button:new("Help",400,450),
 		exit = button:new("Back",400,500)
 	}
 end
